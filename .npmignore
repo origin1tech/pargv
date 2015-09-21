@@ -5,5 +5,3 @@ public/*
 server.js
 .gitignore
 .npmignore
-cli.js
-pargs.js

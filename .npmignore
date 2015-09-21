@@ -1,0 +1,9 @@
+# Exclude Dev Files #
+#####################
+views/*
+public/*
+server.js
+.gitignore
+.npmignore
+cli.js
+pargs.js

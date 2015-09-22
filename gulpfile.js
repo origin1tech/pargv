@@ -55,6 +55,6 @@ gulp.task('pub', function (cb) {
 gulp.task('commit', ['commit:local', 'push']);
 
 // commit and publish project.
-gulp.task('commit:pub', ['commit', 'pub']);
+gulp.task('commit:pub', ['commit:local', 'push', 'pub']);
 
 

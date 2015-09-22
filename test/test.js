@@ -1,3 +1,4 @@
+/* global describe:false, it:false */
 
 var pargv = require('../lib'),
     chai = require('chai'),

@@ -1,6 +1,6 @@
 {
   "name": "pargv",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Minimal utility for parsing node command line arguments.",
   "main": "lib/index.js",
   "repository": {
@@ -31,5 +31,8 @@
     "gulp-dev": "^0.3.0",
     "gulp-git": "^1.4.0",
     "gulp-mocha": "^2.1.3"
+  },
+  "dependencies": {
+    "extend": "^3.0.0"
   }
 }

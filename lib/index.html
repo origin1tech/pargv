@@ -1,0 +1,247 @@
+<!DOCTYPE html><html lang="en"><head><title>lib/index</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="lib/index"><meta name="groc-project-path" content="lib/index.js"><meta name="groc-github-url" content="https://github.com/origin1tech/pargv"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/origin1tech/pargv/blob/master/lib/index.js">lib/index.js</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><p>eslint reset:true </p></div></div><div class="code"><div class="wrapper"><span class="hljs-keyword">var</span> extend = <span class="hljs-built_in">require</span>(<span class="hljs-string">'extend'</span>);
+
+<span class="hljs-built_in">module</span>.exports = (<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">arg</span>) </span>{
+<span class="hljs-pi">
+  'use strict'</span>;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Default values.</p></div></div><div class="code"><div class="wrapper">  <span class="hljs-keyword">var</span> defaults = {</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Index of primary command.</p></div></div><div class="code"><div class="wrapper">    index: <span class="hljs-number">3</span>,</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>When NOT false adjusts index by -1 since arrays are 0 based.</p></div></div><div class="code"><div class="wrapper">    adjustIndex: <span class="hljs-literal">undefined</span>,</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>When not false assumes 1 arguments is primary command.</p></div></div><div class="code"><div class="wrapper">    setCommand: <span class="hljs-literal">undefined</span>,</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>When NOT false data types are cast.</p></div></div><div class="code"><div class="wrapper">    castTypes: <span class="hljs-literal">undefined</span>
+
+  };</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Parsers attempt to cast string to type by conditions.</p></div></div><div class="code"><div class="wrapper">  <span class="hljs-keyword">var</span> parsers = {</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Attempts to parse Date.</p></div></div><div class="code"><div class="wrapper">    date: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{
+      <span class="hljs-keyword">var</span> d = tryParseAs(val, <span class="hljs-built_in">Date</span>);
+      <span class="hljs-keyword">if</span>(d!==<span class="hljs-string">'Invalid Date'</span> &amp;&amp; !<span class="hljs-built_in">isNaN</span>(d))
+        <span class="hljs-keyword">return</span> d;
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Attempts to parse Number.</p></div></div><div class="code"><div class="wrapper">    number: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{
+      <span class="hljs-keyword">var</span> n = tryParseAs(val, <span class="hljs-string">'number'</span>);
+      <span class="hljs-keyword">if</span>(<span class="hljs-built_in">isNaN</span>(n))
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-keyword">return</span> n;
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Check if is true or false.</p></div></div><div class="code"><div class="wrapper">    boolean: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{
+      <span class="hljs-keyword">var</span> likeBool = <span class="hljs-regexp">/^(true|false)$/</span>.test(val);
+      <span class="hljs-keyword">if</span>(!likeBool)
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-keyword">return</span> val == <span class="hljs-string">'true'</span>;
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Tests for JSON like string.</p></div></div><div class="code"><div class="wrapper">    json: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{
+      <span class="hljs-keyword">if</span>(<span class="hljs-regexp">/^{/</span>.test(val))
+        <span class="hljs-keyword">return</span> tryParseAs(val, <span class="hljs-string">'json'</span>);
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Tests for RegExp like string.</p></div></div><div class="code"><div class="wrapper">    regexp: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{
+      <span class="hljs-keyword">if</span>(<span class="hljs-regexp">/^\/.+\/(g|i|m)?([m,i]{1,2})?/</span>.test(val))
+        <span class="hljs-keyword">return</span> tryParseAs(val, <span class="hljs-built_in">RegExp</span>);
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Tests for key/value type string.
+example: &#39;key:value+key2:value2&#39;
+delimiter can be: + , * or =</p></div></div><div class="code"><div class="wrapper">    keyValue: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{
+      <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>,
+          match, exp, tmp,
+          obj, split;
+      obj = {};
+      exp = <span class="hljs-regexp">/[a-zA-Z0-9]+:[a-zA-Z0-9]+/g</span>;
+      match = val.match(exp);
+      <span class="hljs-keyword">if</span>(!match || !match.length)
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+      <span class="hljs-keyword">while</span>((tmp = exp.exec(val)) !== <span class="hljs-literal">null</span>){
+        split = tmp[<span class="hljs-number">0</span>].split(<span class="hljs-string">':'</span>);</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Ensure the value is cast.</p></div></div><div class="code"><div class="wrapper">        obj[split[<span class="hljs-number">0</span>]] = self.cast(split[<span class="hljs-number">1</span>]);
+      }
+      <span class="hljs-keyword">return</span> obj;
+    }
+
+  };</div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private</span></p>
+<p>Method for casting using try catch.</p>
+<p>Parameters:</p>
+<ul>
+<li><p><strong>val must be a String.</strong><br/>(the native JavaScript data type to cast to.)</p>
+</li>
+<li><p><strong>T must be a Function.</strong><br/>(the native function used to cast value.)</p>
+</li>
+</ul>
+<p><strong>Returns a Boolean or a Type</strong></p>
+<p>Example:</p>
+<p>tryParseAs(&#39;25&#39;, Number);</p></div></div><div class="code"><div class="wrapper">  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">tryParseAs</span>(<span class="hljs-params">val, Type</span>)</span>{
+    <span class="hljs-keyword">try</span> {
+      <span class="hljs-keyword">if</span>(Type === <span class="hljs-string">'json'</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">JSON</span>.parse(val);
+      <span class="hljs-keyword">if</span>(Type === <span class="hljs-string">'number'</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">parseFloat</span>(val);
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Type(val);
+    } <span class="hljs-keyword">catch</span>(e) {
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+    }
+  }</div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private</span></p>
+<p>Tests of argument is a flag type.</p>
+<p>Parameters:</p>
+<ul>
+<li><strong>val must be a *.</strong><br/>(the value to test for flag.)</li>
+</ul>
+<p><strong>Returns a Boolean</strong></p>
+<p>Example:</p>
+<p>isFlag(&#39;-m&#39;);</p></div></div><div class="code"><div class="wrapper">  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isFlag</span>(<span class="hljs-params">val</span>) </span>{
+    <span class="hljs-keyword">return</span> <span class="hljs-regexp">/^(-|--)[a-zA-Z0-9]+/</span>.test(val);
+  }</div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private</span></p>
+<p>Strips dashes from string for flags.</p>
+<p>Parameters:</p>
+<ul>
+<li><strong>val must be a String.</strong><br/>(the string flag to be stripped.)</li>
+</ul>
+<p><strong>Returns a String</strong></p>
+<p>Example:</p>
+<p>stripFlag(&#39;--save&#39;);</p></div></div><div class="code"><div class="wrapper">  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">stripFlag</span>(<span class="hljs-params">val</span>) </span>{
+    <span class="hljs-keyword">return</span> val.replace(<span class="hljs-regexp">/^(-|--)/</span>, <span class="hljs-string">''</span>);
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p><span class='doc-section-header'>Constructor class</span></p>
+<p>Pargv Class</p>
+<p><strong>Returns a Pargv</strong></p></div></div><div class="code"><div class="wrapper">  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Pargv</span>(<span class="hljs-params"></span>) </span>{</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Boolean true if manually supplied array.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">this</span>._static = <span class="hljs-literal">false</span>;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Array containing original source.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">this</span>._source = [];</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>The parsed result.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">this</span>._parsed = {};</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Object containing</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">this</span>._parsers = extend({}, parsers);</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Object of configuration options.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">this</span>._options = defaults;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Return Pargv instance.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Configures Pargv.</p>
+<p>Parameters:</p>
+<ul>
+<li><p><strong>index is optional and can be a Number or an Object.</strong><br/>(index of command or object of options.)</p>
+</li>
+<li><p><strong>options is optional and must be an Object.</strong><br/>([description])</p>
+</li>
+</ul>
+<p><strong>Returns a Pargv</strong><br/>([description])</p>
+<p>Example:</p>
+<p>pargv.configure(3, {// your options });</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.configure = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">configure</span>(<span class="hljs-params">index, options</span>) </span>{</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Allow options as first param.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(<span class="hljs-keyword">typeof</span> index === <span class="hljs-string">'object'</span>){
+      options = index;
+      index = <span class="hljs-literal">undefined</span>;
+    }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Merge configuration options.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">this</span>._options = extend({}, <span class="hljs-keyword">this</span>._options, options);
+    <span class="hljs-keyword">this</span>._options.index = index !== <span class="hljs-literal">undefined</span> ? index : <span class="hljs-keyword">this</span>._options.index;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Return Pargv instance.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Adds new parser to configuration.</p>
+<p>Parameters:</p>
+<ul>
+<li><p><strong>name must be a String.</strong><br/>(- the name of the parser to add.)</p>
+</li>
+<li><p><strong>fn must be an Object.</strong><br/>(- the function used for parsing.)</p>
+</li>
+</ul>
+<p><strong>Returns a Pargv</strong></p>
+<p>Example:</p>
+<p>pargv.addParser(&#39;email&#39;, function (val) {
+    // return truthy value if success
+    // return false if failed to continue inspections.
+});</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.addParser = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">addParser</span>(<span class="hljs-params">name, fn, modify</span>) </span>{</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If parser exists and not modifying throw error.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(<span class="hljs-keyword">this</span>._parsers[name] &amp;&amp; !modify)
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Failed to add parser '</span> + name + <span class="hljs-string">' the parser already exists. Did you mean to use pargv.modifyParser?'</span>);
+    <span class="hljs-keyword">this</span>._parsers[name] = fn;
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Modify parser, ensures already exists.</p>
+<p>Parameters:</p>
+<ul>
+<li><p><strong>name must be a String.</strong><br/>(- the name of the parser to modify.)</p>
+</li>
+<li><p><strong>fn must be an Object.</strong><br/>(- the function used for parsing.)</p>
+</li>
+</ul>
+<p><strong>Returns a Pargv</strong></p>
+<p>Example:</p>
+<p>see pargv.addParser().</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.modifyParser = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">modifyParser</span>(<span class="hljs-params">name, fn</span>) </span>{</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If parser does not exsit throw error.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(!<span class="hljs-keyword">this</span>._parsers[name])
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Failed to modify parser '</span> + name + <span class="hljs-string">' the parser does not exist, use "addParser".'</span>);
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._addParser(name, fn, <span class="hljs-literal">true</span>);
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Inspects and casts a string value to detected type.</p>
+<p>Parameters:</p>
+<ul>
+<li><strong>val must be a String.</strong><br/>(the value to be cast.)</li>
+</ul>
+<p><strong>Returns a *</strong></p>
+<p>Example:</p>
+<p>pargv.cast(&#39;true&#39;);</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.cast = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">cast</span>(<span class="hljs-params">val</span>) </span>{</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Do not process if casting is disabled.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(<span class="hljs-keyword">this</span>._options.castTypes === <span class="hljs-literal">false</span>)
+      <span class="hljs-keyword">return</span> val;
+
+    <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>,
+        keys = <span class="hljs-built_in">Object</span>.keys(<span class="hljs-keyword">this</span>._parsers),
+        parsed,
+        key,
+        result;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If known type immediately return.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(<span class="hljs-keyword">typeof</span> val === <span class="hljs-string">'number'</span> ||
+       <span class="hljs-keyword">typeof</span> val === <span class="hljs-string">'boolean'</span> ||
+       <span class="hljs-keyword">typeof</span> val === <span class="hljs-string">'date'</span> ||
+       (val <span class="hljs-keyword">instanceof</span> <span class="hljs-built_in">RegExp</span>) ||
+       (<span class="hljs-keyword">typeof</span> val === <span class="hljs-string">'object'</span> &amp;&amp; val !== <span class="hljs-literal">null</span>)) {
+         <span class="hljs-keyword">return</span> val;
+       }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If a string trim.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(<span class="hljs-keyword">typeof</span> val === <span class="hljs-string">'string'</span>)
+      val = val.trim();</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Iterate until some returns truthy value.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">while</span>(!result &amp;&amp; keys.length){
+      key = keys.shift();
+      result = self._parsers[key].call(self, val);
+    }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If result is still false set to original value.</p></div></div><div class="code"><div class="wrapper">    result = result || val;
+
+    <span class="hljs-keyword">return</span> result;
+
+  };</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Parse the arguments.</p>
+<p>Parameters:</p>
+<ul>
+<li><strong>args is optional and can be a String or an Object.</strong><br/>(- a string or array of arguments to parse.)</li>
+</ul>
+<p><strong>Returns an Objerct</strong></p>
+<p>Example:</p>
+<p>pargv.parse([&#39;start&#39;, &#39;-p&#39;, 3000 ]);</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.parse = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">parse</span>(<span class="hljs-params">args</span>) </span>{
+
+    <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>,
+        pargs = { cmds: []},
+        indexes = [],
+        options, idx,
+        warn, next, key,
+        tmpFlag, tmpCmd, prev;
+
+    options = <span class="hljs-keyword">this</span>._options
+    idx = options.adjustIndex !== <span class="hljs-literal">false</span> ? options.index-=<span class="hljs-number">1</span> : options.index;
+    idx = idx &lt; <span class="hljs-number">0</span> ? <span class="hljs-number">0</span> : idx;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If args are statically
+defined set flag to true.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(args) {
+      <span class="hljs-keyword">if</span>(<span class="hljs-keyword">typeof</span> args === <span class="hljs-string">'string'</span>)
+        args = args.replace(<span class="hljs-regexp">/(\s,|,\s)/</span>, <span class="hljs-string">','</span>).trim().split(<span class="hljs-string">','</span>);
+      <span class="hljs-keyword">this</span>._static = <span class="hljs-literal">true</span>;
+    }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Ensure args.</p></div></div><div class="code"><div class="wrapper">    args = args || process.argv;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Splice to defined index.</p></div></div><div class="code"><div class="wrapper">    args = args.splice(idx);</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Ensure args or warn.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(!args.length) {
+      <span class="hljs-keyword">if</span>(<span class="hljs-built_in">console</span>){
+        warn = <span class="hljs-string">'Failed to parse args the collection contains no elements.'</span>;
+        <span class="hljs-keyword">if</span>(<span class="hljs-built_in">console</span>.warn)
+          <span class="hljs-built_in">console</span>.warn(warn);
+        <span class="hljs-keyword">else</span>
+          <span class="hljs-built_in">console</span>.log(warn);
+      }
+      <span class="hljs-keyword">return</span> {};
+    }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Update source with original args after splice.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">this</span>._source = args.slice(<span class="hljs-number">0</span>);</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If setCommand first arg is command.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(!<span class="hljs-regexp">/^-/</span>.test(args[<span class="hljs-number">0</span>]) &amp;&amp; options.setCommand !== <span class="hljs-literal">false</span>)
+      pargs.cmd = args.shift();</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Iterate the args.</p></div></div><div class="code"><div class="wrapper">    args.forEach((k,i) =&gt;{</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Check if is flag options.</p></div></div><div class="code"><div class="wrapper">       <span class="hljs-keyword">if</span>(isFlag(k)){</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get next argument.</p></div></div><div class="code"><div class="wrapper">         next = args[i+<span class="hljs-number">1</span>];</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Replace flag prefix.</p></div></div><div class="code"><div class="wrapper">         key = k.replace(<span class="hljs-regexp">/^-{1,2}/g</span>, <span class="hljs-string">''</span>);</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Index has been parsed.</p></div></div><div class="code"><div class="wrapper">         indexes.push(i);</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If next argument not flag then parse cast value.</p></div></div><div class="code"><div class="wrapper">         <span class="hljs-keyword">if</span>(next &amp;&amp; !isFlag(next)) {
+            tmpFlag = self.cast(next) || next;
+            pargs[key] = tmpFlag;
+            indexes.push(i+<span class="hljs-number">1</span>);
+         }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Otherwise is simply boolean type flag.</p></div></div><div class="code"><div class="wrapper">         <span class="hljs-keyword">else</span> {
+            pargs[key] = <span class="hljs-literal">true</span>;
+         }
+
+       }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Otherwise is cmd or sub command.</p></div></div><div class="code"><div class="wrapper">       <span class="hljs-keyword">else</span> {</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Get previous argument.</p></div></div><div class="code"><div class="wrapper">         prev = args[i-<span class="hljs-number">1</span>];</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If previous argument and not a flag parse &amp; cast.</p></div></div><div class="code"><div class="wrapper">         <span class="hljs-keyword">if</span>(prev &amp;&amp; !isFlag(prev)){</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Cast and push the parsed argument.</p></div></div><div class="code"><div class="wrapper">           tmpCmd = self.cast(k) || k;
+           pargs.cmds.push(tmpCmd);
+           indexes.push(i);
+
+         }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Otherwise is a cmd.</p></div></div><div class="code"><div class="wrapper">         <span class="hljs-keyword">else</span> {
+           <span class="hljs-keyword">if</span>(indexes.indexOf(i) === -<span class="hljs-number">1</span>){
+              tmpCmd = self.cast(k);
+              pargs.cmds.push(tmpCmd);
+           }
+         }
+
+       }
+
+    });</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Add original source to object.</p></div></div><div class="code"><div class="wrapper">    pargs.source = <span class="hljs-keyword">this</span>._source;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Save the parsed result.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">this</span>._parsed = pargs;
+
+    <span class="hljs-keyword">return</span> pargs;
+
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Returns only flags from parsed object.</p>
+<p>Parameters:</p>
+<ul>
+<li><strong>parsed is optional and must be an Object.</strong><br/>(optional parsed object otherwise use this._parsed.)</li>
+</ul>
+<p><strong>Returns an Object</strong></p>
+<p>Example:</p>
+<p>pargv.getFlags();</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.getFlags = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getFalgs</span>(<span class="hljs-params">parsed</span>) </span>{
+    parsed = parsed || <span class="hljs-keyword">this</span>._parsed;
+    parsed = extend({}, parsed);
+    <span class="hljs-keyword">delete</span> parsed.cmd;
+    <span class="hljs-keyword">delete</span> parsed.cmds;
+    <span class="hljs-keyword">delete</span> parsed.source;
+    <span class="hljs-keyword">return</span> parsed;
+  };</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Resets configuration to default.</p>
+<p><strong>Returns a Pargv</strong></p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.reset = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">reset</span>(<span class="hljs-params"></span>) </span>{
+    <span class="hljs-keyword">this</span>._static = <span class="hljs-literal">false</span>;
+    <span class="hljs-keyword">this</span>._source = [];
+    <span class="hljs-keyword">this</span>._options = extend({}, defaults);
+    <span class="hljs-keyword">this</span>._parsed = {};
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+  }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Create &amp; return new Pargv instance.</p></div></div><div class="code"><div class="wrapper">  <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Pargv();
+
+})();</div></div></div></div></body></html>

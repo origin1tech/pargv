@@ -46,25 +46,6 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
             "pageTitle": "lib/index",
             "title": "index"
           },
-          "depth": 2
-        }, {
-          "type": "file",
-          "data": {
-            "language": {
-              "nameMatchers": [".js"],
-              "pygmentsLexer": "javascript",
-              "multiLineComment": ["/*", "*", "*/"],
-              "singleLineComment": ["//"],
-              "ignorePrefix": "}",
-              "foldPrefix": "^",
-              "name": "JavaScript"
-            },
-            "sourcePath": "/Volumes/Data/Users/Carey/Projects/WebNode/pargv/lib/temp.js",
-            "projectPath": "lib/temp.js",
-            "targetPath": "lib/temp",
-            "pageTitle": "lib/temp",
-            "title": "temp"
-          },
           "depth": 2,
           "outline": []
         }

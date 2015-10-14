@@ -5,7 +5,7 @@
 	"glob": ["./lib/**/*.js", "README.md"],
 	"except": [],
 	"strip": "",
-	"verbose": true,
+	"verbose": false,
 	"repository-url": "https://github.com/origin1tech/pargv",
-  "github": false
+  "github": true
 }

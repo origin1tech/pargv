@@ -2,10 +2,10 @@
 	"root": "./",
 	"out": "./docs",
 	"index-page-title": "index",
-	"glob": ["./lib/**/*.js", "README.md"],
+	"glob": ["./lib/**/*.js", "README.md", "./test/**/*.js"],
 	"except": [],
 	"strip": "",
 	"verbose": false,
 	"repository-url": "https://github.com/origin1tech/pargv",
-  "github": true
+  "github": false
 }

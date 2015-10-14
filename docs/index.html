@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="en"><head><title>index</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="index"><meta name="groc-project-path" content="README.md"><meta name="groc-github-url" content="https://github.com/origin1tech/pargv"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/origin1tech/pargv/blob/master/README.md">README.md</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h1 id="pargv">Pargv</h1>
+<p>Minimal utility for parsing command line arguments in NodeJs.</p>
+<h2 id="what-is-parv">What is Parv</h2>
+<p>Often when you&#39;re parsing arguments it&#39;s for the purpose
+of running a command within your node command line utility.
+Pargv makes this rather simple by assuming the specified
+index provided is this primary command. All other parameters
+are ether additional sub-commands or flags/options. This is
+exactly the purpose of Pargv.</p>
+<h2 id="install-using-npm">Install Using npm</h2>
+<pre><code class="lang-sh">$ npm install pargv</code></pre>
+<h2 id="configure">Configure</h2>
+<p>Pargv accepts two parameters, both of which are optional. The first is a number which represents the index of the primary command. Pargv will then splice arguments before this index leaving the remaining command and options/flags.
+This is likely what&#39;s desired as the initial elements in the process.argv provided by node are related to node itself and not usually needed.</p>
+<p><strong>NOTE</strong> See default options below.</p>
+<p>There are two ways to configure and get the resulting parsed arguments. You can use multiple functions where upon configuring a function is returned to be called again to return the result.</p>
+<p>The other option is to use the fluent api approach where chaining is used to parse the arguments. Both methods accept the same params/options.</p>
+<p><strong>Multi Function</strong></p>
+<pre><code class="lang-js"><span class="hljs-comment">// require Pargv.</span>
+<span class="hljs-keyword">var</span> pargv = <span class="hljs-built_in">require</span>(<span class="hljs-string">'pargv'</span>);
+
+<span class="hljs-comment">// initialize with options.</span>
+pargv = pargv(<span class="hljs-number">3</span>, { <span class="hljs-comment">/* options */</span>});
+
+<span class="hljs-comment">// or simply use defaults which</span>
+<span class="hljs-comment">// works with most scenarios.</span>
+<span class="hljs-keyword">var</span> pargs = pargv();</code></pre>
+<p><strong>Fluent Api</strong></p>
+<pre><code class="lang-js"><span class="hljs-comment">// require Pargv.</span>
+<span class="hljs-keyword">var</span> pargv = <span class="hljs-built_in">require</span>(<span class="hljs-string">'pargv'</span>);
+
+<span class="hljs-comment">// Configure using chain then parse.</span>
+<span class="hljs-keyword">var</span> pargs = pargv.configure().parse();</code></pre>
+<h2 id="basic-usage">Basic Usage</h2>
+<p>Once you have initialized and configured Pargv as needed you are now ready to access the object containing your primary command, sub commands and flags which are essentially options.</p>
+<pre><code class="lang-js"><span class="hljs-keyword">var</span> cmd = pargv.cmd;
+<span class="hljs-keyword">var</span> flags = pargv.flags;</code></pre>
+<h2 id="options">Options</h2>
+<p>See comments for each option.</p>
+<pre><code class="lang-js"><span class="hljs-keyword">var</span> defaults = {
+
+        <span class="hljs-comment">// the index where the primary</span>
+        <span class="hljs-comment">// command element is.</span>
+        <span class="hljs-comment">// ex: node server start</span>
+        <span class="hljs-comment">// the index would be 3 where</span>
+        <span class="hljs-comment">// "start" is our command action.</span>
+        index: <span class="hljs-number">3</span>,
+
+        <span class="hljs-comment">// When NOT false the index passed</span>
+        <span class="hljs-comment">// will be subtracted by one so the</span>
+        <span class="hljs-comment">// array is splice at correct element.</span>
+        adjustIndex: <span class="hljs-literal">undefined</span>,
+
+        <span class="hljs-comment">// When NOT false the first arg</span>
+        <span class="hljs-comment">// is shifted and set as the "cmd"</span>
+        <span class="hljs-comment">// or primary command property.</span>
+        shiftCommand: <span class="hljs-literal">undefined</span>,
+
+        <span class="hljs-comment">// When NOT false data types are cast.</span>
+        castTypes: <span class="hljs-literal">undefined</span>,
+
+        <span class="hljs-comment">// Character to use when wrapping strings.</span>
+        <span class="hljs-comment">// set to false to disable.</span>
+        stringChar: <span class="hljs-string">"'"</span>
+
+};</code></pre>
+<h2 id="license">License</h2>
+<p>See <a href="License.md">LICENSE.md</a></p></div></div></div></div></body></html>

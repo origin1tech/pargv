@@ -1,0 +1,199 @@
+<!DOCTYPE html><html lang="en"><head><title>lib/index</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="lib/index"><meta name="groc-project-path" content="lib/index.js"><meta name="groc-github-url" content="https://github.com/origin1tech/pargv"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path"><a href="https://github.com/origin1tech/pargv/blob/master/lib/index.js">lib/index.js</a></div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><p>eslint reset:true </p></div></div><div class="code"><div class="wrapper"><span class="hljs-keyword">var</span> extend = <span class="hljs-built_in">require</span>(<span class="hljs-string">'extend'</span>);
+
+<span class="hljs-built_in">module</span>.exports = (<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">arg</span>) </span>{
+<span class="hljs-pi">
+  'use strict'</span>;
+
+  <span class="hljs-keyword">var</span> defaults = {</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>the index where the primary
+command element is.
+ex: node server start
+the index would be 3 where
+&quot;start&quot; is our command action.</p></div></div><div class="code"><div class="wrapper">    index: <span class="hljs-number">3</span>,</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>When NOT false the index passed
+will be subtracted by one so the
+array is spliced at correct element.
+Unlikely this would ever need to be
+changed.</p></div></div><div class="code"><div class="wrapper">    adjustIndex: <span class="hljs-literal">undefined</span>,</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>When NOT false the first arg
+is shifted and set as the &quot;cmd&quot;
+or primary command property.</p></div></div><div class="code"><div class="wrapper">    setCommand: <span class="hljs-literal">undefined</span>,</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>When NOT false data types are cast.</p></div></div><div class="code"><div class="wrapper">    castTypes: <span class="hljs-literal">undefined</span>,</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Character to use when wrapping strings.
+set to false to disable.</p></div></div><div class="code"><div class="wrapper">    stringChar: <span class="hljs-literal">false</span>
+
+  };
+
+  <span class="hljs-keyword">var</span> parsers = {
+
+    date: {
+      inspect: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{},
+      cast: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{}
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Cast value to a number.</p></div></div><div class="code"><div class="wrapper">    number: {
+      inspect: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{},
+      cast: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{}
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Cast value to boolean.</p></div></div><div class="code"><div class="wrapper">    boolean: {
+      inspect: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{},
+      cast: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{}
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Cast parse json string.</p></div></div><div class="code"><div class="wrapper">    json: {
+      inspect: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{},
+      cast: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{}
+    },</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Parse out key/value pairs
+then cast values.</p></div></div><div class="code"><div class="wrapper">    keyValue: {
+      inspect: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{},
+      cast: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">val</span>) </span>{}
+    }
+
+  };</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Local methods</p>
+<hr></div></div></div><div class="segment"><div class="comments doc-section doc-section-private"><div class="wrapper"><p><span class='doc-section-header'>Private</span></p>
+<p>Defines non enumerable properties on Pargv instance.</p>
+<p>Parameters:</p>
+<ul>
+<li><strong>context must be an Object.</strong><br/>(the context to define properties on.)</li>
+</ul></div></div><div class="code"><div class="wrapper">  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">defineProperties</span>(<span class="hljs-params">context</span>) </span>{
+
+    <span class="hljs-built_in">Object</span>.defineProperties(context, {</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p><span class='doc-section-header'> of type <em>Object</em></span></p>
+<p>Object containing configuration options.</p></div></div><div class="code"><div class="wrapper">      _options: {
+        writable: <span class="hljs-literal">true</span>,
+        value: {}
+      },</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p><span class='doc-section-header'> of type <em>Array</em></span></p>
+<p>The original array of arguments supplied.</p></div></div><div class="code"><div class="wrapper">      _source: {
+        writable: <span class="hljs-literal">true</span>,
+        value: []
+      },</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p><span class='doc-section-header'> of type <em>Boolean</em></span></p>
+<p>Indicates a static array of options was used.</p></div></div><div class="code"><div class="wrapper">      _static: {
+        writable: <span class="hljs-literal">true</span>,
+        value: <span class="hljs-literal">false</span>
+      },</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p><span class='doc-section-header'> of type <em>Object</em></span></p>
+<p>Object map containing methods used
+when inspecting and parsing argument
+values.</p></div></div><div class="code"><div class="wrapper">      _parsers: {
+        writeable: <span class="hljs-literal">true</span>,
+        value: parsers
+      }
+
+    });
+
+  }
+
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">cast</span>(<span class="hljs-params"></span>) </span>{
+
+  }
+
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">inspect</span>(<span class="hljs-params">val</span>) </span>{
+
+  }
+
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">error</span>(<span class="hljs-params"></span>) </span>{
+
+  }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Public Api</p>
+<hr></div></div><div class="code"><div class="wrapper">  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Pargv</span>(<span class="hljs-params">index, options</span>) </span>{
+
+
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Configures Pargv.</p>
+<p>Parameters:</p>
+<ul>
+<li><p><strong>index is optional and can be a Number or an Object.</strong><br/>(index of command or object of options.)</p>
+</li>
+<li><p><strong>options is optional and must be an Object.</strong><br/>([description])</p>
+</li>
+</ul>
+<p><strong>Returns a pargv</strong><br/>([description])</p>
+<p>Example:</p>
+<p>Accepts index for primary cmd &amp; object of options.
+pargv.configure(3, {// your options});</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.configure = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">configure</span>(<span class="hljs-params">index, options</span>) </span>{</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Merge options.</p></div></div><div class="code"><div class="wrapper">    options = extend({}, defaults, options);
+    options.index = index !== <span class="hljs-literal">undefined</span> ? index : options.index;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Extend pargv with options.</p></div></div><div class="code"><div class="wrapper">    pargv._options = options;
+
+    <span class="hljs-keyword">return</span> pargv;
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Parse the arguments.
+When passing a string it must
+be a csv string.</p>
+<p>Parameters:</p>
+<ul>
+<li><strong>args is optional and can be a String or an Object.</strong><br/>(- a string or array of arguments to parse.)</li>
+</ul>
+<p><strong>Returns an Objerct</strong></p>
+<p>Example:</p>
+<p>Pargv.prototype.parse([&#39;start&#39;, &#39;-p&#39;, 3000 ]);</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.parse = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">parse</span>(<span class="hljs-params">args</span>) </span>{
+
+    <span class="hljs-keyword">var</span> options, idx, isStatic;
+
+    options = Pargv.prototype._options
+    idx = options.adjustIndex ? idx-=<span class="hljs-number">1</span> : options.index;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If args are statically
+defined set flag to true.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(args) {
+      <span class="hljs-keyword">if</span>(<span class="hljs-keyword">typeof</span> args === <span class="hljs-string">'string'</span>)
+        args = args.replace(<span class="hljs-regexp">/(\s,|,\s)/</span>, <span class="hljs-string">','</span>).trim().split(<span class="hljs-string">','</span>);
+      isStatic = <span class="hljs-literal">true</span>;
+    }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Ensure args.</p></div></div><div class="code"><div class="wrapper">    args = args || process.argv;</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Ensure we have args.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(!args.length){
+      error(<span class="hljs-string">'Failed to parse args the collection contains no elements.'</span>);
+      <span class="hljs-keyword">return</span> pargv;
+    }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If not static splice to index.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(!isStatic) {
+      args = args.splice(idx);
+    }</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Update source with original args.</p></div></div><div class="code"><div class="wrapper">    pargv._source = args.slice(<span class="hljs-number">0</span>);</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>If set command shift first arg
+only if first arg is not a flag.</p></div></div><div class="code"><div class="wrapper">    <span class="hljs-keyword">if</span>(!<span class="hljs-regexp">/^-/</span>.test(_argv[<span class="hljs-number">0</span>]) &amp;&amp; options.setCommand !== <span class="hljs-literal">false</span>)
+       _pargs.cmd = _argv.shift();</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Iterate the args.</p></div></div><div class="code"><div class="wrapper">    _argv.forEach((k,i) =&gt;{
+
+       <span class="hljs-keyword">if</span>(<span class="hljs-regexp">/-/g</span>.test(k)){
+         <span class="hljs-keyword">let</span> next = _argv[i+<span class="hljs-number">1</span>];
+         <span class="hljs-keyword">let</span> key = k.replace(<span class="hljs-regexp">/-/g</span>, <span class="hljs-string">''</span>);
+         <span class="hljs-keyword">if</span>(next &amp;&amp; !<span class="hljs-regexp">/-/</span>.test(next))
+             _pargs[key] = castType(next);
+         <span class="hljs-keyword">else</span>
+             _pargs[key] = <span class="hljs-literal">true</span>;
+       }
+
+       <span class="hljs-keyword">else</span> {
+         <span class="hljs-keyword">let</span> prev = _argv[i-<span class="hljs-number">1</span>];
+         <span class="hljs-keyword">if</span>(prev &amp;&amp; !<span class="hljs-regexp">/-/g</span>.test(prev)){
+             _pargs.cmds = _pargs.cmds || [];
+             _pargs.cmds.push(castType(k));
+         }
+       }
+
+    });
+
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Adds a parsing configuration to be run
+when arguments are parsed. If the parser
+already exists it will be overwritten.</p>
+<p>Parameters:</p>
+<ul>
+<li><p><strong>name must be a String.</strong><br/>(- the name of the parser to add.)</p>
+</li>
+<li><p><strong>config must be an Object.</strong><br/>(- the configuation used for the parser.)</p>
+</li>
+</ul>
+<p><strong>Returns an Object</strong></p>
+<p>Example:</p>
+<p>pargv.addParser(&#39;email&#39;, {
+        // method used to test if is this type.
+     inspect: function (val) { // return truthy if passes inspection. },
+         // method used once inspected to cast to type.
+     cast: function (val) { // cast then return updated result. },
+         // optional method used once cast to format the result.
+     format: function (val) { // format then retun formatted result. }
+    });</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.addParser = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">addParser</span>(<span class="hljs-params">name, config</span>) </span>{
+    <span class="hljs-keyword">if</span>(pargv.parsers[name])
+      error(<span class="hljs-string">'Failed to add parser '</span> + name + <span class="hljs-string">' the parser already exists. Did you mean to use pargv.modifyParser?'</span>);
+    <span class="hljs-keyword">else</span>
+      pargv.parsers[name] = extend({}, pargv.parsers[name], config);
+    <span class="hljs-keyword">return</span> pargv;
+  }</div></div></div><div class="segment"><div class="comments doc-section"><div class="wrapper"><p>Alias method to addParser after ensuring
+the parser method already exists.</p>
+<p>Parameters:</p>
+<ul>
+<li><p><strong>name must be a String.</strong><br/>(- the name of the parser to modify.)</p>
+</li>
+<li><p><strong>config must be an Object.</strong><br/>(- the configuation used to modify the parser.)</p>
+</li>
+</ul>
+<p><strong>Returns an Object</strong></p>
+<p>Example:</p>
+<p>see pargv.addParser.</p></div></div><div class="code"><div class="wrapper">  Pargv.prototype.modifyParser = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">modifyParser</span>(<span class="hljs-params">name, config</span>) </span>{
+    <span class="hljs-keyword">if</span>(!pargv.parsers[name])
+      error(<span class="hljs-string">'Failed to modify parser '</span> + name + <span class="hljs-string">' the parser does not exist.'</span>);
+    <span class="hljs-keyword">else</span>
+      <span class="hljs-keyword">return</span> pargv.addParser(name, extend({}, pargv.parsers[name], config));
+  }
+
+  Pargv.prototype.reset = <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">reset</span>(<span class="hljs-params"></span>) </span>{</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>reset;</p></div></div><div class="code"><div class="wrapper">  }
+
+  <span class="hljs-keyword">return</span> Pargv;
+
+});</div></div></div></div></body></html>

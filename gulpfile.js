@@ -1,60 +1,102 @@
-var gulp = require('gulp'),
+var fs = require('fs'),
+    gulp = require('gulp'),
     bump = require('gulp-bump'),
     git = require('gulp-git'),
+    gutil = require('gulp-util'),
+    groc = require('groc'),
     spawn = require('child_process').spawn,
-    argv = process.argv.splice(3),
-    args = [];
+    pargv = require('./lib/index'),
+    pargs = pargv.parse();
 
-// ensure quotes around strings
-// with spaces.
-argv.forEach(function(arg, idx) {
-    if(arg.indexOf(' ') !== -1)
-        arg = '"' + arg + '"';
-    args.push(arg);
+// Common handler for gulp errors.
+function error(err) {
+  if(err)
+    throw new gutil.PluginError('gulp-<%= pluginName %>', err);
+}
+
+// Git commit common task.
+function commit() {
+
+  var args = [],
+      flags = pargv.getFlags(),
+      keys;
+
+  // Ensure message on commits
+  if(!flags.m)
+    flags.m = 'Lazy commit';
+
+  keys = Object.keys(flags);
+
+  // Ensures command is property formatted.
+  keys.forEach(function(k) {
+      if(k === 'm'){
+        args.push('-m');
+        args.push('"' + flags[k] + '"');
+      }
+      else {
+        args.push('-' + k);
+      }
+  });
+
+  // Commit the project.
+  return gulp.src('./*')
+    .pipe(git.commit(undefined, {
+        args: args.join(' '),
+        disableMessageRequirement: true
+    }));
+
+}
+
+// Bumps the project's version.
+gulp.task('bump', function(cb) {
+
+  if (pargs.cmd === 'commit:local')
+    return cb();
+
+  return gulp.src(['./package.json'])
+      .pipe(bump())
+      .pipe(gulp.dest('./'));
+
 });
 
-// bump package version.
-gulp.task('bump', function(){
-    gulp.src('./package.json')
-        .pipe(bump())
-        .pipe(gulp.dest('./'));
-});
+// Remote commit.
+gulp.task('commit', commit);
 
-// commit local.
-gulp.task('commit:local', ['bump'], function () {
+// Builds out documentation.
+gulp.task('docs', function (cb) {
 
-    if(!args || !args.length)
-        args = '-a -m "lazy commit"';
-    else
-        args = args.join(' ');
-
-    return gulp.src('./*')
-        .pipe(git.commit(undefined, {
-            args: args,
-            disableMessageRequirement: true
-        }));
+  return groc.CLI([],function (err) {
+    // Don't need to handle the error directly
+    // it will be logged in console but add additional
+    // error indicating docs although built were not output.
+    if(err)
+      error('Docs successfully built but failed to output due to error.');
+    cb();
+  });
 
 });
 
-// push to repo.
+// Push commit(s) to remote repo.
 gulp.task('push', function(cb) {
-    git.push('origin', 'master', {}, function(err) {
-        if(err) throw err;
+    return git.push('origin', 'master', {}, function(err) {
+        if (err)
+          throw err;
         cb();
     });
 });
 
-// publish to npm.
-gulp.task('pub', function (cb) {
-    spawn('npm', ['publish'], { stdio: 'inherit' }).on('close', function() {
+// Publish the project to NPM.
+gulp.task('pub', function(cb) {
+    return spawn('npm', ['publish'], { stdio: 'inherit' }).on('close', function() {
         cb();
     });
 });
 
-// commit and push.
-gulp.task('commit', ['commit:local', 'push']);
+// Commit locally without bumping version.
+gulp.task('commit:local', ['commit']);
 
-// commit and publish project.
-gulp.task('commit:pub', ['commit:local', 'push', 'pub']);
+// Bump project then commit & push.
+gulp.task('commit:remote', ['bump', 'commit', 'docs', 'push']);
 
-
+// Publish to NPM after commit.
+gulp.task('commit:publish', [ 'bump', 'commit', 'docs', 'push', 'pub']);

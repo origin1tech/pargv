@@ -1,5 +1,3 @@
-# Exclude Dev Files #
-#####################
 views/*
 public/*
 server.js

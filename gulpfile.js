@@ -59,9 +59,6 @@ gulp.task('bump', function(cb) {
 
 });
 
-// Remote commit.
-gulp.task('commit', commit);
-
 // Builds out documentation.
 gulp.task('docs', function (cb) {
 
@@ -75,6 +72,9 @@ gulp.task('docs', function (cb) {
   });
 
 });
+
+// Remote commit.
+gulp.task('commit', commit);
 
 // Push commit(s) to remote repo.
 gulp.task('push', function(cb) {
@@ -96,7 +96,7 @@ gulp.task('pub', function(cb) {
 gulp.task('commit:local', ['commit']);
 
 // Bump project then commit & push.
-gulp.task('commit:remote', ['bump', 'commit', 'docs', 'push']);
+gulp.task('commit:remote', ['bump', 'docs', 'commit', 'push']);
 
 // Publish to NPM after commit.
-gulp.task('commit:publish', [ 'bump', 'commit', 'docs', 'push', 'pub']);
+gulp.task('commit:publish', [ 'bump', 'docs', 'commit', 'push', 'pub']);

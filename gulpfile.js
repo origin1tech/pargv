@@ -17,31 +17,16 @@ function error(err) {
 // Git commit common task.
 function commit() {
 
-  var args = [],
-      flags = pargv.getFlags(),
+  var flags,
       keys;
 
-  // Ensure message on commits
-  if(!flags.m)
-    flags.m = 'Lazy commit';
-
-  keys = Object.keys(flags);
-
-  // Ensures command is property formatted.
-  keys.forEach(function(k) {
-      if(k === 'm'){
-        args.push('-m');
-        args.push('"' + flags[k] + '"');
-      }
-      else {
-        args.push('-' + k);
-      }
-  });
+  // Convert flags to array.
+  flags = pargv.flagsToArray({ 'a': true, 'm': 'Lazy commit' });
 
   // Commit the project.
   return gulp.src('./*')
     .pipe(git.commit(undefined, {
-        args: args.join(' '),
+        args: flags.join(' '),
         disableMessageRequirement: true
     }));
 
@@ -56,20 +41,6 @@ gulp.task('bump', function(cb) {
   return gulp.src(['./package.json'])
       .pipe(bump())
       .pipe(gulp.dest('./'));
-
-});
-
-// Builds out documentation.
-gulp.task('docs', function (cb) {
-
-  return groc.CLI([],function (err) {
-    // Don't need to handle the error directly
-    // it will be logged in console but add additional
-    // error indicating docs although built were not output.
-    if(err)
-      error('Docs successfully built but failed to output due to error.');
-    cb();
-  });
 
 });
 
@@ -96,7 +67,27 @@ gulp.task('pub', function(cb) {
 gulp.task('commit:local', ['commit']);
 
 // Bump project then commit & push.
-gulp.task('commit:remote', ['bump', 'docs', 'commit', 'push']);
+gulp.task('commit:remote', ['bump', 'commit', 'push']);
 
 // Publish to NPM after commit.
-gulp.task('commit:publish', [ 'bump', 'docs', 'commit', 'push', 'pub']);
+gulp.task('commit:publish', [ 'bump', 'commit', 'push', 'pub']);
+
+// Builds out documentation.
+gulp.task('docs', function (cb) {
+
+  var args = [];
+
+  if(pargs.github)
+    args.push('--github');
+
+  return groc.CLI([],function (err) {
+    // Don't need to handle the error directly
+    // it will be logged in console but add additional
+    // error indicating docs although built were not output.
+    if(err)
+      error('Docs successfully built but failed to output due to error.');
+    cb();
+
+  });
+
+});

@@ -1,6 +1,6 @@
 {
   "name": "pargv",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Minimal utility for parsing node command line arguments.",
   "main": "lib/index.js",
   "repository": {
@@ -23,7 +23,7 @@
   "bugs": {
     "url": "https://github.com/origin1tech/pargv/issues"
   },
-  "homepage": "https://github.com/origin1tech/pargv#readme",
+  "homepage": "http://origin1tech.github.io/pargv/",
   "devDependencies": {
     "chai": "^3.3.0",
     "eslint": "^1.6.0",

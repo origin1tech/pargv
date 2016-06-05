@@ -35,13 +35,13 @@ describe('Pargv Tests', function() {
 
     // Test should properly cast a Date.
     it('should return object w/ value cast to date', function() {
-        var parsed = pargv.configure(0).parse(['start', '-date', '12/31/2015 8:00 PM']);
+        var parsed = pargv.configure(0).parse(['start', '--date', '12/31/2015 8:00 PM']);
         assert.deepEqual(parsed.date, new Date('12/31/2015 8:00 PM'));
     });
 
     // Test should properly cast a string to JSON.
     it('should return person object from JSON.', function() {
-        var parsed = pargv.configure(0).parse([ '-person', '{ "name": "John Smith" }']);
+        var parsed = pargv.configure(0).parse([ '--person', '{ "name": "John Smith" }']);
         assert.deepEqual({ person: parsed.person }, { person: { name: 'John Smith' } });
     });
 
@@ -51,7 +51,7 @@ describe('Pargv Tests', function() {
             confIdx = parsed._options.index;
         expect(parsed._options.index).to.equal(0);
         parsed.reset();
-        expect(parsed._options.index).to.equal(3);
+        expect(parsed._options.index).to.equal(2);
     });
 
 });

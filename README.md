@@ -6,10 +6,11 @@ Minimal utility for parsing command line arguments in Node.
 
 Often when you're parsing arguments it's for the purpose
 of running a command within your node command line utility.
-Pargv makes this rather simple by assuming the specified
-index provided is this primary command. All other parameters
-are ether additional sub-commands or flags/options. This is
-exactly the purpose of Pargv.
+Pargv is designed specifically for this purpose by assuming the specified
+index provided is the primary command. All other parameters
+are ether additional sub-commands or flags/options.
+
+**NOTE** If you are in need of a full blown command line parser I would suggest Yargs. Pargv is a stripped down solution for this very specific need. That said if you are after parsing for the purpose of building up a CLI it packages up the args quite nicely for you.
 
 ## Install Using npm
 
@@ -106,7 +107,9 @@ var defaults = {
 	// Index of primary command.
 	index: 3,
 
-	// When NOT false adjusts index by -1 since arrays are 0 based.
+	// When NOT false and not number adjusts index by -1. If number
+	// index is adjusted as:
+	// index += adjustedIndex
 	adjustIndex: undefined,
 
 	// When not false assumes 1 arguments is primary command.

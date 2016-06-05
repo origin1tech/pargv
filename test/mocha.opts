@@ -1,2 +1,1 @@
 ./test/*.js
---compilers js:babel/register

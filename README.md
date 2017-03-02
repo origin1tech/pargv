@@ -73,7 +73,7 @@ var pargs = {
 
 It should be noted that in the example above you could conceivably want "server" to be the primary "cmd" property. This is easily accomplished by the following before calling "parse".
 
-## Data types & Parsers
+## Data Types & Parsers
 
 Pargv attempts to parse known data types when processing arguments either those passed for from process.argv. The supported data types out of the box are as follows.
 
@@ -128,13 +128,12 @@ var exists = pargs.hasCmd({ /* existing pargv parsed result */}, 'command1', 'co
 
 ## API Docs
 
-**NOTE**
-[] 	 expects optional argument
-opts expects options object.
-* 	 expects any type.
-| 	 expects or other specified value.
-...	 expects spread any number of arguments
-par	 expects pargv parsed object of cmds and flags.
+- [] 	 expects optional argument
+- opts expects options object.
+- * 	 expects any type.
+- | 	 expects or other specified value.
+- ...	 expects spread any number of arguments
+- par	 expects pargv parsed object of cmds and flags.
 
 - .configure 		([number] | [opts], [opts]) accepts index of cmd and/or configuration options object.
 - .parse 				([array]) parses process.argv or a supplied array argument.

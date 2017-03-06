@@ -13,7 +13,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "commentsOnly": true,
           "name": "Markdown"
         },
-        "sourcePath": "/Volumes/Data/Users/Carey/Projects/WebNode/pargv/README.md",
+        "sourcePath": "/Volumes/DATA/Projects/WebNode/pargv/README.md",
         "projectPath": "README.md",
         "targetPath": "index",
         "pageTitle": "index",
@@ -39,6 +39,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 2,
+                "title": "Pargv or Yargs or Other",
+                "slug": "pargv-or-yargs-or-other"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
                 "title": "Install Using npm",
                 "slug": "install-using-npm"
               },
@@ -55,6 +63,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 2,
+                "title": "Parsing Arguments",
+                "slug": "parsing-arguments"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
                 "title": "Parsed Result.",
                 "slug": "parsed-result"
               },
@@ -63,16 +79,24 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "API Methods",
-                "slug": "api-methods"
+                "title": "Data Types &amp; Parsers",
+                "slug": "data-types-amp-parsers"
               },
               "depth": 2
             }, {
               "type": "heading",
               "data": {
                 "level": 2,
-                "title": "Supported Data types",
-                "slug": "supported-data-types"
+                "title": "Commands",
+                "slug": "commands"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "API Docs",
+                "slug": "api-docs"
               },
               "depth": 2
             }, {
@@ -81,14 +105,6 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                 "level": 2,
                 "title": "Options",
                 "slug": "options"
-              },
-              "depth": 2
-            }, {
-              "type": "heading",
-              "data": {
-                "level": 2,
-                "title": "Further Reading",
-                "slug": "further-reading"
               },
               "depth": 2
             }, {
@@ -118,6 +134,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "type": "heading",
           "data": {
             "level": 2,
+            "title": "Pargv or Yargs or Other",
+            "slug": "pargv-or-yargs-or-other"
+          },
+          "depth": 2
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 2,
             "title": "Install Using npm",
             "slug": "install-using-npm"
           },
@@ -134,6 +158,14 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "type": "heading",
           "data": {
             "level": 2,
+            "title": "Parsing Arguments",
+            "slug": "parsing-arguments"
+          },
+          "depth": 2
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 2,
             "title": "Parsed Result.",
             "slug": "parsed-result"
           },
@@ -142,16 +174,24 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "type": "heading",
           "data": {
             "level": 2,
-            "title": "API Methods",
-            "slug": "api-methods"
+            "title": "Data Types &amp; Parsers",
+            "slug": "data-types-amp-parsers"
           },
           "depth": 2
         }, {
           "type": "heading",
           "data": {
             "level": 2,
-            "title": "Supported Data types",
-            "slug": "supported-data-types"
+            "title": "Commands",
+            "slug": "commands"
+          },
+          "depth": 2
+        }, {
+          "type": "heading",
+          "data": {
+            "level": 2,
+            "title": "API Docs",
+            "slug": "api-docs"
           },
           "depth": 2
         }, {
@@ -160,14 +200,6 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
             "level": 2,
             "title": "Options",
             "slug": "options"
-          },
-          "depth": 2
-        }, {
-          "type": "heading",
-          "data": {
-            "level": 2,
-            "title": "Further Reading",
-            "slug": "further-reading"
           },
           "depth": 2
         }, {
@@ -200,7 +232,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "foldPrefix": "^",
               "name": "JavaScript"
             },
-            "sourcePath": "/Volumes/Data/Users/Carey/Projects/WebNode/pargv/lib/index.js",
+            "sourcePath": "/Volumes/DATA/Projects/WebNode/pargv/lib/index.js",
             "projectPath": "lib/index.js",
             "targetPath": "lib/index",
             "pageTitle": "lib/index",
@@ -230,7 +262,7 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
               "foldPrefix": "^",
               "name": "JavaScript"
             },
-            "sourcePath": "/Volumes/Data/Users/Carey/Projects/WebNode/pargv/test/test.spec.js",
+            "sourcePath": "/Volumes/DATA/Projects/WebNode/pargv/test/test.spec.js",
             "projectPath": "test/test.spec.js",
             "targetPath": "test/test.spec",
             "pageTitle": "test/test.spec",

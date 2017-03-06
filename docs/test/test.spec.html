@@ -16,17 +16,17 @@ including cmd, cmds, flags and source.</p></div></div><div class="code"><div cla
         <span class="hljs-keyword">var</span> parsed = pargv.configure(<span class="hljs-number">0</span>).parse([<span class="hljs-string">'start'</span>, <span class="hljs-string">'--number'</span>, <span class="hljs-string">'25'</span>]);
         expect(parsed.number).to.equal(<span class="hljs-number">25</span>);
     });</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Test should properly cast a Date.</p></div></div><div class="code"><div class="wrapper">    it(<span class="hljs-string">'should return object w/ value cast to date'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
-        <span class="hljs-keyword">var</span> parsed = pargv.configure(<span class="hljs-number">0</span>).parse([<span class="hljs-string">'start'</span>, <span class="hljs-string">'-date'</span>, <span class="hljs-string">'12/31/2015 8:00 PM'</span>]);
+        <span class="hljs-keyword">var</span> parsed = pargv.configure(<span class="hljs-number">0</span>).parse([<span class="hljs-string">'start'</span>, <span class="hljs-string">'--date'</span>, <span class="hljs-string">'12/31/2015 8:00 PM'</span>]);
         assert.deepEqual(parsed.date, <span class="hljs-keyword">new</span> <span class="hljs-built_in">Date</span>(<span class="hljs-string">'12/31/2015 8:00 PM'</span>));
     });</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Test should properly cast a string to JSON.</p></div></div><div class="code"><div class="wrapper">    it(<span class="hljs-string">'should return person object from JSON.'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
-        <span class="hljs-keyword">var</span> parsed = pargv.configure(<span class="hljs-number">0</span>).parse([ <span class="hljs-string">'-person'</span>, <span class="hljs-string">'{ "name": "John Smith" }'</span>]);
+        <span class="hljs-keyword">var</span> parsed = pargv.configure(<span class="hljs-number">0</span>).parse([ <span class="hljs-string">'--person'</span>, <span class="hljs-string">'{ "name": "John Smith" }'</span>]);
         assert.deepEqual({ person: parsed.person }, { person: { name: <span class="hljs-string">'John Smith'</span> } });
     });</div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Test should ensure configuration reset return expected results.</p></div></div><div class="code"><div class="wrapper">    it(<span class="hljs-string">'should configure custom index then reset to default.'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
         <span class="hljs-keyword">var</span> parsed = pargv.configure(<span class="hljs-number">0</span>),
             confIdx = parsed._options.index;
         expect(parsed._options.index).to.equal(<span class="hljs-number">0</span>);
         parsed.reset();
-        expect(parsed._options.index).to.equal(<span class="hljs-number">3</span>);
+        expect(parsed._options.index).to.equal(<span class="hljs-number">2</span>);
     });
 
 });</div></div></div></div></body></html>

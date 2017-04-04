@@ -9,16 +9,16 @@
     "url": "git+https://github.com/origin1tech/pargv.git"
   },
   "scripts": {
-    "test": "mocha",
-    "docs": "groc"
+    "test": "mocha"
   },
   "keywords": [
     "cli",
     "arguments",
     "args",
-    "command line",
     "minimist",
-    "optimist"
+    "optimist",
+    "commander",
+    "yargs"
   ],
   "author": "Origin1 Technologies <origin1tech@gmail.com>",
   "license": "MIT",
@@ -29,7 +29,6 @@
   "devDependencies": {
     "chai": "^3.3.0",
     "eslint": "^1.6.0",
-    "groc": "^0.8.0",
     "gulp": "^3.9.1",
     "gulp-bump": "^1.0.0",
     "gulp-git": "^1.5.0",
@@ -37,6 +36,9 @@
     "mocha": "^2.3.3"
   },
   "dependencies": {
-    "extend": "^3.0.0"
+    "cliui": "^3.2.0",
+    "extend": "^3.0.0",
+    "figlet": "^1.2.0",
+    "global-prefix": "^0.1.5"
   }
 }

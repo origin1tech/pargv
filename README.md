@@ -81,12 +81,35 @@ Pargv attempts to parse known data types when processing arguments either those 
 - Number
 - Boolean
 - Key Value - "key:value" results in { key: 'value' }
-- JSON - "{ "key": "value", "key2": "value2" }" results in JavaScript Object.
+- JSON - '"{ "name": "Jim", "age": 25 }"' results in JavaScript Object.
 - RegExp - "/^config/i" results in valid RegExp.
+
+**IMPORTANT** Note the single/double quote encapsulation on JSON like strings This is required to preserve the internal quotes of the literal. Basically  just take valid JSON and wrap it with '"{ }"'. This will enable all formatting to be preserved within the brackets.
+
+**PRO-TIP** If you don't like all those quotes (I don't!) just do the following:
+
+```sh
+
+bash$ SOME_CMD --user {} --user.name "Bob" --user.age 25
+
+```
+
+which will result in...
+
+```js
+{
+	name: "Bob",
+	age: 25
+}
+
+```
+
+Working with objects/JSON via a command should be limited though because it kinda sucks to deal with but in a pinch it can be handy.
 
 If you wish to add additional parsers you can do so as shown below. Parsers are called sequentially until a truthy result is found. Custom parsers are called first before known types. If your parser does not return a truthy value it will fall though to internal parsers.
 
 ```js
+
 // Parsers are called with Pargv's context
 //  for conveninece and chaining.
 
@@ -106,6 +129,7 @@ pargs.addParser({
 	one: (val) => { /* do something */ },
 	two: (val) => { /* do something */ }
 });
+
 ```
 ## Commands
 
@@ -128,23 +152,28 @@ var exists = pargs.hasCmd({ /* existing pargv parsed result */}, 'command1', 'co
 
 ## API Docs
 
+Legend for below:
+
 - [] 	 expects optional argument
 - opts expects options object.
-- * 	 expects any type.
-- | 	 expects or other specified value.
-- ...	 expects spread any number of arguments
-- par	 expects pargv parsed object of cmds and flags.
+- \* 	 expects any type.
+- | 	 expects value or other value.
+- ...	 expects spread operator, any number of arguments
+- pargs	 expects pargv parsed object of cmds and flags.
 
-- .configure 		([number] | [opts], [opts]) accepts index of cmd and/or configuration options object.
-- .parse 				([array]) parses process.argv or a supplied array argument.
-- .addParser		(string, function, [boolean]) adds a new parser, used to cast arg to correct data type.
-- .modifyParser [DEPRECATED] use addParser pass true as third arg to overwrite.
-- .cast 				(*) calls parsers returning cast value when truthy value is returned.
-- .getFlags 		([par]) returns only the flags from either the saved parsing or manually provided..
-- .hasCmd 			(* | array | ...) check if cmd exist in cmds, if first arg is parsed result will check it.
-- .reset 				() resets the configuration back to defaults, often used when parsing manual array of args.
+- .configure 		 ([number] | [opts], [opts]) accepts index of cmd and/or configuration options object.
+- .parse 				 ([array]) parses process.argv or a supplied array argument.
+- .addParser		 (string, function, [boolean]) adds a new parser, used to cast arg to correct data type.
+- .modifyParser  [DEPRECATED] use addParser pass true as third arg to overwrite.
+- .cast 				 (*) calls parsers returning cast value when truthy value is returned.
+- .getFlags 		 ([pargs]) returns only the flags from either the saved parsing or manually provided..
+- .hasCmd 			 (* | array | ...) check if cmd exist in cmds, if first arg is parsed result will check it.
+- .getCmd				 (number) returns the command by index.
+- .flagsToArray  ([defaults], [strip]) returns an array of flags with optional defaults.
+- .flagsToString ([defaults], [char]) returns a string of flags w/ optional defaults separated by char
+- .reset 				 () resets the configuration back to defaults, often used when parsing manual array of args.
 
-## Options
+## Configure Options
 
 See comments for each option.
 
@@ -164,7 +193,9 @@ var defaults = {
 	// node path and above index is the primary command.
 	setCommand: undefined,
 
-	// When NOT false data types are cast.
+	// When NOT false parser attempts to cast to the
+	// appropriate type. As we're dealing with strings
+	// this is not bullet proof in some scenarios.
 	castTypes: undefined,
 
 	// Normalize command path. Command may be the

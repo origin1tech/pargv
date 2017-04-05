@@ -4,14 +4,35 @@ Minimal utility for parsing command line arguments in Node.
 
 ## What is Pargv
 
-Often when you're parsing arguments it's for the purpose
-of running a command within your node command line utility.
-Pargv is designed specifically for this purpose by assuming the specified
-index provided is the primary command. All other parameters
-are ether additional sub-commands or flags/options.
+Parv is a minimilistic parser for node process.argv arguments. It does NOT for example handle creating help and usage information like you might find with Yargs or Commander. The reason for this is that more often than not as good as Yargs or Commander (and others) are there are always scenarios that simply can't solve.
 
-## Pargv or Yargs or Other
-If you are looking for a full featured argument parser this is NOT it. I would suggest something like yargs. It is has all the bells and whistles such as usage and more. Pargv is designed for quick and dirty parsing. Often you may need to write a quick little utility and are looking for a simple way to get the command and flags you've passed for your utility. Pargv is perfectly simplistic for this purpose. It even does a fair job at parsing json, key:value pairs among others.
+Pargv is moderately opinionated also. This is because 9 times out of 10 what you really are looking for is what "command" the user input and of course the options along with it. Pargv assumes this and as such structures the parsing as follows:
+
+```sh
+$ node server start --config development
+```
+
+```js
+{
+	exec: 'server'
+	cmd: 'start',
+
+	// Most parsers include 'start' here
+	// but since 'start' is first arg Pargv
+	// assumes is primary command hence
+	// it would not be in the array.
+	// any other commands (not --option or -option)
+	// would be included as expected.
+	cmds: [],
+
+	config: 'development',
+	execPath: '/your/path/to/server',
+	nodePath: '/your/path/to/node',
+	execGlobal: '/your/path/to/global/modules',
+	source: ['/your/node/path', '/your/path/to/app', 'start', '--port', '8080' ]
+}
+
+```
 
 ## Install Using npm
 
@@ -21,12 +42,9 @@ $ npm install pargv
 
 ## Configure
 
-Pargv accepts two parameters, both of which are optional. The first is a number which represents the index of the primary command's position. By default this is 2 or the second argument. NOTE: position is NOT zero based. Positions are counted starting from 1.
+Pargv accepts two parameters, both of which are optional. The first is a number which represents the index of the primary command's position. By default autotmatically removes the executed script and the node path leaving the command(s) called and its option(s). If this is not the desired behavior set the index to 0 and all process.argv elements are included/parsed. But again that's not likely what you're looking for.
 
-Pargv will then splice arguments before this index leaving the remaining command and options/flags.
-This is likely what's desired as the initial elements in the process.argv provided by node are related to node itself and not usually needed for your utility.
-
-To disable this just call:
+Example setting the index to 0:
 
 ```js
 // parse everything
@@ -40,58 +58,34 @@ pargv.configure(0).parse();
 var pargv = require('pargv');
 
 // Parse using defaults.
-var pargs = pargv.parse();
+pargv.parse();
 
 // Configure using chain then parse.
-var pargs = pargv.configure(3, { /* options */ }).parse();
+pargv.configure(3, { /* options */ }).parse();
 
 // OR
 
-var pargs = pargv.configure({ /* your options */ }).parse();
+pargv.configure({ /* your options object */ }).parse();
 ```
-
-## Parsed Result.
-
-The below shows an example of an input from your terminal and subsequently the output that would be produced for that input. The example assumes you're using the default configuration where your primary command is "start".
-
-**Terminal Input**
-
-```sh
-$ node server start --config development
-```
-
-**Would Produce**
-
-```js
-var pargs = {
-	cmd: 'server',
-	cmds: ['start'],
-	config: 'development',
-	source: ['server', 'start', '--config', 'development']
-}
-```
-
-It should be noted that in the example above you could conceivably want "server" to be the primary "cmd" property. This is easily accomplished by the following before calling "parse".
 
 ## Data Types & Parsers
 
-Pargv attempts to parse known data types when processing arguments either those passed for from process.argv. The supported data types out of the box are as follows.
+Pargv attempts to parse known data types when processing arguments. The supported data types out of the box are as follows.
 
-- Date
-- Number
-- Boolean
-- Key Value - "key:value" results in { key: 'value' }
-- JSON - '"{ "name": "Jim", "age": 25 }"' results in JavaScript Object.
-- RegExp - "/^config/i" results in valid RegExp.
+- Date					import to note numbers (epochs) are not parsed only strings to date.
+- Number				if string contains only digits will be parsed as number.
+- Boolean				will parse "true" or "false" strings as true or false.
+- Array					csv type string one,two,three 22 becomes ['one', 'two', 'three', 22 ]
+- Key Value 		"key:value" results in { key: 'value' }
+- JSON 					'"{ "name": "Jim", "age": 25 }"' results in JavaScript Object.
+- RegExp 				"/^config/i" results in valid RegExp.
 
 **IMPORTANT** Note the single/double quote encapsulation on JSON like strings This is required to preserve the internal quotes of the literal. Basically  just take valid JSON and wrap it with '"{ }"'. This will enable all formatting to be preserved within the brackets.
 
 **PRO-TIP** If you don't like all those quotes (I don't!) just do the following:
 
 ```sh
-
-bash$ SOME_CMD --user {} --user.name "Bob" --user.age 25
-
+bash$ SOME_CMD  --user.name "Bob" --user.age 25
 ```
 
 which will result in...
@@ -101,7 +95,22 @@ which will result in...
 	name: "Bob",
 	age: 25
 }
+```
 
+or mix it up
+
+```sh
+bash$ SOME_CMD  --user.name "Bob" --user age:33,nickname:Bobby
+```
+
+which will result in...
+
+```js
+{
+	name: "Bob",
+	nickname: 'Bobby',
+	age: 25
+}
 ```
 
 Working with objects/JSON via a command should be limited though because it kinda sucks to deal with but in a pinch it can be handy.
@@ -113,7 +122,7 @@ If you wish to add additional parsers you can do so as shown below. Parsers are 
 // Parsers are called with Pargv's context
 //  for conveninece and chaining.
 
-pargs.addParser(name, function (val) {
+pargv.addParser(name, function (val) {
 	// do something then return parsed value
 	// or return false to continue down the
 	// chain of parsers.
@@ -122,10 +131,10 @@ pargs.addParser(name, function (val) {
 
 // If the parser already exists just pass "true"
 // as a third argument and then it will overwrite.
-pargs.addParser(name, function () {});
+pargv.addParser(name, function () {});
 
 // You can also add and object of parsers.
-pargs.addParser({
+pargv.addParser({
 	one: (val) => { /* do something */ },
 	two: (val) => { /* do something */ }
 });
@@ -138,7 +147,7 @@ pargs.addParser({
 var result = pargs.cast('some_value');
 
 // Gets only the flags from the parsed result.
-var flags = pargs.getFlags(/* optionally pass current parsed object. */);
+var flags = pargs.getFlags();
 
 // Check if has command.
 var exists = pargs.hasCmd('some_command');
@@ -146,11 +155,10 @@ var exists = pargs.hasCmd('some_command');
 // The following check if ANY command exists.
 var exists = pargs.hasCmd(['command1', 'command2'])
 var exists = pargs.hasCmd('command1', 'command2', 'command3');
-var exists = pargs.hasCmd({ /* existing pargv parsed result */}, 'command1', 'command2', 'command3');
 
 ```
 
-## API Docs
+## API
 
 Legend for below:
 
@@ -164,14 +172,14 @@ Legend for below:
 - .configure 		 ([number] | [opts], [opts]) accepts index of cmd and/or configuration options object.
 - .parse 				 ([array]) parses process.argv or a supplied array argument.
 - .addParser		 (string, function, [boolean]) adds a new parser, used to cast arg to correct data type.
-- .modifyParser  [DEPRECATED] use addParser pass true as third arg to overwrite.
 - .cast 				 (*) calls parsers returning cast value when truthy value is returned.
-- .getFlags 		 ([pargs]) returns only the flags from either the saved parsing or manually provided..
+- .getFlags 		 () returns only the flags from either the saved parsing or manually provided..
 - .hasCmd 			 (* | array | ...) check if cmd exist in cmds, if first arg is parsed result will check it.
 - .getCmd				 (number) returns the command by index.
 - .flagsToArray  ([defaults], [strip]) returns an array of flags with optional defaults.
 - .flagsToString ([defaults], [char]) returns a string of flags w/ optional defaults separated by char
 - .reset 				 () resets the configuration back to defaults, often used when parsing manual array of args.
+
 
 ## Configure Options
 
@@ -198,14 +206,41 @@ var defaults = {
 	// this is not bullet proof in some scenarios.
 	castTypes: undefined,
 
-	// Normalize command path. Command may be the
-	// the full path of the filed called it is usually
-	// desirable to strip the path and just leave the
-	// file name. Set this option to false to disable.
-	normalizeCommand: undefined
+	// When NOT false colors are enabled for logger.
+	colors: undefined,
+
+	// The allowed log level where error = 1,
+	// warn = 2, info = 3 and debug = 4;
+	logLevel: 3,
+
+	// Callback called on message logged.
+	// function (type, args, instance) {
+	// 		// type = the log type eg: error, warn, info, debug.
+	// 		// args = array of all arguments passed.
+	//  	// instance = the logger instance itself.
+	// }
+	logCallback: undefined
 
 };
 ```
+
+## Bonus
+
+### Logger
+
+There's a handy logger built in for simple tasks. It has 4 methods error, warn, info, debug. It can be configured in your options when calling .configure(). By default the log level is 3 or "info". Set "logLevel" to change the level allowed or set "colors" in your options to false to disable colors. You can also set "logCallback" which is called on message logged. This is useful for writing the log message to file or other.
+
+### Ascii Art
+
+Pargv has figlet built in for simple cli ascii art. Simple but handy if you want to dress up your cli. Just call the ".logo" method.
+
+see: https://www.npmjs.com/package/figlet for fonts.
+
+```js
+pargv.logo('My Text Logo', 'cyan', 'figlet font name');
+```
+
+![Ascii Art](https://raw.github.com/origin1tech/pargv/master/ascii-art.jpg)
 
 ## License
 

@@ -230,6 +230,10 @@ var defaults = {
 
 There's a handy logger built in for simple tasks. It has 4 methods error, warn, info, debug. It can be configured in your options when calling .configure(). By default the log level is 3 or "info". Set "logLevel" to change the level allowed or set "colors" in your options to false to disable colors. You can also set "logCallback" which is called on message logged. This is useful for writing the log message to file or other.
 
+```js
+pargv.log.warn('the command %2 is not valid', pargv.cmd);
+```
+
 ### Ascii Art
 
 Pargv has figlet built in for simple cli ascii art. Simple but handy if you want to dress up your cli. Just call the ".logo" method.

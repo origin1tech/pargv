@@ -1,5 +1,1 @@
-views/*
-public/*
-server.js
-.gitignore
-.npmignore
+.vscode

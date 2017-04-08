@@ -27,11 +27,13 @@
   },
   "homepage": "http://origin1tech.github.io/pargv/",
   "devDependencies": {
+    "@types/chalk": "^0.4.31",
     "chai": "^3.5.0",
     "mocha": "^3.2.0"
   },
   "dependencies": {
     "chalk": "^1.1.3",
+    "cliui": "^3.2.0",
     "extend": "^3.0.0",
     "figlet": "^1.2.0",
     "global-prefix": "^0.1.5"

@@ -1,6 +1,8 @@
 
 declare module 'pargv' {
 
+	import { ChalkChain } from 'chalk';
+
 	export interface ILogger {
 		level: number;
 		error(...args: any[]): ILogger;
@@ -26,6 +28,10 @@ declare module 'pargv' {
 		[key: string]: { (val: any): boolean };
 	}
 
+	export interface ICLI {
+		command(cmd: string, usage: string): ICLI;
+	}
+
 	export interface IPargvParsed extends IPargvFlags {
 		cmd: string;
 		cmds: any[];
@@ -40,20 +46,32 @@ declare module 'pargv' {
 
 	export interface IPargv extends IPargvParsed {
 
-		log: ILogger;
-		customParsers: IParsers;
+		cmd: string;
+		cmds: any[];
+		source: string[];
+		nodePath: string;
+		execPath: string;
+		exec: string;
+		globalPath: string;
+		isGlobalExec: boolean;
 		options: IPargvOptions;
+		customParsers: IParsers;
+		log: ILogger;
+		chalk: ChalkChain;
+
 		configure(index: number | IPargvOptions, options?: IPargvOptions): IPargv;
 		addParser(name: string, fn: Function, overwrite?: boolean): IPargv;
 		parse(args?: string[]): IPargv;
 		cast(value: any): any;
 		getFlags(): IPargvFlags;
-		hasCmd(): boolean;
+		hasCmd(...args): boolean;
 		getCmd(index?: number): string;
-		flagsToArray(): any[];
-		flagsToString(): string;
-		ui(): any;
-		fonts(): any;
+		flagsToArray(defaults?: Object | boolean, stripQuotes?: boolean): any[];
+		flagsToString(defaults?: Object | string, char?: string): string[];
+		stripExec(): string[];
+		logo(options: any): IPargv;
+		logo(font: any, text?: string, color?: string): IPargv;
+		fonts(): string[];
 		reset(): IPargv;
 
 	}
@@ -69,6 +87,7 @@ declare module 'pargv' {
 	export const options: IPargvOptions;
 	export const customParsers: IParsers;
 	export const log: ILogger;
+	export const chalk: ChalkChain;
 
 	export function configure(index: number | IPargvOptions, options?: IPargvOptions): IPargv;
 	export function addParser(name: string, fn: Function, overwrite?: boolean): IPargv;
@@ -82,6 +101,9 @@ declare module 'pargv' {
 	export function stripExec(): string[];
 	export function logo(options: any): IPargv;
 	export function logo(font: any, text?: string, color?: string): IPargv;
+	export function fonts(): string[];
 	export function reset(): IPargv;
+
+	export function command()
 
 }

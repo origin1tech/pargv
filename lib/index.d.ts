@@ -1,109 +1,150 @@
+import { ChalkChain, Chalk as ChalkChalk } from 'chalk';
 
-declare module 'pargv' {
+export type LoggerCallback = { (type?: string, args?: any[], logger?: ILogger) };
 
-	import { ChalkChain } from 'chalk';
+export type ActionCallback = { () };
 
-	export interface ILogger {
-		level: number;
-		error(...args: any[]): ILogger;
-		warn(...args: any[]): ILogger;
-		info(...args: any[]): ILogger;
-		debug(...args: any[]): ILogger;
-		exit(): void;
-	}
+export interface IUIOptions {
+	text: string,
+	width?: number;
+	padding?: number[];
+	align?: 'right' | 'center';
+}
 
-	export interface IPargvOptions {
-		index: number;
-		setCommand: boolean;
-		castTypes: boolean;
-		logLevel: number;
-		logCallback: { type: string, args: any[], logger: ILogger }
-	}
+export interface IUI {
+	div(value: string | IUIOptions, ...args: IUIOptions[]): IUI;
+	span(value: string | IUIOptions, ...args: IUIOptions[]): IUI;
+	join(...args: any[]): IUI;
+	show(display?: boolean): void;
+}
 
-	export interface IPargvFlags {
-		[key: string]: any;
-	}
+export interface ILoggerColors {
+	error: string,
+	warn: string,
+	info: string,
+	debug: string
+}
 
-	export interface IParsers {
-		[key: string]: { (val: any): boolean };
-	}
+export interface ILogger {
 
-	export interface ICLI {
-		command(cmd: string, usage: string): ICLI;
-	}
+	trace(trace?: boolean): boolean;
+	level(level?: number): number;
 
-	export interface IPargvParsed extends IPargvFlags {
-		cmd: string;
-		cmds: any[];
-		source: string[];
-		nodePath: string;
-		execPath: string;
-		exec: string;
-		globalPath: string;
-		isGlobalExec: boolean;
-		[key: string]: any; // for custom parsed props.
-	}
+	error(...args: any[]): ILogger;
+	warn(...args: any[]): ILogger;
+	info(...args: any[]): ILogger;
+	debug(...args: any[]): ILogger;
+	write(): ILogger;
 
-	export interface IPargv extends IPargvParsed {
-
-		cmd: string;
-		cmds: any[];
-		source: string[];
-		nodePath: string;
-		execPath: string;
-		exec: string;
-		globalPath: string;
-		isGlobalExec: boolean;
-		options: IPargvOptions;
-		customParsers: IParsers;
-		log: ILogger;
-		chalk: ChalkChain;
-
-		configure(index: number | IPargvOptions, options?: IPargvOptions): IPargv;
-		addParser(name: string, fn: Function, overwrite?: boolean): IPargv;
-		parse(args?: string[]): IPargv;
-		cast(value: any): any;
-		getFlags(): IPargvFlags;
-		hasCmd(...args): boolean;
-		getCmd(index?: number): string;
-		flagsToArray(defaults?: Object | boolean, stripQuotes?: boolean): any[];
-		flagsToString(defaults?: Object | string, char?: string): string[];
-		stripExec(): string[];
-		logo(options: any): IPargv;
-		logo(font: any, text?: string, color?: string): IPargv;
-		fonts(): string[];
-		reset(): IPargv;
-
-	}
-
-	export let cmd: string;
-	export const cmds: any[];
-	export const source: string[];
-	export const nodePath: string;
-	export const execPath: string;
-	export const exec: string;
-	export const globalPath: string;
-	export const isGlobalExec: boolean;
-	export const options: IPargvOptions;
-	export const customParsers: IParsers;
-	export const log: ILogger;
-	export const chalk: ChalkChain;
-
-	export function configure(index: number | IPargvOptions, options?: IPargvOptions): IPargv;
-	export function addParser(name: string, fn: Function, overwrite?: boolean): IPargv;
-	export function parse(args?: string[]): IPargv;
-	export function cast(value: any): any;
-	export function getFlags(): IPargvFlags;
-	export function hasCmd(...args): boolean;
-	export function getCmd(index?: number): string;
-	export function flagsToArray(defaults?: Object | boolean, stripQuotes?: boolean): any[];
-	export function flagsToString(defaults?: Object | string, char?: string): string[];
-	export function stripExec(): string[];
-	export function logo(options: any): IPargv;
-	export function logo(font: any, text?: string, color?: string): IPargv;
-	export function fonts(): string[];
-	export function reset(): IPargv;
-
-	export function command()
+	exit(): void;
 
 }
+
+export interface IPargvOptions {
+	index: number;
+	setCommand: boolean;
+	castTypes: boolean;
+	logLevel: number;
+	logCallback: { type: string, args: any[], logger: ILogger }
+}
+
+export interface IPargvFlags {
+	[key: string]: any;
+}
+
+export interface IParsers {
+	[key: string]: { (val: any): boolean };
+}
+
+export interface IPargvParsed extends IPargvFlags {
+	cmd: string;
+	cmds: any[];
+	source: string[];
+	nodePath: string;
+	execPath: string;
+	exec: string;
+	globalPath: string;
+	isGlobalExec: boolean;
+	[key: string]: any; // for custom parsed props.
+}
+
+export interface IPargv extends IPargvParsed {
+
+	cmd: string;
+	cmds: any[];
+	source: string[];
+	nodePath: string;
+	execPath: string;
+	exec: string;
+	globalPath: string;
+	isGlobalExec: boolean;
+	options: IPargvOptions;
+	customParsers: IParsers;
+	log: ILogger;
+	chalk: ChalkChain;
+	actions: { [key: string]: ActionCallback };
+
+	configure(index: number | IPargvOptions, options?: IPargvOptions): IPargv;
+	addParser(name: string, fn: Function, overwrite?: boolean): IPargv;
+	parse(args?: string[]): IPargv | void;
+	cast(value: any): any;
+	getFlags(): IPargvFlags;
+	hasCmd(...args): boolean;
+	getCmd(index?: number): string;
+	flagsToArray(defaults?: Object | boolean, stripQuotes?: boolean): any[];
+	flagsToString(defaults?: Object | string, char?: string): string[];
+	stripExec(): string[];
+	logo(options: any): IPargv;
+	logo(font: any, text?: string, color?: string): IPargv;
+	action(cmd: string, action: ActionCallback): IPargv;
+	action(cmd: string, alias: string | string[] | ActionCallback, action?: ActionCallback): IPargv;
+	ui(wdith?: number): IUI;
+	ui(usage?: string | number, width?: number): IUI;
+	fonts(): string[];
+	reset(): IPargv;
+
+}
+
+interface PargvStatic extends IPargv {
+	new (index?: number | IPargvOptions, options?: IPargvOptions): IPargv;
+}
+
+interface ChalkStatic {
+	new (options?: { enabled?: boolean }): ChalkChalk;
+}
+
+export function logger(colors: ILoggerColors): ILogger;
+export function logger(trace: boolean): ILogger;
+export function logger(fn: LoggerCallback): ILogger;
+export function logger(level: number, trace: boolean): ILogger;
+export function logger(level: number, fn: LoggerCallback): ILogger;
+export function logger(level: number, colors: ILoggerColors, fn: LoggerCallback): ILogger;
+export function logger(level?: number | ILoggerColors | boolean | LoggerCallback, colors?: ILoggerColors | boolean | LoggerCallback, trace?: boolean | LoggerCallback, fn?: LoggerCallback): ILogger;
+
+declare const Pargv: PargvStatic;
+declare const Chalk: ChalkStatic;
+
+// export interface ICLIUI {
+
+// 	width: number;
+// 	wrap: any;
+// 	rows: any[];
+// 	span(): void;
+// 	div(): any;
+
+// 	_shouldApplyLayoutDSL(): boolean;
+// 	_applyLayoutDSL(str: any): any;
+// 	_colFromString(str: any): {
+// 		text: any;
+// 		padding: number[];
+// 	};
+// 	_measurePadding(str: any): number[];
+// 	toString(): string;
+// 	rowToString(row: any, lines: any): any;
+// 	_renderInline(source: any, previousLine: any): any;
+// 	_rasterize(row: any): any[];
+// 	_negatePadding(col: any): any;
+// 	_columnWidths(row: any): any[];
+
+// }
+

@@ -2,6 +2,10 @@
 
 Minimal utility for parsing command line arguments in Node.
 
+## BREAKING CHANGE
+
+Starting with version "1.5.0" Pargv no longer initializes automatically. This has been changed in favor of creating an instance to better suit Typescript and exporting of types. See below under **"usage"**.
+
 ## What is Pargv
 
 Parv is a minimilistic parser for node process.argv arguments. It does NOT for example handle creating help and usage information like you might find with Yargs or Commander. The reason for this is that more often than not as good as Yargs or Commander (and others) are there are always scenarios that simply can't solve.
@@ -31,7 +35,6 @@ $ node server start --config development
 	execGlobal: '/your/path/to/global/modules',
 	source: ['/your/node/path', '/your/path/to/app', 'start', '--port', '8080' ]
 }
-
 ```
 
 ## Install Using npm
@@ -40,7 +43,22 @@ $ node server start --config development
 $ npm install pargv
 ```
 
-## Configure
+## Usage
+
+```js
+// ES5
+var Pargv = require('pargv').Pargv;
+var pargv = new Pargv(/* options */);
+
+// ES6
+import { Pargv } from 'pargv';
+const pargv = new Pargv(/* options */);
+```
+
+## Configure (DEPRECATED)
+
+Configure still exists on instance but has been **DEPRECATED** in favor of
+passing options on new instance.
 
 Pargv accepts two parameters, both of which are optional. The first is a number which represents the index of the primary command's position. By default autotmatically removes the executed script and the node path leaving the command(s) called and its option(s). If this is not the desired behavior set the index to 0 and all process.argv elements are included/parsed. But again that's not likely what you're looking for.
 
@@ -131,7 +149,7 @@ pargv.addParser(name, function (val) {
 
 // If the parser already exists just pass "true"
 // as a third argument and then it will overwrite.
-pargv.addParser(name, function () {});
+pargv.addParser(name, function () {}, true);
 
 // You can also add and object of parsers.
 pargv.addParser({
@@ -162,23 +180,28 @@ var exists = pargs.hasCmd('command1', 'command2', 'command3');
 
 Legend for below:
 
-- [] 	 expects optional argument
-- opts expects options object.
-- \* 	 expects any type.
-- | 	 expects value or other value.
-- ...	 expects spread operator, any number of arguments
-- pargs	 expects pargv parsed object of cmds and flags.
+- [] 	 				expects optional argument
+- options		 	expects options object.
+- \* 	 				expects any type.
+- | 	 				expects value or other value.
+- ...	 				expects spread operator, any number of arguments
+- pargs	 			expects pargv parsed object of cmds and flags.
 
-- .configure 		 ([number] | [opts], [opts]) accepts index of cmd and/or configuration options object.
+- .configure 		 ([number] | [options], [options]) accepts index of cmd and/or configuration options object.
 - .parse 				 ([array]) parses process.argv or a supplied array argument.
-- .addParser		 (string, function, [boolean]) adds a new parser, used to cast arg to correct data type.
+- .addParser		 (string, function, [boolean]) name, parser callback and true to overwrite existing.
 - .cast 				 (*) calls parsers returning cast value when truthy value is returned.
 - .getFlags 		 () returns only the flags from either the saved parsing or manually provided..
-- .hasCmd 			 (* | array | ...) check if cmd exist in cmds, if first arg is parsed result will check it.
-- .getCmd				 (number) returns the command by index.
+- .hasCmd 			 (* | array | ...) value, array of values or spread, check if cmd exist in cmds
+- .getCmd				 (number) returns the command by passed index.
 - .flagsToArray  ([defaults], [strip]) returns an array of flags with optional defaults.
-- .flagsToString ([defaults], [char]) returns a string of flags w/ optional defaults separated by char
-- .reset 				 () resets the configuration back to defaults, often used when parsing manual array of args.
+- .flagsToString ([defaults], [char]) returns a string of flags w/ optional defaults separated by char,
+- .stripExec 		 () simply returns all args less the node path and the executed path.
+-. fonts 				 () returns an array of usable figlet fonts.
+- .logo 				 (string, [string], [string]) text, color, font.
+- .ui 				 	 ([number]) usage string and help width returns div, span, show for creating help, call show() to show result..
+- .action  			 (string, function) the command to match and the callback function.
+- .reset 				 () resets the configuration back to defaults, used when parsing manual array of args.
 
 
 ## Configure Options
@@ -219,7 +242,11 @@ var defaults = {
 	// 		// args = array of all arguments passed.
 	//  	// instance = the logger instance itself.
 	// }
-	logCallback: undefined
+	logCallback: undefined,
+
+	// When NOT false on parse defined actions are called
+	// when a command is matched.
+	autoActions: undefined
 
 };
 ```

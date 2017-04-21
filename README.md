@@ -90,12 +90,12 @@ pargv.configure({ /* your options object */ }).parse();
 
 Pargv attempts to parse known data types when processing arguments. The supported data types out of the box are as follows.
 
-- Date					import to note numbers (epochs) are not parsed only strings to date.
-- Number				if string contains only digits will be parsed as number.
+- Date							import to note numbers (epochs) are not parsed only strings to date.
+- Number					if string contains only digits will be parsed as number.
 - Boolean				will parse "true" or "false" strings as true or false.
-- Array					csv type string one,two,three 22 becomes ['one', 'two', 'three', 22 ]
-- Key Value 		"key:value" results in { key: 'value' }
-- JSON 					'"{ "name": "Jim", "age": 25 }"' results in JavaScript Object.
+- Array						csv type string one,two,three 22 becomes ['one', 'two', 'three', 22 ]
+- Key Value 	"key:value" results in { key: 'value' }
+- JSON 						'"{ "name": "Jim", "age": 25 }"' results in JavaScript Object.
 - RegExp 				"/^config/i" results in valid RegExp.
 
 **IMPORTANT** Note the single/double quote encapsulation on JSON like strings This is required to preserve the internal quotes of the literal. Basically  just take valid JSON and wrap it with '"{ }"'. This will enable all formatting to be preserved within the brackets.
@@ -138,7 +138,7 @@ If you wish to add additional parsers you can do so as shown below. Parsers are 
 ```js
 
 // Parsers are called with Pargv's context
-//  for conveninece and chaining.
+// for conveninece and chaining.
 
 pargv.addParser(name, function (val) {
 	// do something then return parsed value
@@ -170,7 +170,7 @@ var flags = pargs.getFlags();
 // Check if has command.
 var exists = pargs.hasCmd('some_command');
 
-// The following check if ANY command exists.
+// The following checks if ANY command exists.
 var exists = pargs.hasCmd(['command1', 'command2'])
 var exists = pargs.hasCmd('command1', 'command2', 'command3');
 
@@ -180,28 +180,27 @@ var exists = pargs.hasCmd('command1', 'command2', 'command3');
 
 Legend for below:
 
-- [] 	 				expects optional argument
+- [] 	 						expects optional argument
 - options		 	expects options object.
-- \* 	 				expects any type.
-- | 	 				expects value or other value.
-- ...	 				expects spread operator, any number of arguments
-- pargs	 			expects pargv parsed object of cmds and flags.
+- \* 	 						expects any type.
+- | 	 							expects value or other value.
+- ...	 						expects spread operator, any number of arguments
 
-- .configure 		 ([number] | [options], [options]) accepts index of cmd and/or configuration options object.
-- .parse 				 ([array]) parses process.argv or a supplied array argument.
-- .addParser		 (string, function, [boolean]) name, parser callback and true to overwrite existing.
-- .cast 				 (*) calls parsers returning cast value when truthy value is returned.
-- .getFlags 		 () returns only the flags from either the saved parsing or manually provided..
-- .hasCmd 			 (* | array | ...) value, array of values or spread, check if cmd exist in cmds
-- .getCmd				 (number) returns the command by passed index.
+- .configure 		 	([number] | [options], [options]) accepts index of cmd and/or configuration options object.
+- .parse 				 			([array]) parses process.argv or a supplied array argument.
+- .addParser		 		(string, function, [boolean]) name, parser callback and true to overwrite existing.
+- .cast 				 				(*) calls parsers returning cast value when truthy value is returned.
+- .getFlags 		 		() returns only the flags from either the saved parsing or manually provided..
+- .hasCmd 			 			(* | array | ...) value, array of values or spread, check if cmd exist in cmds
+- .getCmd				 			(number) returns the command by passed index.
 - .flagsToArray  ([defaults], [strip]) returns an array of flags with optional defaults.
 - .flagsToString ([defaults], [char]) returns a string of flags w/ optional defaults separated by char,
-- .stripExec 		 () simply returns all args less the node path and the executed path.
--. fonts 				 () returns an array of usable figlet fonts.
-- .logo 				 (string, [string], [string]) text, color, font.
-- .ui 				 	 ([number]) usage string and help width returns div, span, show for creating help, call show() to show result..
-- .action  			 (string, function) the command to match and the callback function.
-- .reset 				 () resets the configuration back to defaults, used when parsing manual array of args.
+- .stripExec 		 	() simply returns all args less the node path and the executed path.
+-. fonts 				 			() returns an array of usable figlet fonts.
+- .logo 				 				(string, [string], [string]) text, color, font.
+- .ui 				 	 				([number]) usage string and help width returns div, span, show for creating help, call show() to show result.
+- .action  			 		(string, string, function) the command to match, aliases and the callback function.
+- .reset 				 			() resets the configuration back to defaults, used when parsing manual array of args.
 
 
 ## Configure Options
@@ -255,7 +254,9 @@ var defaults = {
 
 ### Logger
 
-There's a handy logger built in for simple tasks. It has 4 methods error, warn, info, debug. It can be configured in your options when calling .configure(). By default the log level is 3 or "info". Set "logLevel" to change the level allowed or set "colors" in your options to false to disable colors. You can also set "logCallback" which is called on message logged. This is useful for writing the log message to file or other.
+There's a handy logger built in for simple tasks. It has 6 methods error, warn, info, debug, write and exit. See options for configurations. By default the log level is 3 or "info". Set ".logLevel" to change the level allowed or set "colors" in your options to false to disable colors. You can also set "logCallback" which is called on message logged. This is useful for writing the log message to file or other.
+
+The logger does not attempt to be a full blown solution rather is designed to handle simple logging tasks for a CLI without the need for another dependency. That said it works perfectly fine.
 
 ```js
 pargv.log.warn('the command %2 is not valid', pargv.cmd);
@@ -263,11 +264,21 @@ pargv.log.warn('the command %2 is not valid', pargv.cmd);
 
 ### Ascii Art
 
-Pargv has figlet built in for simple cli ascii art. Simple but handy if you want to dress up your cli. Just call the ".logo" method.
+Pargv has figlet built in for simple cli ascii art. Handy if you want to dress up your cli. Just call the ".logo" method.
 
 see: https://www.npmjs.com/package/figlet for fonts.
 
+### Chalk
+
+The chalk constructor is also exported. Just new up an instance. Like the logger and ASCII art these modules are exposed so that a complete CLI solution can be created quickly. In short Chalk is needed for the logger hence we just export it for convenience.
+
 ```js
+const Chalk = require('pargv').Chalk;
+const chalk = new Chalk();
+```
+
+```js
+// Define the text, the color and an available figlet font name.
 pargv.logo('My Text Logo', 'cyan', 'figlet font name');
 ```
 

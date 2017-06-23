@@ -27,6 +27,7 @@ export interface ILoggerColors {
 
 export interface ILogger {
 
+	enabled(state?: boolean): void;
 	trace(trace?: boolean): boolean;
 	level(level?: number): number;
 

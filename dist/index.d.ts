@@ -1,13 +1,13 @@
 import { IPargvOptions, IFigletOptions, BeforeFigletRender, IPargvCommandConfig, IMap, IPargvCommandOption, ActionCallback, ILayout, CastCallback, IPargvCommands } from './interfaces';
 export declare class PargvCommand {
-    private _context;
     private _usage;
     private _description;
     private _aliases;
     private _examples;
-    private _action;
     private _depends;
+    pargv: Pargv;
     name: string;
+    onAction: ActionCallback;
     options: IMap<IPargvCommandOption>;
     constructor(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig, context?: Pargv);
     /**
@@ -18,12 +18,45 @@ export declare class PargvCommand {
      */
     private parseTokens(val, isCommand?);
     /**
+     * Cast To Type
+     * Casts a value to the specified time or fallsback to default.
+     *
+     * @param type the type to cast to.
+     * @param def an optional default value.
+     * @param val the value to be cast.
+     */
+    private castToType(type, def, val);
+    /**
      * Find Option
-     * Looks up an option by name or alias.
+     * Looks up an option by name, alias or position.
      *
      * @param key the key or alias name to find option by.
      */
-    findOption(key: string): IPargvCommandOption;
+    findOption(key: string | number): IPargvCommandOption;
+    /**
+     * Alias To Name
+     * Converts an alias to the primary option name.
+     *
+     * @param alias the alias name to be converted.
+     */
+    aliasToName(alias: string): string;
+    validate(argv: any[]): any;
+    /**
+     * Command Count
+     * Gets the total sub command count and total required.
+     */
+    commandStats(): {
+        cmds: {
+            required: any[];
+            requiredAny: any[];
+            total: any[];
+        };
+        flags: {
+            required: any[];
+            requiredAny: any[];
+            total: any[];
+        };
+    };
     /**
      * Option
      * Adds option to command.
@@ -31,9 +64,9 @@ export declare class PargvCommand {
      * @param val the option val to parse or option configuration object.
      * @param description the description for the option.
      * @param def the default value.
-     * @param cast the expression, method or type for validating/casting.
+     * @param type the expression, method or type for validating/casting.
      */
-    option(val: string | IPargvCommandOption, description?: string, def?: any, cast?: string | RegExp | CastCallback): this;
+    option(val: string | IPargvCommandOption, description?: string, def?: any, type?: string | RegExp | CastCallback): this;
     /**
      * Demand
      * Demands that the option be present when parsed.
@@ -81,26 +114,11 @@ export declare class PargvCommand {
      * @param args allows for examples as separate method signature params.
      */
     example(val: string | string[], ...args: any[]): this;
-    /**
-     * Command
-     * Creates new command configuration.
-     *
-     * @param command the command to be matched or options object.
-     * @param description the description or options object.
-     * @param options options object for the command.
-     */
-    command(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig): (command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig) => PargvCommand;
-    /**
-     * Parse
-     * Parses the provided arguments inspecting for commands and options.
-     *
-     * @param argv the process.argv or custom args array.
-     */
-    parse(...argv: any[]): void;
 }
 export declare class Pargv {
     private _usage;
     private _parsed;
+    private _suppress;
     commands: IPargvCommands;
     options: IPargvOptions;
     constructor(options?: IPargvOptions);
@@ -132,7 +150,14 @@ export declare class Pargv {
      *
      * @param argv the process.argv or custom args array.
      */
-    parse(...argv: any[]): void;
+    parse(...argv: any[]): any;
+    /**
+     * Exec
+     * Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
+     */
+    exec(...argv: any[]): void;
     /**
      * Help
      * Displays the generated help or supplied help string.

@@ -3,29 +3,35 @@ import * as path from 'path';
 import * as cliui from 'cliui';
 import * as figlet from 'figlet';
 import * as prefix from 'global-prefix';
-import { Colurs, get as getColurs } from 'colurs';
-import { IPargvOptions, IMetadata, IFigletOptions, BeforeFigletRender, ILayoutOptions, IPargvCommandConfig, IMap, IPargvCommandOption, ActionCallback, ILayout, CastCallback, IPargvCommands } from './interfaces';
-import { extend, isString, isPlainObject, get, set, isUndefined, isArray, isDebug, contains, camelcase, keys, isBoolean, noop, isFunction, toArray, tryRequire, split, castType, getType, isRegExp, toDefault } from 'chek';
+import { Colurs, get as getColurs, IColurs } from 'colurs';
+import { IPargvOptions, IMetadata, IFigletOptions, BeforeFigletRender, ILayoutOptions, IPargvCommandConfig, IMap, IPargvCommandOption, ActionCallback, ILayout, CastCallback, IPargvCommands, CastType, IPargvResult } from './interfaces';
+import { extend, isString, isPlainObject, get, set, isUndefined, isArray, isDebug, contains, camelcase, keys, isBoolean, noop, isFunction, toArray, tryRequire, split, castType, getType, isRegExp, toDefault, containsAny, isValue, tryWrap, isNumber, isFloat, isInteger, isDate, last } from 'chek';
 
 const pkg = tryRequire(path.resolve(process.cwd(), 'package.json'), { version: '0.0.0' });
-const colurs = getColurs();
+let colurs: IColurs;
 
-const KEYVAL_EXP = /^([a-zA-Z0-9]+:[a-zA-Z0-9]+,?)+$/g;
-const CSV_EXP = /^(.+,.+){1,}$/g;
+const KEYVAL_EXP = /^((.+:.+)(\||\+)?)$/;
+const CSV_EXP = /^(.+,.+){1,}$/;
+const ARRAY_EXP = /^(.+(,|\||\s).+){1,}$/;
+const JSON_EXP = /^"?{.+}"?$/;
 const REGEX_EXP = /^\/.+\/(g|i|m)?([m,i,u,y]{1,4})?/;
 const REGEX_OPTS_EXP = /(g|i|m)?([m,i,u,y]{1,4})?$/;
+
 const FLAG_EXP = /^--?/;
-const TOKEN_ANY_EXP = /(^--?|^<|>$|^\[|\]$)/g;
+const FLAG_SHORT_EXP = /^-[a-zA-Z0-9]/;
+const TOKEN_ANY_EXP = /(^--?|^<|>$|^\[|\]$)/;
 const TOKEN_PREFIX_EXP = /^(--?|<|\[)/;
+
 const NESTED_EXP = /^[a-zA-Z0-9]+\./;
 const GLOBAL_PREFIX_EXP = new RegExp('^' + prefix, 'i');
 const SPLIT_CHARS = ['|', ',', ' '];
 declare var v8debug;
 
 const DEFAULTS: IPargvOptions = {
-  strict: false,          // when true only defined commands/options are allowed.
+  strict: false,          // when true error message shown and exits for missing arguments.
   auto: true,             // when true parsed values are auto cast to type if not defined.
-  injectDebug: false      // when true injects debug flag into args.
+  colors: true,           // wether or not to use colors in help & log messages.
+  catchAll: 'help'        // defines action when no command is found by default shows help.
 };
 
 // UTILS //
@@ -52,10 +58,7 @@ function normalizeDebug(argv: string[]): string[] {
   if (!debugFlag)
     return [];
 
-  if (!/^--debug-brk=/.test(debugFlag))
-    return [debugFlag];
-  // Otherwise break out the port into separate arg.
-  return debugFlag.split('=');
+  return [debugFlag];
 
 }
 
@@ -141,6 +144,32 @@ function toOptionString(val: string) {
 }
 
 /**
+ * Normalize Args
+ * Converts -abc to -a -b -c
+ * Converts --name=bob to --name bob
+ *
+ * @param args the arguments to normalize.
+ */
+function normalizeArgs(args: any[]) {
+  let arr = [],
+    idx;
+  args.forEach((el) => {
+    if (/^--/.test(el) && ~(idx = el.indexOf('='))) {
+      arr.push(el.slice(0, idx), el.slice(idx + 1));
+    }
+    else if (FLAG_SHORT_EXP.test(el)) {
+      el.replace(FLAG_EXP, '').split('').forEach((s) => {
+        arr.push('-' + s);
+      });
+    }
+    else {
+      arr.push(el);
+    }
+  });
+  return arr;
+}
+
+/**
  * Parse Token
  * Parses command or option token to object.
  *
@@ -178,7 +207,7 @@ function parseToken(token: string, next?: string) {
   }
 
   // Remove < or ] from the type.
-  const type = stripToken(split[1] || 'auto');
+  const type = stripToken(split[1] || '');
 
   // Split the name inspect for aliases then sort by length.
   aliases = aliases
@@ -196,7 +225,7 @@ function parseToken(token: string, next?: string) {
 
   // Ensure alias is not same as name.
   if (contains(aliases, name))
-    throw new Error(`Alias ${name} cannot be the same as option name property.`);
+    log.error(`alias ${name} cannot be the same as option name property.`);
 
   // This is a sub command value.
   if (!flag)
@@ -215,54 +244,56 @@ function parseToken(token: string, next?: string) {
 
 }
 
-function cast(key: any, val: any) {
-  //
-}
-
-/**
- * Cast To Type
- * Just a wrapper to chek's castType.
- *
- * @param type the type to cast to.
- * @param val the value to be cast.
- */
-function castTypeWrapper(type: string | RegExp, def: any, val: any) {
-
-  type = (type as string).trim();
-  const isListExp = /(,|\s|\|)/.test(type) || isRegExp(type);
-
-  if (!isListExp)
-    return castType(val, type, def);
-
-  // Handle list like strings
-  // ex: small, medium, large
-  // becomes: /^(small|medium|large)$/
-  const match = val.match(splitToList(type));
-
-  return toDefault(match && match[0], def);
-
-}
+// Crude logger just need to show some messages.
+const logTypes = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  debug: 'magenta'
+};
+const log = {
+  error: (...args: any[]) => {
+    args.unshift(colurs.bold[logTypes['error']]('error:'));
+    console.log('');
+    console.log.apply(console, args);
+    console.log('');
+    log.exit(1);
+  },
+  info: (...args: any[]) => {
+    args.unshift(colurs.bold[logTypes['info']]('info:'));
+    console.log.apply(console, args);
+    return log;
+  },
+  warn: (...args: any[]) => {
+    args.unshift(colurs.bold[logTypes['warn']]('warn:'));
+    console.log.apply(console, args);
+    return log;
+  },
+  write: (...args: any[]) => {
+    console.log.apply(console, args);
+  },
+  exit: process.exit
+};
 
 // PARGV COMMAND CLASS //
 
 export class PargvCommand {
 
-  private _context: Pargv;
-
   private _usage: string;
   private _description: string = '';
   private _aliases: string[] = [];
   private _examples: string[] = [];
-  private _action: ActionCallback = noop;
   private _depends: { name?: string[] } = {};
 
+  pargv: Pargv;
   name: string;
+  onAction: ActionCallback = noop;
   options: IMap<IPargvCommandOption> = {};
 
   constructor(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig, context?: Pargv) {
 
     if (!command)
-      throw new Error('Cannot defined command using name of undefined.');
+      log.error('cannot define command using name of undefined.');
 
     if (isPlainObject(command)) {
       options = <IPargvCommandConfig>command;
@@ -276,10 +307,16 @@ export class PargvCommand {
 
     options = options || {};
 
-    this._context = context;
+    this.pargv = context;
     this.parseTokens(<string>command || options.command, true);
     this._description = <string>description || options.description || `Executes ${command} command.`;
     this._aliases = isString(options.aliases) ? split(options.aliases, SPLIT_CHARS) : [];
+
+    // Add debug options
+    this.option('--debug', 'Debug flag.');
+    this.option('--debug-brk [debugPort]', 'Debug break flag.');
+
+    return this;
 
   }
 
@@ -298,14 +335,15 @@ export class PargvCommand {
     const arr = split(val.trim(), SPLIT_CHARS);
     let usage: any = [];
     let parsedOpts: IPargvCommandOption[] = [];
+    let ctr = 0;
 
     // If command shift out the command.
     if (isCommand) {
       let tmpCmd: any = arr.shift().trim();
       // split out aliases
       tmpCmd = tmpCmd.split('.');
-      if (this._context.commands[tmpCmd[0]])
-        throw new Error(`Cannot add command ${tmpCmd[0]}, the command already exists.`);
+      if (this.pargv.commands[tmpCmd[0]])
+        log.error(`cannot add command`, colurs.yellow(`${tmpCmd[0]}`), `the command already exists.`);
       this.name = tmpCmd.shift();
       if (tmpCmd.length)
         this._aliases = tmpCmd;
@@ -321,9 +359,6 @@ export class PargvCommand {
 
       el = el.trim();
       const parsed: IPargvCommandOption = parseToken(el, arr[i + 1]);
-
-      if (!parsed.flag)
-        parsed.position = i;
 
       // Build up the parsed values for usage string.
       if (parsed.flag) {
@@ -342,6 +377,18 @@ export class PargvCommand {
           usage.push(`[${parsed.name}]`);
       }
 
+      // Set postion and update counter.
+      if (!parsed.flag) {
+        parsed.position = ctr;
+        ctr++;
+      }
+
+      // The following may be overwritten from .option.
+      const type = parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
+      parsed.cast = this.castToType.bind(this, type, null);
+      parsed.description = parsed.flag ? `flag option.` : `sub command/argument.`;
+
+      // Store the options for the command.
       this.options[parsed.name] = extend<IPargvCommandOption>({}, this.options[parsed.name], parsed);
 
       // Add to collection of parsed options.
@@ -357,21 +404,322 @@ export class PargvCommand {
   }
 
   /**
+   * Cast To Type
+   * Casts a value to the specified time or fallsback to default.
+   *
+   * @param type the type to cast to.
+   * @param def an optional default value.
+   * @param val the value to be cast.
+   */
+  private castToType(type: string | RegExp, def: any, val: any) {
+
+    let result = null;
+    type = (type as string).trim();
+    const isAuto = type === 'auto';
+
+    if (isString(val))
+      val = val.trim();
+
+    // Check if is list type expression.
+    const isListType = ARRAY_EXP.test(type) || isRegExp(type);
+    type = isListType ? 'list' : type;
+
+    const is: any = {
+      object: isPlainObject,
+      number: isNumber,
+      integer: isInteger,
+      float: isFloat,
+      date: isDate,
+      array: isArray,
+      json: isPlainObject,
+      regexp: isRegExp,
+      boolean: isBoolean,
+      list: (v: any) => { return isValue(v); }
+    };
+
+    const to: any = {
+
+      // Never called in autoCast method.
+      list: (v) => {
+        const match = val.match(splitToList(<string>type));
+        result = match && match[0];
+      },
+
+      object: (v) => {
+        if (!KEYVAL_EXP.test(v))
+          return null;
+        const obj = {};
+        const pairs = split(v, ['|', '+']);
+        if (!pairs.length) return null;
+        pairs.forEach((p) => {
+          const kv = p.split(':');
+          if (kv.length > 1) {
+            let castVal: any = kv[1];
+            // Check if an array is denoted with [ & ]
+            // If yes strip them from string.
+            if (/^\[/.test(castVal) && /\]$/.test(castVal))
+              castVal = castVal.replace(/(^\[|\]$)/g, '');
+            // Check if auto casting is enabled.
+            if (this.pargv.options.auto) {
+              castVal = autoCast(castVal) || castVal;
+              if (isArray(castVal))
+                castVal = (castVal as any[]).map((el) => {
+                  return autoCast(el) || el;
+                });
+            }
+            set(obj, kv[0], castVal);
+          }
+        });
+        return obj;
+
+      },
+
+      json: (v) => {
+        if (!JSON_EXP.test(v))
+          return null;
+        v = v.replace(/^"/, '').replace(/"$/, '');
+        return tryWrap(JSON.parse, v)();
+      },
+
+      array: (v) => {
+        if (!ARRAY_EXP.test(v))
+          return null;
+        return toArray(v);
+      },
+
+      number: (v) => {
+        if (!/[0-9]/g.test(v))
+          return null;
+        return castType(v, 'number');
+      },
+
+      date: (v) => {
+        return castType(v, 'date');
+      },
+
+      regexp: (v) => {
+        if (!REGEX_EXP.test(v))
+          return null;
+        return castType(val, 'regexp');
+      },
+
+      boolean: (v) => {
+        if (!/^(true|false)$/.test(v))
+          return null;
+        return castType(v, 'boolean');
+      }
+
+    };
+
+    to.integer = to.number;
+    to.float = to.number;
+
+    function autoCast(v) {
+
+      // Ensure type is set to auto.
+      const origType = type;
+      type = 'auto';
+
+      let _result;
+
+      let castMethods = [
+        to.object.bind(null, v),
+        to.json.bind(null, v),
+        to.array.bind(null, v),
+        to.regexp.bind(null, v),
+        to.date.bind(null, v, 'date'),
+        to.number.bind(null, v),
+        to.boolean.bind(null, v)
+      ];
+
+      // While no result iterate try to
+      // cast to known types. Return the
+      // result or the default value.
+      while (castMethods.length && !_result) {
+        const method = castMethods.shift();
+        _result = method();
+      }
+
+      type = origType;
+
+      return _result;
+
+    }
+
+    // If no value return default.
+    if (!val) return def;
+
+    // If not a special type just cast to the type.
+    if (type !== 'auto') {
+      result = to[type](val);
+    }
+
+    // Try to iterate and auto cast type.
+    else {
+      result = autoCast(val);
+    }
+
+    // If Auto no type checking.
+    if (isAuto)
+      return toDefault(result, def || val);
+
+    // Check if there is a default value if nothing is defined.
+    result = toDefault(result, def);
+
+    // Ensure valid type.
+    if (!is[type](result))
+      log.error(`expected type ${colurs.cyan(type)} but got ${colurs.cyan(getType(type))}.`);
+
+    return result;
+
+  }
+
+  /**
    * Find Option
-   * Looks up an option by name or alias.
+   * Looks up an option by name, alias or position.
    *
    * @param key the key or alias name to find option by.
    */
-  findOption(key: string): IPargvCommandOption {
+  findOption(key: string | number): IPargvCommandOption {
     let option;
     for (const k in this.options) {
+      const opt = this.options[k];
       const aliases = this.options[k].aliases;
-      if (key === k || contains(<string[]>aliases, key)) {
-        option = this.options[k];
+      if (isString(key) && (key === k || contains(<string[]>aliases, key))) {
+        option = opt;
         break;
+      }
+      else if (key === opt.position) {
+        option = opt;
       }
     }
     return option;
+  }
+
+  /**
+   * Alias To Name
+   * Converts an alias to the primary option name.
+   *
+   * @param alias the alias name to be converted.
+   */
+  aliasToName(alias: string) {
+    const opt = this.findOption(alias);
+    return (opt && opt.name) || null;
+  }
+
+  validate(argv: any[]) {
+
+    console.log();
+    console.log(this._usage);
+    console.log('arguments: ' + argv.join(' '));
+    console.log();
+
+    const opts = this.options;
+    const stats: any = {
+      commandsMissing: {},
+      commandsRequiredCount: 0,
+      commandsOptionalCount: 0,
+      commandsMissingCount: 0,
+      flagsMissing: {},
+      flagsRequiredCount: 0,
+      flagsOptionalCount: 0,
+      flagsMissingCount: 0
+    };
+
+    let ctr = 0;
+    const filteredCmds = [];
+
+    argv.forEach((el, i) => {
+      const opt = this.findOption(el);
+      if (opt) {
+        if (opt.flag && opt.type !== 'boolean')
+          argv.splice(i + 1, 1);
+      }
+      if (!FLAG_EXP.test(el))
+        filteredCmds.push(el);
+    });
+
+    console.log(filteredCmds);
+
+    for (let p in opts) {
+
+      const opt = opts[p];
+      const names = [opt.name].concat(opt.aliases || []);
+
+      // Don't process injected
+      // debug options.
+      if (/^--debug/.test(opt.name))
+        continue;
+
+      // Store required and optiona total counts.
+      if (opt.required)
+        opt.flag ? stats.flagsRequiredCount++ : stats.commandsRequiredCount++;
+      else
+        opt.flag ? stats.flagsOptionalCount++ : stats.commandsOptionalCount++;
+
+      let hasOpt;
+
+      if (opt.flag) {
+        hasOpt = containsAny(argv, names);
+        if (opt.required) {
+          stats.flagsRequiredCount++;
+          if (!hasOpt) {
+            stats.flagsMissing[opt.name] = opt;
+            stats.flagsMissingCount++;
+          }
+        }
+      }
+      else {
+
+
+      }
+
+      //console.log('match:', opt.name, names.join(', '), '-', hasOpt);
+
+    }
+
+    return stats;
+
+  }
+
+  /**
+   * Command Count
+   * Gets the total sub command count and total required.
+   */
+  commandStats() {
+    let stats = {
+      cmds: {
+        required: [],
+        requiredAny: [],
+        total: []
+      },
+      flags: {
+        required: [],
+        requiredAny: [],
+        total: []
+      }
+    };
+    const cmds = stats.cmds;
+    const flags = stats.flags;
+    const opts = this.options;
+    for (let p in opts) {
+      const opt = opts[p];
+      if (!opt.flag) {
+        cmds.total.push(opt.name);
+        if (opt.required) {
+          cmds.required.push(opt.name);
+          cmds.requiredAny = cmds.requiredAny.concat([opt.name].concat(opt.aliases || []));
+        }
+      }
+      else {
+        flags.total.push(opt.name);
+        if (opt.required) {
+          flags.required.push(opt.name);
+          flags.requiredAny = flags.requiredAny.concat([opt.name].concat(opt.aliases || []));
+        }
+      }
+    }
+    return stats;
   }
 
   /**
@@ -381,22 +729,25 @@ export class PargvCommand {
    * @param val the option val to parse or option configuration object.
    * @param description the description for the option.
    * @param def the default value.
-   * @param cast the expression, method or type for validating/casting.
+   * @param type the expression, method or type for validating/casting.
    */
-  option(val: string | IPargvCommandOption, description?: string, def?: any, cast?: string | RegExp | CastCallback) {
+  option(val: string | IPargvCommandOption, description?: string, def?: any, type?: string | RegExp | CastCallback) {
     if (isPlainObject(val)) {
       const opt = <IPargvCommandOption>val;
       if (!opt.name)
-        throw new Error('Pargv command option requires "name" property when passing object.');
+        log.error('cannot add option using name property of undefined.');
       extend(this.options[opt.name], opt);
     }
     else {
       const parsed: IPargvCommandOption = this.parseTokens(val as string)[0];
-      parsed.description = description;
+      parsed.description = description || parsed.description;
       parsed.default = def;
-      if (isString(cast) || isRegExp(cast))
-        cast = castTypeWrapper.bind(this, cast, def);
-      parsed.cast = <CastCallback>cast;
+      type = type || parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
+      if (isString(type) || isRegExp(type))
+        type = this.castToType.bind(this, type, def);
+      if (!isString(type) && !isFunction(type))
+        log.error('invalid cast type only string, RegExp or Callback Function are supported.');
+      parsed.cast = <CastCallback | string>type;
     }
     return this;
   }
@@ -424,7 +775,8 @@ export class PargvCommand {
       }
       // create options object.
       else {
-        this.options[d] = { name: d, required: true, aliases: [], type: 'auto', flag: true, as: stripped };
+        const type = this.pargv.options.auto ? 'auto' : 'string';
+        this.options[d] = { name: d, required: true, aliases: [], type: type, flag: true };
       }
     });
 
@@ -473,8 +825,8 @@ export class PargvCommand {
    * @param fn the callback function when parsed command matches.
    */
   action(fn: ActionCallback) {
-    if (!fn) throw new Error('Cannot add action with action method of undefined.');
-    this._action = fn;
+    if (!fn) log.error('cannot add action with action method of undefined.');
+    this.onAction = fn;
     return this;
   }
 
@@ -490,28 +842,6 @@ export class PargvCommand {
     return this;
   }
 
-  /**
-   * Command
-   * Creates new command configuration.
-   *
-   * @param command the command to be matched or options object.
-   * @param description the description or options object.
-   * @param options options object for the command.
-   */
-  command(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig) {
-    return this._context.command;
-  }
-
-  /**
-   * Parse
-   * Parses the provided arguments inspecting for commands and options.
-   *
-   * @param argv the process.argv or custom args array.
-   */
-  parse(...argv: any[]) {
-    return this._context.parse(...argv);
-  }
-
 }
 
 // PARGV CONTAINER //
@@ -520,12 +850,14 @@ export class Pargv {
 
   private _usage: string;
   private _parsed: any;
+  private _suppress: boolean = false;
 
   commands: IPargvCommands = {};
   options: IPargvOptions;
 
   constructor(options?: IPargvOptions) {
     this.options = extend<IPargvOptions>({}, DEFAULTS, options);
+    colurs = new Colurs({ enabled: this.options.colors });
   }
 
   /**
@@ -572,9 +904,7 @@ export class Pargv {
    */
   parse(...argv: any[]) {
 
-    let cmd: string = '';
-    let cmds: string[] = [];
-    let flags: IMetadata = [];
+    let cmdStr: string = '';
     let parsedExec, action;
 
     // if first arg is array then set as argv.
@@ -591,7 +921,10 @@ export class Pargv {
     parsedExec = path.parse(source[1]);
 
     // Seed result object with paths.
-    const obj: any = {
+    const result: any = {
+      cmd: '',
+      cmds: [],
+      flags: {},
       globalPath: prefix,
       nodePath: source[0],
       execPath: source[1],
@@ -605,24 +938,116 @@ export class Pargv {
     // Remove node and exec path from args.
     argv = argv.slice(2);
 
+    // Normalize the args/flags.
+    argv = normalizeArgs(argv);
+
     // Don't shift if is a flag arg.
-    if (!isFlag(argv[0]))
-      cmd = argv.shift();
+    if (!FLAG_EXP.test(argv[0]))
+      cmdStr = result.cmd = argv.shift();
 
     // Lookup the command.
-    const cmdObj = this.commands[cmd];
+    const cmd = this.commands[cmdStr];
+    const autoType = this.options.auto ? 'auto' : 'string';
+    let ctr = 0;
 
-    if (!cmdObj)
-      throw new Error(`Invalid command, the command ${cmd} was not found.`);
+    if (!cmd)
+      log.error(`invalid command, the command ${cmdStr} was not found.`);
+
+    // Validate the arguments.
+    if (this.options.strict) {
+
+    }
+
+    const validation = cmd.validate(argv);
+    // console.log(validation);
 
     // Iterate the args.
     argv.forEach((el, i) => {
 
-      // lookup the option.
-      const opt = cmdObj.findOption(el);
+      const nextId = i + 1;
+      let next = argv[nextId];
+      const isFlag = FLAG_EXP.test(el);
+      // const prev = argv[i - 1];
+      // const isPrevFlag = FLAG_EXP.test(prev || '');
+      // const isNextFlag = FLAG_EXP.test(next || '');
+      // const isShortFlag = FLAG_SHORT_EXP.test(el);
+      // const isPrevShortFlag = FLAG_SHORT_EXP.test(prev);
+
+      const isKeyVal = KEYVAL_EXP.test(next || '');
+
+      // Lookup the defined option if any.
+      const opt = isFlag ? cmd.findOption(el) : cmd.findOption(ctr);
+
+      // No anonymous flags/commands allowed throw error.
+      if (!opt)
+        log.error(`unknown argument ${el} is NOT allowed in strict mode.`);
+
+      // Is a flag.
+      if (isFlag) {
+
+        const key = el.replace(FLAG_EXP, '');
+        const keyName = camelcase(opt.as || key);
+        const isBool = !opt.as;
+
+        const fn: CastCallback = opt.cast as CastCallback;
+        const val = isBool ? true : fn(next);
+
+        // If required and no value throw error.
+        if (opt.required && !isValue(val))
+          log.error(`command ${cmd.name} requires missing option ${opt.name}.`);
+
+        if (isValue(val)) {
+          // If the result is an object use extend
+          // in case the object is built over multiple flags.
+          if (isPlainObject(val))
+            result.flags[keyName] = extend({}, result.flags[keyName], val);
+          else
+            result.flags[keyName] = val;
+        }
+
+        if (!isBool)
+          argv.splice(next, 1);
+
+      }
+
+      // Is a sub command.
+      else {
+
+        const fn: CastCallback = opt.cast as CastCallback;
+        const val = fn(el);
+        result.cmds.push(val);
+
+        // Update position counter.
+        ctr++;
+
+      }
 
     });
 
+    return result;
+
+  }
+
+  /**
+   * Exec
+   * Parses arguments then executes command action if any.
+   *
+   * @param argv optional arguments otherwise defaults to process.argv.
+   */
+  exec(...argv: any[]) {
+    const parsed: IPargvResult = this.parse(...argv);
+    const cmd = this.commands[parsed.cmd];
+    // We should never hit the following.
+    if (!cmd)
+      log.error(`whoops successfully parsed args but command ${parsed.cmd} could not be found.`);
+    // Make clone of the sub commands.
+    let cmds = parsed.cmds.slice(0);
+    const stats = cmd.commandStats();
+    let offset = stats.cmds.total.length - cmds.length;
+    while (offset > 0 && offset--)
+      cmds.push(null);
+    if (isFunction(cmd.onAction))
+      cmd.onAction(...cmds, parsed, cmd);
   }
 
   /**
@@ -644,8 +1069,7 @@ export class Pargv {
       ['Number', '- native number.'],
       ['Date', '- native date.'],
       ['RegExp', '- native regular expression.'],
-      ['Array', '- native array.'],
-      ['List', '- csv, pipe or space separated converted to RegExp.']
+      ['Array', '- native array.']
     ];
 
     const typesHelp = layout.join('\n', ...types.map((t) => {
@@ -741,7 +1165,7 @@ export class Pargv {
 
     function invalidExit(element, elements) {
       if (isString(element) && elements.length && isPlainObject(elements[0]))
-        throw new Error('Invalid element(s) cannot mix string element with element options objects.');
+        log.error('invalid element(s) cannot mix string element with element options objects.');
     }
 
     function add(type: string, ...elements: any[]) {
@@ -832,54 +1256,3 @@ function createInstance(options?: IPargvOptions): Pargv {
 }
 
 export { createInstance as get };
-
-
-// const key = el.replace(/^--?/, '');
-// const nextId = i + 1;
-// const next = argv[i + 1];
-// const isKeyVal = next && KEYVAL_EXP.test(next);
-// const isNested = NESTED_EXP.test(key);
-
-// const isFlagValue = false;
-
-
-
-  // Inspect flags.
-  // if (isFlag(el)) {
-
-  // Check if nested object.
-  // if (isNested) {
-  //   const objKey = key.split('.')[0];
-  //   flags[objKey] = flags[objKey] || {};
-  //   flags[objKey] = set(flags[objKey], key, cast(key, next));
-  // }
-
-  // Check if next value is key:value pair.
-  // else if (isKeyVal) {
-  //   flags[key] = flags[key] || {};
-  //   flags[key] = extend({}, cast(key, next));
-  // }
-
-  // Otherwise is non object or simple boolean.
-  // else {
-  //   const val = !isFlagValue ? true : next ? cast(key, next) : null;
-  //   flags[key] = val;
-  // }
-
-  // Exclude next el in array when non bool.
-  // if (isFlagValue)
-  //   exclude.push(nextId);
-
-//}
-
-// Is a sub command.
-// else {
-//   cmds.push(el);
-// }
-
-// Get action.
-// action = this._commands[cmd] || this._commands['*'];
-
-// If actions enabled execute matching action.
-// if (this._options.actions)
-//   action();

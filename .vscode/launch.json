@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "TsNode Active",
+      "name": "Live Relative",
       "type": "node",
       "request": "launch",
       "program": "${workspaceRoot}/node_modules/ts-node/dist/_bin.js",
@@ -16,44 +16,17 @@
       "protocol": "inspector"
     },
     {
-      "name": "TsNode Temp",
+      "name": "Live Temp",
       "type": "node",
       "request": "launch",
       "program": "${workspaceRoot}/node_modules/ts-node/dist/_bin.js",
       "args": [
         "-P",
         "${workspaceRoot}/src/tsconfig.json",
-        "${workspaceRoot}/src/temp.ts",
-        "generate",
-        "home"
+        "${workspaceRoot}/src/temp.ts"
       ],
       "cwd": "${workspaceRoot}",
       "protocol": "inspector"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Temp Typescript",
-      "cwd": "${workspaceRoot}",
-      "program": "${workspaceRoot}/src/temp.ts",
-      "sourceMaps": true,
-      "stopOnEntry": false,
-      "preLaunchTask": "build",
-      "runtimeExecutable": null,
-      "console": "internalConsole",
-      "runtimeArgs": [
-        "--nolazy"
-      ],
-      "args": [
-        "generate",
-        "home"
-      ],
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "outFiles": [
-        "${workspaceRoot}/dist/**/*.js"
-      ]
     },
     {
       "type": "node",

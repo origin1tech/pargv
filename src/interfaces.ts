@@ -1,10 +1,11 @@
 import { Pargv, PargvCommand } from './';
 
 export type FigletLayout = 'default' | 'full' | 'fitted' | 'controlled smushing' | 'universal smushing';
+export type CastType = 'object' | 'json' | 'array' | 'regexp' | 'float' | 'integer' | 'number' | 'date' | 'boolean';
 export type BeforeFigletRender = (text: string, options?: IFigletOptions) => string;
-export type CastCallback = (val: any, option?: IPargvCommandOption, command?: IPargvCommandConfig) => boolean;
-export type ActionCallback = (parsed?: IMetadata, command?: IPargvCommandConfig, pargv?: Pargv) => void;
+export type CastCallback = (val: any, option?: IPargvCommandOption, command?: PargvCommand) => boolean;
 export type FallbackCallback = (pargv?: Pargv) => void;
+export type ActionCallback = (...args: any[]) => void;
 
 // COMMON //
 
@@ -48,8 +49,8 @@ export interface ILayout {
 export interface IPargvOptions {
   strict?: boolean;
   auto?: boolean;
-  catchall?: 'help' | 'none' | FallbackCallback;
-  injectDebug?: boolean;
+  colors?: boolean;
+  catchAll?: 'help' | 'none' | FallbackCallback;
 }
 
 export interface IPargvCommandConfig {
@@ -78,4 +79,14 @@ export interface IPargvCommandOption {
   position?: number;
   default?: any;
   cast?: string | CastCallback;
+}
+
+export interface IPargvResult {
+  cmd?: string;
+  cmds?: any[];
+  flags?: { [key: string]: any; };
+  globalPath?: string;
+  nodePath?: string;
+  execPath?: string;
+  exec?: string;
 }

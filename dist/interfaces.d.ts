@@ -77,7 +77,6 @@ export interface IPargvCommandOption {
     required?: boolean;
     as?: string;
     position?: number;
-    default?: any;
     coerce?: string | CoerceCallback;
 }
 export interface IPargvResult {

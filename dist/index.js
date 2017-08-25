@@ -236,6 +236,7 @@ function parseToken(token, next) {
 function castToType(type, def, val) {
     var _this = this;
     var result = null;
+    var origVal = val;
     type = type.trim();
     var isAuto = type === 'auto';
     if (chek_1.isString(val))
@@ -359,7 +360,7 @@ function castToType(type, def, val) {
     if (isAuto)
         return chek_1.toDefault(result, def || val);
     // Check if there is a default value if nothing is defined.
-    result = chek_1.toDefault(result, def);
+    result = chek_1.toDefault(result, def || val);
     // Ensure valid type.
     if (!is[type](result))
         log.error("expected type " + colurs.cyan(type) + " but got " + colurs.cyan(chek_1.getType(type)) + ".");
@@ -415,8 +416,10 @@ var log = {
 var PargvCommand = (function () {
     function PargvCommand(command, description, options, context) {
         this._depends = {};
-        this._aliases = [];
         this._description = '';
+        this._aliases = [];
+        this._coercions = {};
+        this._demands = [];
         this._examples = [];
         this._action = chek_1.noop;
         this.options = {};
@@ -502,7 +505,8 @@ var PargvCommand = (function () {
             }
             // The following may be overwritten from .option.
             var type = parsed.type = parsed.type || (_this.pargv.options.auto ? 'auto' : 'string');
-            parsed.coerce = castToType.bind(null, type, null);
+            // Add default coercion may be overridden.
+            _this._coercions[el] = _this.normalizeCoercion(type, null);
             // Store the options for the command.
             _this.options[parsed.name] = chek_1.extend({}, _this.options[parsed.name], parsed);
             // Add to collection of parsed options.
@@ -511,6 +515,27 @@ var PargvCommand = (function () {
         if (isCommand)
             this._usage = usage.join(' ');
         return parsedOpts;
+    };
+    /**
+     * Coerce
+     * Coerce or transform the defined option when matched.
+     *
+     * @param key the option key to be coerced.
+     * @param fn the string type, RegExp or coerce callback.
+     * @param def an optional value when coercion fails.
+     */
+    PargvCommand.prototype.normalizeCoercion = function (fn, def) {
+        fn = fn || (this.pargv.options.auto ? 'auto' : 'string');
+        if (chek_1.isString(fn) || chek_1.isRegExp(fn))
+            fn = castToType.bind(null, fn, def);
+        if (!chek_1.isFunction(fn))
+            log.error('invalid cast type only string, RegExp or Callback Function are supported.');
+        return fn;
+    };
+    PargvCommand.prototype.command = function (command, description, config) {
+        var cmd = new PargvCommand(command, description, config, this.pargv);
+        this.pargv.commands[cmd._name] = cmd;
+        return cmd;
     };
     /**
      * Find Option
@@ -522,16 +547,30 @@ var PargvCommand = (function () {
         var option;
         for (var k in this.options) {
             var opt = this.options[k];
-            var aliases = this.options[k].aliases;
-            if (chek_1.isString(key) && (key === k || chek_1.contains(aliases, key))) {
+            var aliases = opt.aliases;
+            if (opt.as)
+                aliases.push(opt.as);
+            if ((key === k || chek_1.contains(aliases, key)) || key === opt.position) {
                 option = opt;
                 break;
             }
-            else if (key === opt.position) {
-                option = opt;
-            }
         }
         return option;
+    };
+    PargvCommand.prototype.findInCollection = function (key, coll, def) {
+        if (coll[key])
+            return coll[key];
+        var opt = this.findOption(key);
+        var aliases = opt.aliases;
+        if (opt.as)
+            aliases.push(opt.as);
+        var fn;
+        // Iterate aliases if match check if coercion exists.
+        while (aliases.length && !fn) {
+            var k = aliases.shift();
+            fn = coll[k];
+        }
+        return chek_1.toDefault(fn, def);
     };
     /**
      * Alias To Name
@@ -647,24 +686,30 @@ var PargvCommand = (function () {
      * @param def the default value.
      * @param coerce the expression, method or type for validating/casting.
      */
-    PargvCommand.prototype.option = function (val, description, def, coerce) {
+    PargvCommand.prototype.option = function (val, description, coerce, def) {
+        var opt;
         if (chek_1.isPlainObject(val)) {
-            var opt = val;
+            opt = val;
             if (!opt.name)
                 log.error('cannot add option using name property of undefined.');
-            chek_1.extend(this.options[opt.name], opt);
+            coerce = opt.coerce;
         }
-        else {
-            var parsed = this.parseTokens(val)[0];
-            parsed.description = description;
-            parsed.default = def;
-            coerce = coerce || parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
-            if (chek_1.isString(coerce) || chek_1.isRegExp(coerce))
-                coerce = castToType.bind(null, coerce, def);
-            if (!chek_1.isString(coerce) && !chek_1.isFunction(coerce))
-                log.error('invalid cast type only string, RegExp or Callback Function are supported.');
-            parsed.coerce = coerce;
-        }
+        var parsed = opt || this.parseTokens(val)[0];
+        parsed.description = description;
+        this._coercions[parsed.name] = this.normalizeCoercion(coerce, def);
+        chek_1.extend(this.options[parsed.name], parsed);
+        return this;
+    };
+    /**
+     * Coerce
+     * Coerce or transform the defined option when matched.
+     *
+     * @param key the option key to be coerced.
+     * @param fn the string type, RegExp or coerce callback.
+     * @param def an optional value when coercion fails.
+     */
+    PargvCommand.prototype.coerce = function (key, fn, def) {
+        this._coercions[key] = this.normalizeCoercion(fn, def);
         return this;
     };
     /**
@@ -685,16 +730,7 @@ var PargvCommand = (function () {
         args.forEach(function (d) {
             d = d.trim();
             d = FLAG_EXP.test(d) ? d : d.length > 1 ? "--" + d : "-" + d;
-            var stripped = stripToken(d);
-            var opt = _this.findOption(d);
-            // set existing to required.
-            if (opt) {
-                opt.required = true;
-            }
-            else {
-                var type = _this.pargv.options.auto ? 'auto' : 'string';
-                _this.options[d] = { name: d, required: true, aliases: [], type: type, flag: true };
-            }
+            _this._demands.push(d);
         });
     };
     /**
@@ -715,12 +751,22 @@ var PargvCommand = (function () {
     };
     /**
      * Description
-     * Saves the description for the command.
+     * Saves the description for a command or option.
      *
+     * @param key the option key to set description for, none for setting command desc.
      * @param val the description.
      */
-    PargvCommand.prototype.description = function (val) {
-        this._description = val || this._description;
+    PargvCommand.prototype.description = function (key, val) {
+        if (arguments.length === 1) {
+            val = key;
+            key = undefined;
+        }
+        if (!key) {
+            this._description = val || this._description;
+        }
+        else {
+            var opt = this.findOption(key);
+        }
         return this;
     };
     /**
@@ -764,6 +810,14 @@ var PargvCommand = (function () {
         }
         this._examples = this._examples.concat(mergeArgs(val, args));
         return this;
+    };
+    /**
+     * Epilog
+     * Adds trailing message like copying to help.
+     */
+    PargvCommand.prototype.epilog = function (val) {
+        this.pargv.epilog(val);
+        return this.pargv;
     };
     /**
      * Parse
@@ -991,20 +1045,20 @@ var Pargv = (function () {
         this._description = val;
         return this;
     };
+    Pargv.prototype.command = function (command, description, config) {
+        var cmd = new PargvCommand(command, description, config, this);
+        this.commands[cmd._name] = cmd;
+        return cmd;
+    };
     /**
-     * Epilog
-     * Displays trailing message.
-     *
-     * @param val the trailing epilogue to be displayed.
-     */
+   * Epilog
+   * Displays trailing message.
+   *
+   * @param val the trailing epilogue to be displayed.
+   */
     Pargv.prototype.epilog = function (val) {
         this._epilog = val;
         return this;
-    };
-    Pargv.prototype.command = function (command, description, options) {
-        var cmd = new PargvCommand(command, description, options, this);
-        this.commands[cmd._name] = cmd;
-        return cmd;
     };
     /**
      * Parse

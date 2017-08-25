@@ -11,7 +11,6 @@ export type ActionCallback = (...args: any[]) => void;
 export type HelpCallback = (command: string, commands?: IPargvCommands) => string;
 
 
-
 // COMMON //
 
 export interface IMap<T> {
@@ -100,7 +99,6 @@ export interface IPargvCommandOption {
   required?: boolean;
   as?: string;
   position?: number;
-  default?: any;
   coerce?: string | CoerceCallback;
 }
 

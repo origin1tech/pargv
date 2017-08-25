@@ -272,6 +272,7 @@ function parseToken(token: string, next?: string) {
 function castToType(type: string | RegExp, def: any, val?: any) {
 
   let result = null;
+  const origVal = val;
   type = (type as string).trim();
   const isAuto = type === 'auto';
 
@@ -422,7 +423,7 @@ function castToType(type: string | RegExp, def: any, val?: any) {
     return toDefault(result, def || val);
 
   // Check if there is a default value if nothing is defined.
-  result = toDefault(result, def);
+  result = toDefault(result, def || val);
 
   // Ensure valid type.
   if (!is[type](result))
@@ -470,9 +471,11 @@ export class PargvCommand {
   private _depends: { name?: string[] } = {};
 
   _usage: string;
-  _aliases: string[] = [];
   _name: string;
   _description: string = '';
+  _aliases: string[] = [];
+  _coercions: IMap<CoerceCallback> = {};
+  _demands: string[] = [];
   _examples: string[] = [];
   _action: ActionCallback = noop;
 
@@ -580,7 +583,8 @@ export class PargvCommand {
       // The following may be overwritten from .option.
       const type = parsed.type = parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
 
-      parsed.coerce = castToType.bind(null, type, null);
+      // Add default coercion may be overridden.
+      this._coercions[el] = this.normalizeCoercion(type, null);
 
       // Store the options for the command.
       this.options[parsed.name] = extend<IPargvCommandOption>({}, this.options[parsed.name], parsed);
@@ -598,6 +602,33 @@ export class PargvCommand {
   }
 
   /**
+   * Coerce
+   * Coerce or transform the defined option when matched.
+   *
+   * @param key the option key to be coerced.
+   * @param fn the string type, RegExp or coerce callback.
+   * @param def an optional value when coercion fails.
+   */
+  private normalizeCoercion(fn: string | RegExp | CoerceCallback, def?: any) {
+    fn = fn || (this.pargv.options.auto ? 'auto' : 'string');
+    if (isString(fn) || isRegExp(fn))
+      fn = castToType.bind(null, fn, def);
+    if (!isFunction(fn))
+      log.error('invalid cast type only string, RegExp or Callback Function are supported.');
+    return <CoerceCallback>fn;
+  }
+
+  command(config: IPargvCommandConfig): PargvCommand;
+  command(command: string): PargvCommand;
+  command(command: string, config: IPargvCommandConfig): PargvCommand;
+  command(command: string, description: string, config: IPargvCommandConfig): PargvCommand;
+  command(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, config?: IPargvCommandConfig): PargvCommand {
+    const cmd = new PargvCommand(command, description, config, this.pargv);
+    this.pargv.commands[cmd._name] = cmd;
+    return cmd;
+  }
+
+  /**
    * Find Option
    * Looks up an option by name, alias or position.
    *
@@ -607,16 +638,31 @@ export class PargvCommand {
     let option;
     for (const k in this.options) {
       const opt = this.options[k];
-      const aliases = this.options[k].aliases;
-      if (isString(key) && (key === k || contains(<string[]>aliases, key))) {
+      const aliases = opt.aliases as string[];
+      if (opt.as)
+        aliases.push(opt.as);
+      if ((key === k || contains(aliases, key)) || key === opt.position) {
         option = opt;
         break;
       }
-      else if (key === opt.position) {
-        option = opt;
-      }
     }
     return option;
+  }
+
+  findInCollection<T>(key: string, coll: any, def?: any): T {
+    if (coll[key])
+      return coll[key];
+    const opt = this.findOption(key);
+    const aliases = <string[]>opt.aliases;
+    if (opt.as)
+      aliases.push(opt.as);
+    let fn;
+    // Iterate aliases if match check if coercion exists.
+    while (aliases.length && !fn) {
+      const k = aliases.shift();
+      fn = coll[k];
+    }
+    return toDefault(fn, def);
   }
 
   /**
@@ -746,24 +792,36 @@ export class PargvCommand {
    * @param def the default value.
    * @param coerce the expression, method or type for validating/casting.
    */
-  option(val: string | IPargvCommandOption, description?: string, def?: any, coerce?: string | RegExp | CoerceCallback) {
+  option(val: string | IPargvCommandOption, description?: string, coerce?: string | RegExp | CoerceCallback, def?: any) {
+
+    let opt;
+
     if (isPlainObject(val)) {
-      const opt = <IPargvCommandOption>val;
+      opt = <IPargvCommandOption>val;
       if (!opt.name)
         log.error('cannot add option using name property of undefined.');
-      extend(this.options[opt.name], opt);
+      coerce = opt.coerce;
     }
-    else {
-      const parsed: IPargvCommandOption = this.parseTokens(val as string)[0];
-      parsed.description = description;
-      parsed.default = def;
-      coerce = coerce || parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
-      if (isString(coerce) || isRegExp(coerce))
-        coerce = castToType.bind(null, coerce, def);
-      if (!isString(coerce) && !isFunction(coerce))
-        log.error('invalid cast type only string, RegExp or Callback Function are supported.');
-      parsed.coerce = <CoerceCallback | string>coerce;
-    }
+
+    const parsed: IPargvCommandOption = opt || this.parseTokens(val as string)[0];
+    parsed.description = description;
+    this._coercions[parsed.name] = this.normalizeCoercion(coerce, def);
+    extend(this.options[parsed.name], parsed);
+
+    return this;
+
+  }
+
+  /**
+   * Coerce
+   * Coerce or transform the defined option when matched.
+   *
+   * @param key the option key to be coerced.
+   * @param fn the string type, RegExp or coerce callback.
+   * @param def an optional value when coercion fails.
+   */
+  coerce(key: string, fn: string | RegExp | CoerceCallback, def?: any) {
+    this._coercions[key] = this.normalizeCoercion(fn, def);
     return this;
   }
 
@@ -782,17 +840,7 @@ export class PargvCommand {
     args.forEach((d) => {
       d = d.trim();
       d = FLAG_EXP.test(d) ? d : d.length > 1 ? `--${d}` : `-${d}`;
-      const stripped = stripToken(d);
-      const opt = this.findOption(d);
-      // set existing to required.
-      if (opt) {
-        opt.required = true;
-      }
-      // create options object.
-      else {
-        const type = this.pargv.options.auto ? 'auto' : 'string';
-        this.options[d] = { name: d, required: true, aliases: [], type: type, flag: true };
-      }
+      this._demands.push(d);
     });
 
   }
@@ -812,12 +860,25 @@ export class PargvCommand {
 
   /**
    * Description
-   * Saves the description for the command.
+   * Saves the description for a command or option.
    *
+   * @param key the option key to set description for, none for setting command desc.
    * @param val the description.
    */
-  description(val: string) {
-    this._description = val || this._description;
+  description(key: string, val?: string) {
+
+    if (arguments.length === 1) {
+      val = key;
+      key = undefined;
+    }
+
+    if (!key) {
+      this._description = val || this._description;
+    }
+    else {
+      const opt = this.findOption(key);
+    }
+
     return this;
   }
 
@@ -855,6 +916,15 @@ export class PargvCommand {
   example(val: string | string[], ...args: any[]) {
     this._examples = this._examples.concat(mergeArgs(val, args));
     return this;
+  }
+
+  /**
+   * Epilog
+   * Adds trailing message like copying to help.
+   */
+  epilog(val: string): Pargv {
+    this.pargv.epilog(val);
+    return this.pargv;
   }
 
   /**
@@ -912,7 +982,7 @@ export class Pargv {
       .action(this.showHelp.bind(this));
 
     // Add catch all command.
-    this.command('*', null)
+    this.command('*', null);
 
   }
 
@@ -1141,17 +1211,6 @@ export class Pargv {
   }
 
   /**
-   * Epilog
-   * Displays trailing message.
-   *
-   * @param val the trailing epilogue to be displayed.
-   */
-  epilog(val: string) {
-    this._epilog = val;
-    return this;
-  }
-
-  /**
    * Command
    * Creates new command configuration.
    *
@@ -1162,10 +1221,22 @@ export class Pargv {
   command(config: IPargvCommandConfig): PargvCommand;
   command(command: string): PargvCommand;
   command(command: string, config: IPargvCommandConfig): PargvCommand;
-  command(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig): PargvCommand {
-    const cmd = new PargvCommand(command, description, options, this);
+  command(command: string, description: string, config: IPargvCommandConfig): PargvCommand;
+  command(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, config?: IPargvCommandConfig): PargvCommand {
+    const cmd = new PargvCommand(command, description, config, this);
     this.commands[cmd._name] = cmd;
     return cmd;
+  }
+
+  /**
+ * Epilog
+ * Displays trailing message.
+ *
+ * @param val the trailing epilogue to be displayed.
+ */
+  epilog(val: string) {
+    this._epilog = val;
+    return this;
   }
 
   /**

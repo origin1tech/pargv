@@ -2,9 +2,11 @@ import { IPargvOptions, IFigletOptions, IPargvCommandConfig, IMap, IPargvCommand
 export declare class PargvCommand {
     private _depends;
     _usage: string;
-    _aliases: string[];
     _name: string;
     _description: string;
+    _aliases: string[];
+    _coercions: IMap<CoerceCallback>;
+    _demands: string[];
     _examples: string[];
     _action: ActionCallback;
     pargv: Pargv;
@@ -18,12 +20,26 @@ export declare class PargvCommand {
      */
     private parseTokens(val, isCommand?);
     /**
+     * Coerce
+     * Coerce or transform the defined option when matched.
+     *
+     * @param key the option key to be coerced.
+     * @param fn the string type, RegExp or coerce callback.
+     * @param def an optional value when coercion fails.
+     */
+    private normalizeCoercion(fn, def?);
+    command(config: IPargvCommandConfig): PargvCommand;
+    command(command: string): PargvCommand;
+    command(command: string, config: IPargvCommandConfig): PargvCommand;
+    command(command: string, description: string, config: IPargvCommandConfig): PargvCommand;
+    /**
      * Find Option
      * Looks up an option by name, alias or position.
      *
      * @param key the key or alias name to find option by.
      */
     findOption(key: string | number): IPargvCommandOption;
+    findInCollection<T>(key: string, coll: any, def?: any): T;
     /**
      * Alias To Name
      * Converts an alias to the primary option name.
@@ -47,7 +63,16 @@ export declare class PargvCommand {
      * @param def the default value.
      * @param coerce the expression, method or type for validating/casting.
      */
-    option(val: string | IPargvCommandOption, description?: string, def?: any, coerce?: string | RegExp | CoerceCallback): this;
+    option(val: string | IPargvCommandOption, description?: string, coerce?: string | RegExp | CoerceCallback, def?: any): this;
+    /**
+     * Coerce
+     * Coerce or transform the defined option when matched.
+     *
+     * @param key the option key to be coerced.
+     * @param fn the string type, RegExp or coerce callback.
+     * @param def an optional value when coercion fails.
+     */
+    coerce(key: string, fn: string | RegExp | CoerceCallback, def?: any): this;
     /**
      * Demand
      * Demands that the option be present when parsed.
@@ -67,11 +92,12 @@ export declare class PargvCommand {
     depends(when: string, demand: string | string[], ...args: string[]): void;
     /**
      * Description
-     * Saves the description for the command.
+     * Saves the description for a command or option.
      *
+     * @param key the option key to set description for, none for setting command desc.
      * @param val the description.
      */
-    description(val: string): this;
+    description(key: string, val?: string): this;
     /**
      * Alias
      * Adds aliases for the command.
@@ -95,6 +121,11 @@ export declare class PargvCommand {
      * @param args allows for examples as separate method signature params.
      */
     example(val: string | string[], ...args: any[]): this;
+    /**
+     * Epilog
+     * Adds trailing message like copying to help.
+     */
+    epilog(val: string): Pargv;
     /**
      * Parse
      * Parses the provided arguments inspecting for commands and options.
@@ -162,13 +193,6 @@ export declare class Pargv {
      */
     description(val: string): this;
     /**
-     * Epilog
-     * Displays trailing message.
-     *
-     * @param val the trailing epilogue to be displayed.
-     */
-    epilog(val: string): this;
-    /**
      * Command
      * Creates new command configuration.
      *
@@ -179,6 +203,14 @@ export declare class Pargv {
     command(config: IPargvCommandConfig): PargvCommand;
     command(command: string): PargvCommand;
     command(command: string, config: IPargvCommandConfig): PargvCommand;
+    command(command: string, description: string, config: IPargvCommandConfig): PargvCommand;
+    /**
+   * Epilog
+   * Displays trailing message.
+   *
+   * @param val the trailing epilogue to be displayed.
+   */
+    epilog(val: string): this;
     /**
      * Parse
      * Parses the provided arguments inspecting for commands and options.

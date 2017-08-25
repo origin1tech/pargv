@@ -75,4 +75,7 @@ Thumbs.db
 temp.js
 test.js
 src/temp.ts
+dist/temp.js
+dist/temp.d.ts
+dist/temp.js.map
 

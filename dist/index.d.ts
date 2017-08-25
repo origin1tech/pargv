@@ -1,13 +1,13 @@
-import { IPargvOptions, IFigletOptions, BeforeFigletRender, IPargvCommandConfig, IMap, IPargvCommandOption, ActionCallback, ILayout, CastCallback, IPargvCommands } from './interfaces';
+import { IPargvOptions, IFigletOptions, IPargvCommandConfig, IMap, IPargvCommandOption, ActionCallback, ILayout, CoerceCallback, IPargvCommands, IPargvOptionStats, AnsiStyles, ILogo } from './interfaces';
 export declare class PargvCommand {
-    private _usage;
-    private _description;
-    private _aliases;
-    private _examples;
     private _depends;
+    _usage: string;
+    _aliases: string[];
+    _name: string;
+    _description: string;
+    _examples: string[];
+    _action: ActionCallback;
     pargv: Pargv;
-    name: string;
-    onAction: ActionCallback;
     options: IMap<IPargvCommandOption>;
     constructor(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig, context?: Pargv);
     /**
@@ -17,15 +17,6 @@ export declare class PargvCommand {
      * @param val the command value to parse.
      */
     private parseTokens(val, isCommand?);
-    /**
-     * Cast To Type
-     * Casts a value to the specified time or fallsback to default.
-     *
-     * @param type the type to cast to.
-     * @param def an optional default value.
-     * @param val the value to be cast.
-     */
-    private castToType(type, def, val);
     /**
      * Find Option
      * Looks up an option by name, alias or position.
@@ -40,23 +31,13 @@ export declare class PargvCommand {
      * @param alias the alias name to be converted.
      */
     aliasToName(alias: string): string;
-    validate(argv: any[]): any;
     /**
-     * Command Count
-     * Gets the total sub command count and total required.
+     * Stats
+     * Validates the arguments to be parsed return stats.
+     *
+     * @param argv the array of arguments to validate.
      */
-    commandStats(): {
-        cmds: {
-            required: any[];
-            requiredAny: any[];
-            total: any[];
-        };
-        flags: {
-            required: any[];
-            requiredAny: any[];
-            total: any[];
-        };
-    };
+    stats(argv: any[]): IPargvOptionStats;
     /**
      * Option
      * Adds option to command.
@@ -64,9 +45,9 @@ export declare class PargvCommand {
      * @param val the option val to parse or option configuration object.
      * @param description the description for the option.
      * @param def the default value.
-     * @param type the expression, method or type for validating/casting.
+     * @param coerce the expression, method or type for validating/casting.
      */
-    option(val: string | IPargvCommandOption, description?: string, def?: any, type?: string | RegExp | CastCallback): this;
+    option(val: string | IPargvCommandOption, description?: string, def?: any, coerce?: string | RegExp | CoerceCallback): this;
     /**
      * Demand
      * Demands that the option be present when parsed.
@@ -114,27 +95,79 @@ export declare class PargvCommand {
      * @param args allows for examples as separate method signature params.
      */
     example(val: string | string[], ...args: any[]): this;
+    /**
+     * Parse
+     * Parses the provided arguments inspecting for commands and options.
+     *
+     * @param argv the process.argv or custom args array.
+     */
+    parse(...argv: any[]): (...argv: any[]) => any;
+    /**
+     * Exec
+     * Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
+     */
+    exec(...argv: any[]): (...argv: any[]) => void;
 }
 export declare class Pargv {
-    private _usage;
-    private _parsed;
-    private _suppress;
+    private _name;
+    private _nameFont;
+    private _nameStyles;
+    private _version;
+    private _description;
+    private _epilog;
+    private _helpDisabled;
+    private _helpHandler;
     commands: IPargvCommands;
     options: IPargvOptions;
     constructor(options?: IPargvOptions);
+    /**
+     * Compile Help
+     * Compiles help for all commands or single defined commnand.
+     *
+     * @param command the optional command to build help for.
+     */
+    private compileHelp(command?);
     /**
      * UI
      * Alias to layout for backward compatibility.
      */
     readonly ui: (width?: number, wrap?: boolean) => ILayout;
     /**
-     * Usage
-     * Simply a string denoting the general command and options layout.
-     * If not defined the usage statement for the first command is used.
+     * App
+     * Just adds a string to use as title of app, used in help.
      *
-     * @param val the usage string.
+     * @see http://flamingtext.com/tools/figlet/fontlist.html
+     * Simple Font examples
+     * standard, doom, ogre, slant, rounded, big, banner
+     *
+     * @param val the value to use as app name.
+     * @param font a Figlet font.
+     * @param styles an ansi color/style or array of styles.
      */
-    usage(val: string): this;
+    name(val: string, styles?: AnsiStyles | AnsiStyles[], font?: string): this;
+    /**
+     * Version
+     * Just adds a string to use as the version for your program, used in help.
+     *
+     * @param val the value to use as version name.
+     */
+    version(val: string): this;
+    /**
+     * Description
+     * The program's description or purpose.
+     *
+     * @param val the description string.
+     */
+    description(val: string): this;
+    /**
+     * Epilog
+     * Displays trailing message.
+     *
+     * @param val the trailing epilogue to be displayed.
+     */
+    epilog(val: string): this;
     /**
      * Command
      * Creates new command configuration.
@@ -143,7 +176,9 @@ export declare class Pargv {
      * @param description the description or options object.
      * @param options options object for the command.
      */
-    command(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig): PargvCommand;
+    command(config: IPargvCommandConfig): PargvCommand;
+    command(command: string): PargvCommand;
+    command(command: string, config: IPargvCommandConfig): PargvCommand;
     /**
      * Parse
      * Parses the provided arguments inspecting for commands and options.
@@ -160,14 +195,28 @@ export declare class Pargv {
     exec(...argv: any[]): void;
     /**
      * Help
-     * Displays the generated help or supplied help string.
+     * Helper method for defining custom help text.
      *
-     * @param val optional value to use instead of generated help.
+     * @param val callback for custom help or boolean to toggle enable/disable.
      */
-    help(val?: string): this;
+    help(disabled: boolean): Pargv;
+    /**
+     * Show Help
+     * Displays all help or help for provided command name.
+     *
+     * @param command optional name for displaying help for a particular command.
+     */
+    showHelp(command?: string | PargvCommand): void;
+    /**
+     * Remove
+     * Removes an existing command from the collection.
+     *
+     * @param cmd the command name to be removed.
+     */
+    remove(cmd: string): void;
     /**
      * Logo
-     * Displays an ASCII logo using Figlet.
+     * Builds or Displays an ASCII logo using Figlet.
      *
      * @param text the text to be displayed.
      * @param font the figlet font to be used.
@@ -175,21 +224,14 @@ export declare class Pargv {
      * @param horizontalLayout the horizontal layout mode.
      * @param verticalLayout the vertical layout mode.
      */
-    logo(text: string | IFigletOptions, font?: string): {
-        before: (fn: BeforeFigletRender) => Pargv;
-        show: () => Pargv;
-        result: () => string;
-    };
-    /**
-     * Fonts
-     * Returns list of figlet fonts.
-     */
-    fonts(): any;
+    logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): ILogo;
     /**
       * Layout
       * Creates a CLI layout much like creating divs in the terminal.
       * Supports strings with \t \s \n or IUIOptions object.
       * @see https://www.npmjs.com/package/cliui
+      *
+      *
       *
       * @param width the width of the layout.
       * @param wrap if the layout should wrap.

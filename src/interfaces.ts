@@ -1,11 +1,16 @@
 import { Pargv, PargvCommand } from './';
 
 export type FigletLayout = 'default' | 'full' | 'fitted' | 'controlled smushing' | 'universal smushing';
+
 export type CastType = 'object' | 'json' | 'array' | 'regexp' | 'float' | 'integer' | 'number' | 'date' | 'boolean';
-export type BeforeFigletRender = (text: string, options?: IFigletOptions) => string;
-export type CastCallback = (val: any, option?: IPargvCommandOption, command?: PargvCommand) => boolean;
-export type FallbackCallback = (pargv?: Pargv) => void;
+
+export type AnsiStyles = 'bold' | 'italic' | 'underline' | 'inverse' | 'dim' | 'hidden' | 'strikethrough' | 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'grey' | 'gray' | 'bgBlack' | 'bgRed' | 'bgGreen' | 'bgYellow' | 'bgBlue' | 'bgMagenta' | 'bgCyan' | 'bgWhite' | 'bgGray' | 'bgGrey';
+
+export type CoerceCallback = (val: any, option?: IPargvCommandOption, command?: PargvCommand) => boolean;
 export type ActionCallback = (...args: any[]) => void;
+export type HelpCallback = (command: string, commands?: IPargvCommands) => string;
+
+
 
 // COMMON //
 
@@ -35,13 +40,23 @@ export interface ILayoutOptions {
 }
 
 export interface ILayout {
-  div<T>(...elements: T[]): ILayout;
-  span<T>(...elements: T[]): ILayout;
-  join<T>(by: string, ...elements: T[]): ILayout;
-  render<T>(...elements: T[]): void;
-  show<T>(...elements: T[]): void;
+  div(...elements: any[]): ILayout;
+  span(...elements: any[]): ILayout;
+  flow(align: number | number[], ...elements: any[]): ILayout;
+  repeat(char: string, len?: number, padding?: number | number[]): ILayout;
+  section(title: string, padding?: number | number[]): ILayout;
+  join(by: string, ...elements: any[]): ILayout;
+  render(...elements: any[]): void;
+  show(...elements: any[]): void;
   get(): string;
   ui: any;
+}
+
+export interface ILogo {
+  fonts(): any[];
+  render(): void;
+  show(): void;
+  get(): string;
 }
 
 // PARGV & PARGV COMMAND //
@@ -49,8 +64,16 @@ export interface ILayout {
 export interface IPargvOptions {
   strict?: boolean;
   auto?: boolean;
-  colors?: boolean;
-  catchAll?: 'help' | 'none' | FallbackCallback;
+  colorize?: boolean;
+  divider: string;
+  dupes?: boolean;
+  colors?: {
+    primary: AnsiStyles | AnsiStyles[];
+    accent: AnsiStyles | AnsiStyles[];
+    alert: AnsiStyles | AnsiStyles[];
+    muted: AnsiStyles | AnsiStyles[];
+  };
+
 }
 
 export interface IPargvCommandConfig {
@@ -78,7 +101,7 @@ export interface IPargvCommandOption {
   as?: string;
   position?: number;
   default?: any;
-  cast?: string | CastCallback;
+  coerce?: string | CoerceCallback;
 }
 
 export interface IPargvResult {
@@ -89,4 +112,21 @@ export interface IPargvResult {
   nodePath?: string;
   execPath?: string;
   exec?: string;
+}
+
+export interface IPargvCommandOptions {
+  [key: string]: IPargvCommandOption;
+}
+
+export interface IPargvOptionStats {
+  commandsMissing?: IPargvCommandOption[];
+  commandsRequiredCount?: number;
+  commandsOptionalCount?: number;
+  commandsMissingCount?: number;
+  flagsMissing: IPargvCommandOption[];
+  flagsRequiredCount?: number;
+  flagsOptionalCount?: number;
+  flagsMissingCount?: number;
+  unknown?: any[];
+  flagsDuplicates?: any[];
 }

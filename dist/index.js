@@ -6,7 +6,6 @@ var figlet = require("figlet");
 var prefix = require("global-prefix");
 var colurs_1 = require("colurs");
 var chek_1 = require("chek");
-var pkg = chek_1.tryRequire(path.resolve(process.cwd(), 'package.json'), { version: '0.0.0' });
 var colurs;
 var KEYVAL_EXP = /^((.+:.+)(\||\+)?)$/;
 var CSV_EXP = /^(.+,.+){1,}$/;
@@ -14,20 +13,38 @@ var ARRAY_EXP = /^(.+(,|\||\s).+){1,}$/;
 var JSON_EXP = /^"?{.+}"?$/;
 var REGEX_EXP = /^\/.+\/(g|i|m)?([m,i,u,y]{1,4})?/;
 var REGEX_OPTS_EXP = /(g|i|m)?([m,i,u,y]{1,4})?$/;
+var DOT_EXP = /^(.+\..+)$/;
 var FLAG_EXP = /^--?/;
 var FLAG_SHORT_EXP = /^-[a-zA-Z0-9]/;
+var FLAG_NOT_EXP = /^(--no)?-{0,1}[0-9a-zA-Z]/;
 var TOKEN_ANY_EXP = /(^--?|^<|>$|^\[|\]$)/;
 var TOKEN_PREFIX_EXP = /^(--?|<|\[)/;
-var NESTED_EXP = /^[a-zA-Z0-9]+\./;
-var GLOBAL_PREFIX_EXP = new RegExp('^' + prefix, 'i');
 var SPLIT_CHARS = ['|', ',', ' '];
 var DEFAULTS = {
-    strict: false,
+    strict: true,
+    colorize: true,
+    dupes: true,
     auto: true,
-    colors: true,
-    catchAll: 'help' // defines action when no command is found by default shows help.
+    divider: '=',
+    colors: {
+        primary: ['magenta', 'bold'],
+        accent: ['blue', 'bold'],
+        alert: ['red', 'bold'],
+        muted: 'gray'
+    }
 };
 // UTILS //
+/**
+ * Is Dot Notation
+ * Tests if value is dot notated string.
+ *
+ * @param val the value to be inspected.
+ */
+function isDotNotation(val) {
+    if (!chek_1.isString(val))
+        return false;
+    return /\..*\./.test(val) && !val.match(/\s/);
+}
 /**
  * Normalize Debug
  * Normalizes the debug arg if exists by breaking
@@ -208,6 +225,146 @@ function parseToken(token, next) {
     // Return flag name/aliases then details from parsed value.
     return { name: name, aliases: aliases, as: parsed.name, type: parsed.type, required: parsed.required, flag: true };
 }
+/**
+ * Cast To Type
+ * Casts a value to the specified time or fallsback to default.
+ *
+ * @param type the type to cast to.
+ * @param def an optional default value.
+ * @param val the value to be cast.
+ */
+function castToType(type, def, val) {
+    var _this = this;
+    var result = null;
+    type = type.trim();
+    var isAuto = type === 'auto';
+    if (chek_1.isString(val))
+        val = val.trim();
+    // Check if is list type expression.
+    var isListType = ARRAY_EXP.test(type) || chek_1.isRegExp(type);
+    type = isListType ? 'list' : type;
+    var is = {
+        object: chek_1.isPlainObject,
+        number: chek_1.isNumber,
+        integer: chek_1.isInteger,
+        float: chek_1.isFloat,
+        date: chek_1.isDate,
+        array: chek_1.isArray,
+        json: chek_1.isPlainObject,
+        regexp: chek_1.isRegExp,
+        boolean: chek_1.isBoolean,
+        list: function (v) { return chek_1.isValue(v); }
+    };
+    var to = {
+        // Never called in autoCast method.
+        list: function (v) {
+            var match = val.match(splitToList(type));
+            result = match && match[0];
+        },
+        object: function (v) {
+            if (!KEYVAL_EXP.test(v))
+                return null;
+            var obj = {};
+            var pairs = chek_1.split(v, ['|', '+']);
+            if (!pairs.length)
+                return null;
+            pairs.forEach(function (p) {
+                var kv = p.split(':');
+                if (kv.length > 1) {
+                    var castVal = kv[1];
+                    // Check if an array is denoted with [ & ]
+                    // If yes strip them from string.
+                    if (/^\[/.test(castVal) && /\]$/.test(castVal))
+                        castVal = castVal.replace(/(^\[|\]$)/g, '');
+                    // Check if auto casting is enabled.
+                    if (_this.pargv.options.auto) {
+                        castVal = autoCast(castVal) || castVal;
+                        if (chek_1.isArray(castVal))
+                            castVal = castVal.map(function (el) {
+                                return autoCast(el) || el;
+                            });
+                    }
+                    chek_1.set(obj, kv[0], castVal);
+                }
+            });
+            return obj;
+        },
+        json: function (v) {
+            if (!JSON_EXP.test(v))
+                return null;
+            v = v.replace(/^"/, '').replace(/"$/, '');
+            return chek_1.tryWrap(JSON.parse, v)();
+        },
+        array: function (v) {
+            if (!ARRAY_EXP.test(v))
+                return null;
+            return chek_1.toArray(v);
+        },
+        number: function (v) {
+            if (!/[0-9]/g.test(v))
+                return null;
+            return chek_1.castType(v, 'number');
+        },
+        date: function (v) {
+            return chek_1.castType(v, 'date');
+        },
+        regexp: function (v) {
+            if (!REGEX_EXP.test(v))
+                return null;
+            return chek_1.castType(val, 'regexp');
+        },
+        boolean: function (v) {
+            if (!/^(true|false)$/.test(v))
+                return null;
+            return chek_1.castType(v, 'boolean');
+        }
+    };
+    to.integer = to.number;
+    to.float = to.number;
+    function autoCast(v) {
+        // Ensure type is set to auto.
+        var origType = type;
+        type = 'auto';
+        var _result;
+        var castMethods = [
+            to.object.bind(null, v),
+            to.json.bind(null, v),
+            to.array.bind(null, v),
+            to.regexp.bind(null, v),
+            to.date.bind(null, v, 'date'),
+            to.number.bind(null, v),
+            to.boolean.bind(null, v)
+        ];
+        // While no result iterate try to
+        // cast to known types. Return the
+        // result or the default value.
+        while (castMethods.length && !_result) {
+            var method = castMethods.shift();
+            _result = method();
+        }
+        type = origType;
+        return _result;
+    }
+    // If no value return default.
+    if (!val)
+        return def;
+    // If not a special type just cast to the type.
+    if (type !== 'auto') {
+        result = to[type](val);
+    }
+    else {
+        result = autoCast(val);
+    }
+    // If Auto no type checking.
+    if (isAuto)
+        return chek_1.toDefault(result, def || val);
+    // Check if there is a default value if nothing is defined.
+    result = chek_1.toDefault(result, def);
+    // Ensure valid type.
+    if (!is[type](result))
+        log.error("expected type " + colurs.cyan(type) + " but got " + colurs.cyan(chek_1.getType(type)) + ".");
+    return result;
+}
 // Crude logger just need to show some messages.
 var logTypes = {
     error: 'red',
@@ -257,30 +414,31 @@ var log = {
 // PARGV COMMAND CLASS //
 var PargvCommand = (function () {
     function PargvCommand(command, description, options, context) {
-        this._description = '';
-        this._aliases = [];
-        this._examples = [];
         this._depends = {};
-        this.onAction = chek_1.noop;
+        this._aliases = [];
+        this._description = '';
+        this._examples = [];
+        this._action = chek_1.noop;
         this.options = {};
         if (!command)
             log.error('cannot define command using name of undefined.');
         if (chek_1.isPlainObject(command)) {
             options = command;
-            description = undefined;
+            command = undefined;
         }
         if (chek_1.isPlainObject(description)) {
             options = description;
             description = undefined;
         }
+        // Normalize options.
         options = options || {};
         this.pargv = context;
-        this.parseTokens(command || options.command, true);
-        this._description = description || options.description || "Executes " + command + " command.";
+        this._description = description || options.description;
         this._aliases = chek_1.isString(options.aliases) ? chek_1.split(options.aliases, SPLIT_CHARS) : [];
-        // Add debug options
-        this.option('--debug', 'Debug flag.');
-        this.option('--debug-brk [debugPort]', 'Debug break flag.');
+        // Add in debug options.
+        this.option('--debug, --debug-brk [port]');
+        // Parse the Command.
+        this.parseTokens(command || options.command, true);
         return this;
     }
     /**
@@ -303,12 +461,16 @@ var PargvCommand = (function () {
             var tmpCmd = arr.shift().trim();
             // split out aliases
             tmpCmd = tmpCmd.split('.');
-            if (this.pargv.commands[tmpCmd[0]])
-                log.error("cannot add command", colurs.yellow("" + tmpCmd[0]), "the command already exists.");
-            this.name = tmpCmd.shift();
+            var name = tmpCmd.shift();
+            // Exclude help from this check allow overwriting.
+            if (name !== 'help' && this.pargv.commands[name])
+                log.error("cannot add command", colurs.yellow("" + name), "the command already exists.");
+            if (name === 'help')
+                this.pargv.remove(name);
+            this._name = name;
             if (tmpCmd.length)
                 this._aliases = tmpCmd;
-            usage.push(this.name);
+            usage.push(this._name);
         }
         arr.forEach(function (el, i) {
             var prev = arr[i - 1];
@@ -339,9 +501,8 @@ var PargvCommand = (function () {
                 ctr++;
             }
             // The following may be overwritten from .option.
-            var type = parsed.type || (_this.pargv.options.auto ? 'auto' : 'string');
-            parsed.cast = _this.castToType.bind(_this, type, null);
-            parsed.description = parsed.flag ? "flag option." : "sub command/argument.";
+            var type = parsed.type = parsed.type || (_this.pargv.options.auto ? 'auto' : 'string');
+            parsed.coerce = castToType.bind(null, type, null);
             // Store the options for the command.
             _this.options[parsed.name] = chek_1.extend({}, _this.options[parsed.name], parsed);
             // Add to collection of parsed options.
@@ -350,146 +511,6 @@ var PargvCommand = (function () {
         if (isCommand)
             this._usage = usage.join(' ');
         return parsedOpts;
-    };
-    /**
-     * Cast To Type
-     * Casts a value to the specified time or fallsback to default.
-     *
-     * @param type the type to cast to.
-     * @param def an optional default value.
-     * @param val the value to be cast.
-     */
-    PargvCommand.prototype.castToType = function (type, def, val) {
-        var _this = this;
-        var result = null;
-        type = type.trim();
-        var isAuto = type === 'auto';
-        if (chek_1.isString(val))
-            val = val.trim();
-        // Check if is list type expression.
-        var isListType = ARRAY_EXP.test(type) || chek_1.isRegExp(type);
-        type = isListType ? 'list' : type;
-        var is = {
-            object: chek_1.isPlainObject,
-            number: chek_1.isNumber,
-            integer: chek_1.isInteger,
-            float: chek_1.isFloat,
-            date: chek_1.isDate,
-            array: chek_1.isArray,
-            json: chek_1.isPlainObject,
-            regexp: chek_1.isRegExp,
-            boolean: chek_1.isBoolean,
-            list: function (v) { return chek_1.isValue(v); }
-        };
-        var to = {
-            // Never called in autoCast method.
-            list: function (v) {
-                var match = val.match(splitToList(type));
-                result = match && match[0];
-            },
-            object: function (v) {
-                if (!KEYVAL_EXP.test(v))
-                    return null;
-                var obj = {};
-                var pairs = chek_1.split(v, ['|', '+']);
-                if (!pairs.length)
-                    return null;
-                pairs.forEach(function (p) {
-                    var kv = p.split(':');
-                    if (kv.length > 1) {
-                        var castVal = kv[1];
-                        // Check if an array is denoted with [ & ]
-                        // If yes strip them from string.
-                        if (/^\[/.test(castVal) && /\]$/.test(castVal))
-                            castVal = castVal.replace(/(^\[|\]$)/g, '');
-                        // Check if auto casting is enabled.
-                        if (_this.pargv.options.auto) {
-                            castVal = autoCast(castVal) || castVal;
-                            if (chek_1.isArray(castVal))
-                                castVal = castVal.map(function (el) {
-                                    return autoCast(el) || el;
-                                });
-                        }
-                        chek_1.set(obj, kv[0], castVal);
-                    }
-                });
-                return obj;
-            },
-            json: function (v) {
-                if (!JSON_EXP.test(v))
-                    return null;
-                v = v.replace(/^"/, '').replace(/"$/, '');
-                return chek_1.tryWrap(JSON.parse, v)();
-            },
-            array: function (v) {
-                if (!ARRAY_EXP.test(v))
-                    return null;
-                return chek_1.toArray(v);
-            },
-            number: function (v) {
-                if (!/[0-9]/g.test(v))
-                    return null;
-                return chek_1.castType(v, 'number');
-            },
-            date: function (v) {
-                return chek_1.castType(v, 'date');
-            },
-            regexp: function (v) {
-                if (!REGEX_EXP.test(v))
-                    return null;
-                return chek_1.castType(val, 'regexp');
-            },
-            boolean: function (v) {
-                if (!/^(true|false)$/.test(v))
-                    return null;
-                return chek_1.castType(v, 'boolean');
-            }
-        };
-        to.integer = to.number;
-        to.float = to.number;
-        function autoCast(v) {
-            // Ensure type is set to auto.
-            var origType = type;
-            type = 'auto';
-            var _result;
-            var castMethods = [
-                to.object.bind(null, v),
-                to.json.bind(null, v),
-                to.array.bind(null, v),
-                to.regexp.bind(null, v),
-                to.date.bind(null, v, 'date'),
-                to.number.bind(null, v),
-                to.boolean.bind(null, v)
-            ];
-            // While no result iterate try to
-            // cast to known types. Return the
-            // result or the default value.
-            while (castMethods.length && !_result) {
-                var method = castMethods.shift();
-                _result = method();
-            }
-            type = origType;
-            return _result;
-        }
-        // If no value return default.
-        if (!val)
-            return def;
-        // If not a special type just cast to the type.
-        if (type !== 'auto') {
-            result = to[type](val);
-        }
-        else {
-            result = autoCast(val);
-        }
-        // If Auto no type checking.
-        if (isAuto)
-            return chek_1.toDefault(result, def || val);
-        // Check if there is a default value if nothing is defined.
-        result = chek_1.toDefault(result, def);
-        // Ensure valid type.
-        if (!is[type](result))
-            log.error("expected type " + colurs.cyan(type) + " but got " + colurs.cyan(chek_1.getType(type)) + ".");
-        return result;
     };
     /**
      * Find Option
@@ -522,101 +543,99 @@ var PargvCommand = (function () {
         var opt = this.findOption(alias);
         return (opt && opt.name) || null;
     };
-    PargvCommand.prototype.validate = function (argv) {
+    /**
+     * Stats
+     * Validates the arguments to be parsed return stats.
+     *
+     * @param argv the array of arguments to validate.
+     */
+    PargvCommand.prototype.stats = function (argv) {
         var _this = this;
-        console.log();
-        console.log(this._usage);
-        console.log('arguments: ' + argv.join(' '));
-        console.log();
+        var clone = argv.slice(0);
+        argv = argv.slice(0);
         var opts = this.options;
         var stats = {
-            commandsMissing: {},
+            commandsMissing: [],
             commandsRequiredCount: 0,
             commandsOptionalCount: 0,
             commandsMissingCount: 0,
-            flagsMissing: {},
+            flagsMissing: [],
             flagsRequiredCount: 0,
             flagsOptionalCount: 0,
-            flagsMissingCount: 0
+            flagsMissingCount: 0,
+            flagsDuplicates: []
         };
         var ctr = 0;
         var filteredCmds = [];
+        var filteredFlags = [];
+        // Filter out only commands no flags.
         argv.forEach(function (el, i) {
             var opt = _this.findOption(el);
             if (opt) {
-                if (opt.flag && opt.type !== 'boolean')
-                    argv.splice(i + 1, 1);
+                if (opt.flag) {
+                    if (opt.type !== 'boolean')
+                        argv.splice(i + 1, 1);
+                    filteredFlags.push(el);
+                }
             }
             if (!FLAG_EXP.test(el))
                 filteredCmds.push(el);
         });
-        console.log(filteredCmds);
-        for (var p in opts) {
+        filteredFlags.sort().forEach(function (f, i) {
+            var prev = filteredFlags[i - 1];
+            var next = filteredFlags[i + 1];
+            if (stats.flagsDuplicates.indexOf(f) < 0 && (prev === f || next === f))
+                stats.flagsDuplicates.push(f);
+        });
+        var _loop_1 = function (p) {
             var opt = opts[p];
             var names = [opt.name].concat(opt.aliases || []);
             // Don't process injected
             // debug options.
             if (/^--debug/.test(opt.name))
-                continue;
-            // Store required and optiona total counts.
-            if (opt.required)
-                opt.flag ? stats.flagsRequiredCount++ : stats.commandsRequiredCount++;
-            else
-                opt.flag ? stats.flagsOptionalCount++ : stats.commandsOptionalCount++;
-            var hasOpt = void 0;
+                return "continue";
+            var hasOpt;
             if (opt.flag) {
                 hasOpt = chek_1.containsAny(argv, names);
                 if (opt.required) {
                     stats.flagsRequiredCount++;
                     if (!hasOpt) {
-                        stats.flagsMissing[opt.name] = opt;
+                        stats.flagsMissing.push(opt);
                         stats.flagsMissingCount++;
                     }
                 }
+                else {
+                    stats.flagsOptionalCount++;
+                }
+                clone = clone.filter(function (el, i) {
+                    var tmpOpt = _this.findOption(el);
+                    if (tmpOpt.flag && tmpOpt.type !== 'boolean')
+                        clone.splice(i + 1, 1);
+                    return !chek_1.contains(names, el);
+                });
             }
             else {
-            }
-            //console.log('match:', opt.name, names.join(', '), '-', hasOpt);
-        }
-        return stats;
-    };
-    /**
-     * Command Count
-     * Gets the total sub command count and total required.
-     */
-    PargvCommand.prototype.commandStats = function () {
-        var stats = {
-            cmds: {
-                required: [],
-                requiredAny: [],
-                total: []
-            },
-            flags: {
-                required: [],
-                requiredAny: [],
-                total: []
+                hasOpt = filteredCmds[opt.position];
+                if (opt.required) {
+                    stats.commandsRequiredCount++;
+                    if (!hasOpt) {
+                        stats.commandsMissing.push(opt);
+                        stats.commandsMissingCount++;
+                    }
+                }
+                else {
+                    stats.commandsOptionalCount++;
+                }
+                clone = clone.filter(function (el) {
+                    return el !== hasOpt;
+                });
             }
         };
-        var cmds = stats.cmds;
-        var flags = stats.flags;
-        var opts = this.options;
         for (var p in opts) {
-            var opt = opts[p];
-            if (!opt.flag) {
-                cmds.total.push(opt.name);
-                if (opt.required) {
-                    cmds.required.push(opt.name);
-                    cmds.requiredAny = cmds.requiredAny.concat([opt.name].concat(opt.aliases || []));
-                }
-            }
-            else {
-                flags.total.push(opt.name);
-                if (opt.required) {
-                    flags.required.push(opt.name);
-                    flags.requiredAny = flags.requiredAny.concat([opt.name].concat(opt.aliases || []));
-                }
-            }
+            _loop_1(p);
         }
+        // Save any uknown args.
+        stats.unknown = clone;
         return stats;
     };
     /**
@@ -626,9 +645,9 @@ var PargvCommand = (function () {
      * @param val the option val to parse or option configuration object.
      * @param description the description for the option.
      * @param def the default value.
-     * @param type the expression, method or type for validating/casting.
+     * @param coerce the expression, method or type for validating/casting.
      */
-    PargvCommand.prototype.option = function (val, description, def, type) {
+    PargvCommand.prototype.option = function (val, description, def, coerce) {
         if (chek_1.isPlainObject(val)) {
             var opt = val;
             if (!opt.name)
@@ -637,14 +656,14 @@ var PargvCommand = (function () {
         }
         else {
             var parsed = this.parseTokens(val)[0];
-            parsed.description = description || parsed.description;
+            parsed.description = description;
             parsed.default = def;
-            type = type || parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
-            if (chek_1.isString(type) || chek_1.isRegExp(type))
-                type = this.castToType.bind(this, type, def);
-            if (!chek_1.isString(type) && !chek_1.isFunction(type))
+            coerce = coerce || parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
+            if (chek_1.isString(coerce) || chek_1.isRegExp(coerce))
+                coerce = castToType.bind(null, coerce, def);
+            if (!chek_1.isString(coerce) && !chek_1.isFunction(coerce))
                 log.error('invalid cast type only string, RegExp or Callback Function are supported.');
-            parsed.cast = type;
+            parsed.coerce = coerce;
         }
         return this;
     };
@@ -728,7 +747,7 @@ var PargvCommand = (function () {
     PargvCommand.prototype.action = function (fn) {
         if (!fn)
             log.error('cannot add action with action method of undefined.');
-        this.onAction = fn;
+        this._action = fn;
         return this;
     };
     /**
@@ -746,18 +765,183 @@ var PargvCommand = (function () {
         this._examples = this._examples.concat(mergeArgs(val, args));
         return this;
     };
+    /**
+     * Parse
+     * Parses the provided arguments inspecting for commands and options.
+     *
+     * @param argv the process.argv or custom args array.
+     */
+    PargvCommand.prototype.parse = function () {
+        var argv = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            argv[_i] = arguments[_i];
+        }
+        return this.pargv.parse;
+    };
+    /**
+     * Exec
+     * Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
+     */
+    PargvCommand.prototype.exec = function () {
+        var argv = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            argv[_i] = arguments[_i];
+        }
+        return this.pargv.exec;
+    };
     return PargvCommand;
 }());
 exports.PargvCommand = PargvCommand;
 // PARGV CONTAINER //
 var Pargv = (function () {
     function Pargv(options) {
-        this._suppress = false;
+        var _this = this;
+        this._helpDisabled = false;
         this.commands = {};
         this.options = chek_1.extend({}, DEFAULTS, options);
-        colurs = new colurs_1.Colurs({ enabled: this.options.colors });
+        colurs = new colurs_1.Colurs({ enabled: this.options.colorize });
+        // Set default help handler.
+        this._helpHandler = function (command) {
+            if (_this._helpDisabled === true)
+                return;
+            return _this.compileHelp(command).get();
+        };
+        // Enable help command.
+        this.command('help.h')
+            .action(this.showHelp.bind(this));
+        // Add catch all command.
+        this.command('*', null);
     }
+    // PRIVATE
+    /**
+     * Compile Help
+     * Compiles help for all commands or single defined commnand.
+     *
+     * @param command the optional command to build help for.
+     */
+    Pargv.prototype.compileHelp = function (command) {
+        var _this = this;
+        var layout = this.layout();
+        var obj = {};
+        // Get single cmd in object or
+        // get all commands.
+        var cmds = command ? {}[command] = this.commands[command] : this.commands;
+        var helpCmd;
+        if (!command) {
+            helpCmd = cmds['help'];
+        }
+        // Define color vars.
+        var primary = this.options.colors.primary;
+        var alert = this.options.colors.alert;
+        var accent = this.options.colors.accent;
+        var muted = this.options.colors.muted;
+        var div = this.options.divider;
+        var ctr = 0;
+        // Builds option row help.
+        var buildOption = function (opt) {
+            var names = [opt.name].concat(opt.aliases);
+            var namesStr = names.join(', ');
+            var arr = ['\t\t' + names, opt.description || ''];
+            var lastCol = opt.required ? { text: colurs.applyAnsi('required', alert), align: 'right' } : '';
+            arr.push(lastCol);
+            layout.div.apply(layout, arr);
+        };
+        // Builds commands and flags help.
+        var buildOptions = function (cmd) {
+            var optKeys = chek_1.keys(cmd.options);
+            var flagCt = 0;
+            var cmdCt = 0;
+            layout.section(colurs.applyAnsi('Commands:', accent));
+            // Build sub commands.
+            optKeys.forEach(function (k) {
+                var opt = cmd.options[k];
+                if (!opt.flag) {
+                    buildOption(opt);
+                    cmdCt++;
+                }
+            });
+            if (!cmdCt)
+                layout.div(colurs.applyAnsi('  none', muted));
+            layout.section(colurs.applyAnsi('Flags:', accent));
+            // Build flags.
+            optKeys.forEach(function (k) {
+                var opt = cmd.options[k];
+                if (opt.flag) {
+                    buildOption(opt);
+                    flagCt++;
+                }
+            });
+            if (!flagCt)
+                layout.div(colurs.applyAnsi('  none', muted));
+        };
+        // Builds the app name, version descript header.
+        var buildHeader = function () {
+            // Add the name to the layout.
+            if (_this._name) {
+                if (!_this._nameFont)
+                    layout.repeat(colurs.applyAnsi(div, muted));
+                var tmpName = _this._name;
+                if (_this._nameFont)
+                    tmpName = _this.logo(tmpName, _this._nameFont, _this._nameStyles).get();
+                else
+                    tmpName = colurs.applyAnsi(tmpName, _this._nameStyles);
+                layout.div(tmpName);
+                if (_this._nameFont)
+                    layout.div();
+                // Add description to layout.
+                if (_this._description)
+                    layout.div(colurs.applyAnsi('Description:', accent) + " " + chek_1.padLeft(_this._description, 3));
+                // Add version to layout.
+                if (_this._version)
+                    layout.div(colurs.applyAnsi('Version:', accent) + " " + chek_1.padLeft(_this._version, 7));
+                // Add break in layout.
+                layout.repeat(colurs.applyAnsi(div, muted));
+            }
+        };
+        // Builds the body of the help iterating
+        // over each command and its options.
+        var buildBody = function () {
+            // Iterate each command build option rows.
+            for (var p in cmds) {
+                if (ctr > 0)
+                    layout.repeat(colurs.applyAnsi('-', muted), 15);
+                var cmd = cmds[p];
+                var opts = cmd.options;
+                // Add usage to layout.
+                var usage = colurs.applyAnsi('Usage: ', primary) + cmd._usage;
+                layout.div(usage);
+                if (cmd._description) {
+                    layout.div();
+                    layout.div(colurs.applyAnsi(cmd._description, muted));
+                }
+                // Build option rows.
+                buildOptions(cmd);
+                ctr++;
+            }
+        };
+        var buildFooter = function () {
+            // Add epilog if any.
+            if (_this._epilog) {
+                layout.div('');
+                layout.div(colurs.applyAnsi(_this._epilog, muted));
+            }
+        };
+        // Build help for single command.
+        if (command) {
+            buildBody();
+        }
+        else {
+            buildHeader();
+            buildBody();
+            buildFooter();
+        }
+        // return the resulting layout.
+        return layout;
+    };
     Object.defineProperty(Pargv.prototype, "ui", {
+        // GETTERS
         /**
          * UI
          * Alias to layout for backward compatibility.
@@ -770,27 +954,56 @@ var Pargv = (function () {
     });
     // USAGE & COMMANDS //
     /**
-     * Usage
-     * Simply a string denoting the general command and options layout.
-     * If not defined the usage statement for the first command is used.
+     * App
+     * Just adds a string to use as title of app, used in help.
      *
-     * @param val the usage string.
+     * @see http://flamingtext.com/tools/figlet/fontlist.html
+     * Simple Font examples
+     * standard, doom, ogre, slant, rounded, big, banner
+     *
+     * @param val the value to use as app name.
+     * @param font a Figlet font.
+     * @param styles an ansi color/style or array of styles.
      */
-    Pargv.prototype.usage = function (val) {
-        this._usage = val;
+    Pargv.prototype.name = function (val, styles, font) {
+        this._name = val;
+        this._nameStyles = chek_1.toArray(styles, []);
+        this._nameFont = font;
         return this;
     };
     /**
-     * Command
-     * Creates new command configuration.
+     * Version
+     * Just adds a string to use as the version for your program, used in help.
      *
-     * @param command the command to be matched or options object.
-     * @param description the description or options object.
-     * @param options options object for the command.
+     * @param val the value to use as version name.
      */
+    Pargv.prototype.version = function (val) {
+        this._version = val;
+        return this;
+    };
+    /**
+     * Description
+     * The program's description or purpose.
+     *
+     * @param val the description string.
+     */
+    Pargv.prototype.description = function (val) {
+        this._description = val;
+        return this;
+    };
+    /**
+     * Epilog
+     * Displays trailing message.
+     *
+     * @param val the trailing epilogue to be displayed.
+     */
+    Pargv.prototype.epilog = function (val) {
+        this._epilog = val;
+        return this;
+    };
     Pargv.prototype.command = function (command, description, options) {
         var cmd = new PargvCommand(command, description, options, this);
-        this.commands[cmd.name] = cmd;
+        this.commands[cmd._name] = cmd;
         return cmd;
     };
     /**
@@ -800,12 +1013,14 @@ var Pargv = (function () {
      * @param argv the process.argv or custom args array.
      */
     Pargv.prototype.parse = function () {
+        var _this = this;
         var argv = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             argv[_i] = arguments[_i];
         }
         var cmdStr = '';
         var parsedExec, action;
+        var isExec = chek_1.last(argv) === '__exec__' ? argv.pop() : null;
         // if first arg is array then set as argv.
         if (chek_1.isArray(argv[0]))
             argv = argv[0];
@@ -837,60 +1052,82 @@ var Pargv = (function () {
             cmdStr = result.cmd = argv.shift();
         // Lookup the command.
         var cmd = this.commands[cmdStr];
-        var autoType = this.options.auto ? 'auto' : 'string';
         var ctr = 0;
         if (!cmd)
             log.error("invalid command, the command " + cmdStr + " was not found.");
-        // Validate the arguments.
-        if (this.options.strict) {
+        var stats = cmd.stats(argv);
+        // Check if strict parsing is enabled.
+        if (this.options.strict && (stats.flagsMissingCount || stats.commandsMissingCount)) {
+            if (stats.commandsMissingCount) {
+                var missing = stats.commandsMissing[0];
+                log.error("missing required command or subcommand - " + missing.name + ".");
+            }
+            if (stats.flagsMissingCount) {
+                var missing = stats.flagsMissing[0];
+                log.error("missing required flag or option - " + missing.name + ".");
+            }
         }
-        var validation = cmd.validate(argv);
-        // console.log(validation);
+        // Check if duplicate flags are allowed.
+        if (!this.options.dupes && stats.flagsDuplicates.length) {
+            log.error("whoops duplicate flags are prohibited, found duplicates - " + stats.flagsDuplicates.join(', ') + ".");
+        }
         // Iterate the args.
         argv.forEach(function (el, i) {
             var nextId = i + 1;
             var next = argv[nextId];
             var isFlag = FLAG_EXP.test(el);
-            // const prev = argv[i - 1];
-            // const isPrevFlag = FLAG_EXP.test(prev || '');
-            // const isNextFlag = FLAG_EXP.test(next || '');
-            // const isShortFlag = FLAG_SHORT_EXP.test(el);
-            // const isPrevShortFlag = FLAG_SHORT_EXP.test(prev);
             var isKeyVal = KEYVAL_EXP.test(next || '');
+            var isFlagNext = FLAG_EXP.test(next || '');
             // Lookup the defined option if any.
             var opt = isFlag ? cmd.findOption(el) : cmd.findOption(ctr);
             // No anonymous flags/commands allowed throw error.
-            if (!opt)
+            if (!opt && _this.options.strict)
                 log.error("unknown argument " + el + " is NOT allowed in strict mode.");
+            var isNot = FLAG_NOT_EXP.test(el) ? true : false;
+            el = isNot ? el.replace(/^--no/, '') : el;
+            var key = el.replace(FLAG_EXP, '');
+            var keyName = chek_1.camelcase((opt && opt.as) || key);
+            var isBool = (opt && !opt.as) || (!opt && (isFlagNext || !next));
+            var type = _this.options.auto ? 'auto' : 'string';
+            var fn = !opt ? castToType.bind(null, type, next) : opt.coerce;
             // Is a flag.
             if (isFlag) {
-                var key = el.replace(FLAG_EXP, '');
-                var keyName = chek_1.camelcase(opt.as || key);
-                var isBool = !opt.as;
-                var fn = opt.cast;
-                var val = isBool ? true : fn(next);
+                var val = isBool ? true : fn(next, opt, cmd);
                 // If required and no value throw error.
                 if (opt.required && !chek_1.isValue(val))
-                    log.error("command " + cmd.name + " requires missing option " + opt.name + ".");
+                    log.error("command " + cmd._name + " requires missing option " + opt.name + ".");
                 if (chek_1.isValue(val)) {
                     // If the result is an object use extend
                     // in case the object is built over multiple flags.
-                    if (chek_1.isPlainObject(val))
-                        result.flags[keyName] = chek_1.extend({}, result.flags[keyName], val);
-                    else
+                    if (chek_1.isPlainObject(val) || isDotNotation(key)) {
+                        if (isDotNotation(key))
+                            chek_1.set(result.flags, key, val);
+                        else
+                            result.flags[keyName] = chek_1.extend({}, result.flags[keyName], val);
+                    }
+                    else {
                         result.flags[keyName] = val;
+                    }
                 }
                 if (!isBool)
                     argv.splice(next, 1);
             }
             else {
-                var fn = opt.cast;
-                var val = fn(el);
-                result.cmds.push(val);
+                var val = fn(el, opt, cmd);
+                if (chek_1.isValue(val))
+                    result.cmds.push(val);
                 // Update position counter.
                 ctr++;
             }
         });
+        // If called from exec pad
+        // cmds array for use with spread.
+        if (isExec) {
+            var totalArgs = stats.commandsOptionalCount + stats.commandsRequiredCount;
+            var offset = totalArgs - result.cmds.length;
+            while (offset > 0 && offset--)
+                result.cmds.push(null);
+        }
         return result;
     };
     /**
@@ -904,49 +1141,49 @@ var Pargv = (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             argv[_i] = arguments[_i];
         }
-        var parsed = this.parse.apply(this, argv);
+        var parsed = this.parse.apply(this, argv.concat(['__exec__']));
         var cmd = this.commands[parsed.cmd];
-        // We should never hit the following.
-        if (!cmd)
-            log.error("whoops successfully parsed args but command " + parsed.cmd + " could not be found.");
-        // Make clone of the sub commands.
-        var cmds = parsed.cmds.slice(0);
-        var stats = cmd.commandStats();
-        var offset = stats.cmds.total.length - cmds.length;
-        while (offset > 0 && offset--)
-            cmds.push(null);
-        if (chek_1.isFunction(cmd.onAction))
-            cmd.onAction.apply(cmd, cmds.concat([parsed, cmd]));
+        if (chek_1.isFunction(cmd._action))
+            cmd._action.apply(cmd, parsed.cmds.concat([parsed, cmd]));
+    };
+    Pargv.prototype.help = function (fn) {
+        var _this = this;
+        if (chek_1.isBoolean(fn)) {
+            this._helpDisabled = fn;
+        }
+        else if (chek_1.isFunction(fn)) {
+            this._helpDisabled = undefined;
+            this._helpHandler = function (command) {
+                return fn(command, _this.commands);
+            };
+        }
+        return this;
     };
     /**
-     * Help
-     * Displays the generated help or supplied help string.
+     * Show Help
+     * Displays all help or help for provided command name.
      *
-     * @param val optional value to use instead of generated help.
+     * @param command optional name for displaying help for a particular command.
      */
-    Pargv.prototype.help = function (val) {
-        var layout = this.layout(95);
-        // Supported Types
-        var types = [
-            ['String', '- native string.'],
-            ['Boolean', '- native boolean.'],
-            ['Float', '- number containing decimal.'],
-            ['Integer', ' - number without decimal.'],
-            ['Number', '- native number.'],
-            ['Date', '- native date.'],
-            ['RegExp', '- native regular expression.'],
-            ['Array', '- native array.']
-        ];
-        var typesHelp = layout.join.apply(layout, ['\n'].concat(types.map(function (t) {
-            colurs.yellow(t[0]);
-            return t.join('\t');
-        })));
-        return this;
+    Pargv.prototype.showHelp = function (command) {
+        var name = chek_1.isPlainObject(command) ? command._name : command;
+        var help = this._helpHandler(name, this.commands);
+        console.log(help);
+        console.log();
+    };
+    /**
+     * Remove
+     * Removes an existing command from the collection.
+     *
+     * @param cmd the command name to be removed.
+     */
+    Pargv.prototype.remove = function (cmd) {
+        delete this.commands[cmd];
     };
     // EXTENDED METHODS
     /**
      * Logo
-     * Displays an ASCII logo using Figlet.
+     * Builds or Displays an ASCII logo using Figlet.
      *
      * @param text the text to be displayed.
      * @param font the figlet font to be used.
@@ -954,12 +1191,12 @@ var Pargv = (function () {
      * @param horizontalLayout the horizontal layout mode.
      * @param verticalLayout the vertical layout mode.
      */
-    Pargv.prototype.logo = function (text, font) {
-        var _this = this;
+    Pargv.prototype.logo = function (text, font, styles) {
         var result;
+        var methods;
         var defaults = {
-            text: 'Pargv',
-            font: 'Doom',
+            text: 'App',
+            font: 'Ogre',
             horizontalLayout: 'default',
             verticalLayout: 'default'
         };
@@ -971,29 +1208,39 @@ var Pargv = (function () {
         options = chek_1.extend({}, defaults, options);
         // Process the text.
         result = figlet.textSync(options.text, options);
-        return {
-            // Allows for modifiying the result like colorizing.
-            before: function (fn) {
-                result = fn(result);
-                return _this;
-            },
-            // Outputs/shows the result in the console.
-            show: function () {
-                console.log(result);
-                return _this;
-            },
-            // Simply returns the current result.
-            result: function () {
-                return result;
-            }
+        // Apply ansi styles if any.
+        if (styles)
+            result = colurs.applyAnsi(result, styles);
+        /**
+         * Render
+         * Renders out the Figlet font logo.
+         */
+        function render() {
+            console.log(result);
+            return this;
+        }
+        /**
+         * Fonts
+         * Lists Figlet Fonts.
+         */
+        function fonts() {
+            return figlet.fontsSync();
+        }
+        /**
+         * Get
+         * Returns the Figlet font without rendering.
+         */
+        function get() {
+            return result;
+        }
+        var show = render;
+        methods = {
+            fonts: fonts,
+            show: show,
+            render: render,
+            get: get
         };
-    };
-    /**
-     * Fonts
-     * Returns list of figlet fonts.
-     */
-    Pargv.prototype.fonts = function () {
-        return figlet.fontsSync();
+        return methods;
     };
     /**
       * Layout
@@ -1001,14 +1248,22 @@ var Pargv = (function () {
       * Supports strings with \t \s \n or IUIOptions object.
       * @see https://www.npmjs.com/package/cliui
       *
+      *
+      *
       * @param width the width of the layout.
       * @param wrap if the layout should wrap.
       */
     Pargv.prototype.layout = function (width, wrap) {
         // Base width of all divs.
-        width = width || 95;
+        width = width || 100;
         // Init cli ui.
         var ui = cliui({ width: width, wrap: wrap });
+        // Alignment.
+        var flowMap = {
+            '-1': null,
+            0: 'center',
+            1: 'right'
+        };
         function invalidExit(element, elements) {
             if (chek_1.isString(element) && elements.length && chek_1.isPlainObject(elements[0]))
                 log.error('invalid element(s) cannot mix string element with element options objects.');
@@ -1035,6 +1290,51 @@ var Pargv = (function () {
             return methods;
         }
         /**
+         * Flow
+         * Shortcut method to specify columns and their flow
+         * direction or alignment. Last arg must be number or
+         * and array matching the number or preceding elements.
+         *
+         * Supports flowing right or center.
+         * 1 = right
+         * 0 = center
+         *
+         * @example
+         * Flow the first and last elements to the right with the middle centered.
+         * flow('one', 'two', 'three', [1, 0, 1])
+         *
+         * @example
+         * Flow the last element to the right
+         * flow('one', 'two', 1)
+         *
+         * @param align the alignment direction or array of alignments.
+         * @param elements the column elements with last element as number or array.
+         */
+        function flow(align) {
+            var elements = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                elements[_i - 1] = arguments[_i];
+            }
+            align = chek_1.toArray(align);
+            var isLast = align.length === 1;
+            var lastIdx = elements.length - 1;
+            elements = elements.map(function (el, i) {
+                if (isLast && i < lastIdx)
+                    return el;
+                var dir = !isLast ? align[i] : align[0];
+                if (!dir || dir === null || dir === -1)
+                    return el;
+                dir = flowMap[dir];
+                if (chek_1.isPlainObject(el))
+                    el.align = dir;
+                else
+                    el = { text: el, align: dir };
+                return el;
+            });
+            add.apply(void 0, ['div'].concat(elements));
+            return this;
+        }
+        /**
          * Span
          * Adds Span to the UI.
          *
@@ -1046,6 +1346,43 @@ var Pargv = (function () {
                 elements[_i] = arguments[_i];
             }
             add.apply(void 0, ['span'].concat(elements));
+            return methods;
+        }
+        /**
+         * Repeat
+         * Simply repeats a character by layout width
+         * or specified length. Good for creating sections
+         * or dividers. If single integer is used for padding
+         * will use value for top padding then double for bottom.
+         *
+         * @param char the character to be repeated
+         * @param len optional lenth to repeat or width offset by 25 is used.
+         * @param padding number or array of numbers if single digit used for top/bottom.
+         */
+        function repeat(char, len, padding) {
+            len = len || (width - 1);
+            var _char = char;
+            while (len--)
+                char += _char;
+            this.section(char, padding);
+            return methods;
+        }
+        /**
+         * Section
+         * Helper to create a section header.
+         *
+         * When single integer is used for padding it will
+         * be applied to the top and bottom padding only where
+         * the bottom will be double the top.
+         *
+         * @param title the name of the section.
+         * @param padding the optional padding used for the section.
+         */
+        function section(title, padding) {
+            padding = padding >= 0 ? padding : 1;
+            if (chek_1.isNumber(padding))
+                padding = [padding, 0, padding, 0];
+            add('div', { text: title, padding: padding });
             return methods;
         }
         /**
@@ -1089,8 +1426,11 @@ var Pargv = (function () {
         var show = render;
         var methods = {
             div: div,
-            join: join,
             span: span,
+            repeat: repeat,
+            section: section,
+            flow: flow,
+            join: join,
             get: get,
             render: render,
             show: show,

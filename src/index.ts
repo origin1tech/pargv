@@ -4,10 +4,9 @@ import * as cliui from 'cliui';
 import * as figlet from 'figlet';
 import * as prefix from 'global-prefix';
 import { Colurs, get as getColurs, IColurs } from 'colurs';
-import { IPargvOptions, IMetadata, IFigletOptions, BeforeFigletRender, ILayoutOptions, IPargvCommandConfig, IMap, IPargvCommandOption, ActionCallback, ILayout, CastCallback, IPargvCommands, CastType, IPargvResult } from './interfaces';
-import { extend, isString, isPlainObject, get, set, isUndefined, isArray, isDebug, contains, camelcase, keys, isBoolean, noop, isFunction, toArray, tryRequire, split, castType, getType, isRegExp, toDefault, containsAny, isValue, tryWrap, isNumber, isFloat, isInteger, isDate, last } from 'chek';
+import { IPargvOptions, IMetadata, IFigletOptions, ILayoutOptions, IPargvCommandConfig, IMap, IPargvCommandOption, ActionCallback, ILayout, CoerceCallback, IPargvCommands, CastType, IPargvResult, IPargvOptionStats, AnsiStyles, ILogo, HelpCallback } from './interfaces';
+import { extend, isString, isPlainObject, get, set, isUndefined, isArray, isDebug, contains, camelcase, keys, isBoolean, noop, isFunction, toArray, tryRequire, split, castType, getType, isRegExp, toDefault, containsAny, isValue, tryWrap, isNumber, isFloat, isInteger, isDate, last, duplicates, padLeft } from 'chek';
 
-const pkg = tryRequire(path.resolve(process.cwd(), 'package.json'), { version: '0.0.0' });
 let colurs: IColurs;
 
 const KEYVAL_EXP = /^((.+:.+)(\||\+)?)$/;
@@ -16,25 +15,43 @@ const ARRAY_EXP = /^(.+(,|\||\s).+){1,}$/;
 const JSON_EXP = /^"?{.+}"?$/;
 const REGEX_EXP = /^\/.+\/(g|i|m)?([m,i,u,y]{1,4})?/;
 const REGEX_OPTS_EXP = /(g|i|m)?([m,i,u,y]{1,4})?$/;
+const DOT_EXP = /^(.+\..+)$/;
 
 const FLAG_EXP = /^--?/;
 const FLAG_SHORT_EXP = /^-[a-zA-Z0-9]/;
+const FLAG_NOT_EXP = /^(--no)?-{0,1}[0-9a-zA-Z]/;
 const TOKEN_ANY_EXP = /(^--?|^<|>$|^\[|\]$)/;
 const TOKEN_PREFIX_EXP = /^(--?|<|\[)/;
 
-const NESTED_EXP = /^[a-zA-Z0-9]+\./;
-const GLOBAL_PREFIX_EXP = new RegExp('^' + prefix, 'i');
 const SPLIT_CHARS = ['|', ',', ' '];
 declare var v8debug;
 
 const DEFAULTS: IPargvOptions = {
-  strict: false,          // when true error message shown and exits for missing arguments.
-  auto: true,             // when true parsed values are auto cast to type if not defined.
-  colors: true,           // wether or not to use colors in help & log messages.
-  catchAll: 'help'        // defines action when no command is found by default shows help.
+  strict: true,       // when true error message shown and exits for missing arguments.
+  colorize: true,     // wether or not to use colors in help & log messages.
+  dupes: true,        // when true a flag can be used multiple times required for objects.
+  auto: true,         // when true parsed values are auto cast to type if not defined.
+  divider: '=',
+  colors: {
+    primary: ['magenta', 'bold'],
+    accent: ['blue', 'bold'],
+    alert: ['red', 'bold'],
+    muted: 'gray'
+  }
 };
 
 // UTILS //
+
+/**
+ * Is Dot Notation
+ * Tests if value is dot notated string.
+ *
+ * @param val the value to be inspected.
+ */
+function isDotNotation(val: any) {
+  if (!isString(val)) return false;
+  return /\..*\./.test(val) && !val.match(/\s/);
+}
 
 /**
  * Normalize Debug
@@ -244,6 +261,177 @@ function parseToken(token: string, next?: string) {
 
 }
 
+/**
+ * Cast To Type
+ * Casts a value to the specified time or fallsback to default.
+ *
+ * @param type the type to cast to.
+ * @param def an optional default value.
+ * @param val the value to be cast.
+ */
+function castToType(type: string | RegExp, def: any, val?: any) {
+
+  let result = null;
+  type = (type as string).trim();
+  const isAuto = type === 'auto';
+
+  if (isString(val))
+    val = val.trim();
+
+  // Check if is list type expression.
+  const isListType = ARRAY_EXP.test(type) || isRegExp(type);
+  type = isListType ? 'list' : type;
+
+  const is: any = {
+    object: isPlainObject,
+    number: isNumber,
+    integer: isInteger,
+    float: isFloat,
+    date: isDate,
+    array: isArray,
+    json: isPlainObject,
+    regexp: isRegExp,
+    boolean: isBoolean,
+    list: (v: any) => { return isValue(v); }
+  };
+
+  const to: any = {
+
+    // Never called in autoCast method.
+    list: (v) => {
+      const match = val.match(splitToList(<string>type));
+      result = match && match[0];
+    },
+
+    object: (v) => {
+      if (!KEYVAL_EXP.test(v))
+        return null;
+      const obj = {};
+      const pairs = split(v, ['|', '+']);
+      if (!pairs.length) return null;
+      pairs.forEach((p) => {
+        const kv = p.split(':');
+        if (kv.length > 1) {
+          let castVal: any = kv[1];
+          // Check if an array is denoted with [ & ]
+          // If yes strip them from string.
+          if (/^\[/.test(castVal) && /\]$/.test(castVal))
+            castVal = castVal.replace(/(^\[|\]$)/g, '');
+          // Check if auto casting is enabled.
+          if (this.pargv.options.auto) {
+            castVal = autoCast(castVal) || castVal;
+            if (isArray(castVal))
+              castVal = (castVal as any[]).map((el) => {
+                return autoCast(el) || el;
+              });
+          }
+          set(obj, kv[0], castVal);
+        }
+      });
+      return obj;
+
+    },
+
+    json: (v) => {
+      if (!JSON_EXP.test(v))
+        return null;
+      v = v.replace(/^"/, '').replace(/"$/, '');
+      return tryWrap(JSON.parse, v)();
+    },
+
+    array: (v) => {
+      if (!ARRAY_EXP.test(v))
+        return null;
+      return toArray(v);
+    },
+
+    number: (v) => {
+      if (!/[0-9]/g.test(v))
+        return null;
+      return castType(v, 'number');
+    },
+
+    date: (v) => {
+      return castType(v, 'date');
+    },
+
+    regexp: (v) => {
+      if (!REGEX_EXP.test(v))
+        return null;
+      return castType(val, 'regexp');
+    },
+
+    boolean: (v) => {
+      if (!/^(true|false)$/.test(v))
+        return null;
+      return castType(v, 'boolean');
+    }
+
+  };
+
+  to.integer = to.number;
+  to.float = to.number;
+
+  function autoCast(v) {
+
+    // Ensure type is set to auto.
+    const origType = type;
+    type = 'auto';
+
+    let _result;
+
+    let castMethods = [
+      to.object.bind(null, v),
+      to.json.bind(null, v),
+      to.array.bind(null, v),
+      to.regexp.bind(null, v),
+      to.date.bind(null, v, 'date'),
+      to.number.bind(null, v),
+      to.boolean.bind(null, v)
+    ];
+
+    // While no result iterate try to
+    // cast to known types. Return the
+    // result or the default value.
+    while (castMethods.length && !_result) {
+      const method = castMethods.shift();
+      _result = method();
+    }
+
+    type = origType;
+
+    return _result;
+
+  }
+
+  // If no value return default.
+  if (!val) return def;
+
+  // If not a special type just cast to the type.
+  if (type !== 'auto') {
+    result = to[type](val);
+  }
+
+  // Try to iterate and auto cast type.
+  else {
+    result = autoCast(val);
+  }
+
+  // If Auto no type checking.
+  if (isAuto)
+    return toDefault(result, def || val);
+
+  // Check if there is a default value if nothing is defined.
+  result = toDefault(result, def);
+
+  // Ensure valid type.
+  if (!is[type](result))
+    log.error(`expected type ${colurs.cyan(type)} but got ${colurs.cyan(getType(type))}.`);
+
+  return result;
+
+}
+
 // Crude logger just need to show some messages.
 const logTypes = {
   error: 'red',
@@ -279,15 +467,16 @@ const log = {
 
 export class PargvCommand {
 
-  private _usage: string;
-  private _description: string = '';
-  private _aliases: string[] = [];
-  private _examples: string[] = [];
   private _depends: { name?: string[] } = {};
 
+  _usage: string;
+  _aliases: string[] = [];
+  _name: string;
+  _description: string = '';
+  _examples: string[] = [];
+  _action: ActionCallback = noop;
+
   pargv: Pargv;
-  name: string;
-  onAction: ActionCallback = noop;
   options: IMap<IPargvCommandOption> = {};
 
   constructor(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig, context?: Pargv) {
@@ -297,7 +486,7 @@ export class PargvCommand {
 
     if (isPlainObject(command)) {
       options = <IPargvCommandConfig>command;
-      description = undefined;
+      command = undefined;
     }
 
     if (isPlainObject(description)) {
@@ -305,16 +494,17 @@ export class PargvCommand {
       description = undefined;
     }
 
+    // Normalize options.
     options = options || {};
-
     this.pargv = context;
-    this.parseTokens(<string>command || options.command, true);
-    this._description = <string>description || options.description || `Executes ${command} command.`;
+    this._description = <string>description || options.description;
     this._aliases = isString(options.aliases) ? split(options.aliases, SPLIT_CHARS) : [];
 
-    // Add debug options
-    this.option('--debug', 'Debug flag.');
-    this.option('--debug-brk [debugPort]', 'Debug break flag.');
+    // Add in debug options.
+    this.option('--debug, --debug-brk [port]');
+
+    // Parse the Command.
+    this.parseTokens(<string>command || options.command, true);
 
     return this;
 
@@ -342,12 +532,16 @@ export class PargvCommand {
       let tmpCmd: any = arr.shift().trim();
       // split out aliases
       tmpCmd = tmpCmd.split('.');
-      if (this.pargv.commands[tmpCmd[0]])
-        log.error(`cannot add command`, colurs.yellow(`${tmpCmd[0]}`), `the command already exists.`);
-      this.name = tmpCmd.shift();
+      const name = tmpCmd.shift();
+      // Exclude help from this check allow overwriting.
+      if (name !== 'help' && this.pargv.commands[name])
+        log.error(`cannot add command`, colurs.yellow(`${name}`), `the command already exists.`);
+      if (name === 'help')
+        this.pargv.remove(name);
+      this._name = name;
       if (tmpCmd.length)
         this._aliases = tmpCmd;
-      usage.push(this.name);
+      usage.push(this._name);
     }
 
     arr.forEach((el, i) => {
@@ -384,9 +578,9 @@ export class PargvCommand {
       }
 
       // The following may be overwritten from .option.
-      const type = parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
-      parsed.cast = this.castToType.bind(this, type, null);
-      parsed.description = parsed.flag ? `flag option.` : `sub command/argument.`;
+      const type = parsed.type = parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
+
+      parsed.coerce = castToType.bind(null, type, null);
 
       // Store the options for the command.
       this.options[parsed.name] = extend<IPargvCommandOption>({}, this.options[parsed.name], parsed);
@@ -400,177 +594,6 @@ export class PargvCommand {
       this._usage = usage.join(' ');
 
     return parsedOpts;
-
-  }
-
-  /**
-   * Cast To Type
-   * Casts a value to the specified time or fallsback to default.
-   *
-   * @param type the type to cast to.
-   * @param def an optional default value.
-   * @param val the value to be cast.
-   */
-  private castToType(type: string | RegExp, def: any, val: any) {
-
-    let result = null;
-    type = (type as string).trim();
-    const isAuto = type === 'auto';
-
-    if (isString(val))
-      val = val.trim();
-
-    // Check if is list type expression.
-    const isListType = ARRAY_EXP.test(type) || isRegExp(type);
-    type = isListType ? 'list' : type;
-
-    const is: any = {
-      object: isPlainObject,
-      number: isNumber,
-      integer: isInteger,
-      float: isFloat,
-      date: isDate,
-      array: isArray,
-      json: isPlainObject,
-      regexp: isRegExp,
-      boolean: isBoolean,
-      list: (v: any) => { return isValue(v); }
-    };
-
-    const to: any = {
-
-      // Never called in autoCast method.
-      list: (v) => {
-        const match = val.match(splitToList(<string>type));
-        result = match && match[0];
-      },
-
-      object: (v) => {
-        if (!KEYVAL_EXP.test(v))
-          return null;
-        const obj = {};
-        const pairs = split(v, ['|', '+']);
-        if (!pairs.length) return null;
-        pairs.forEach((p) => {
-          const kv = p.split(':');
-          if (kv.length > 1) {
-            let castVal: any = kv[1];
-            // Check if an array is denoted with [ & ]
-            // If yes strip them from string.
-            if (/^\[/.test(castVal) && /\]$/.test(castVal))
-              castVal = castVal.replace(/(^\[|\]$)/g, '');
-            // Check if auto casting is enabled.
-            if (this.pargv.options.auto) {
-              castVal = autoCast(castVal) || castVal;
-              if (isArray(castVal))
-                castVal = (castVal as any[]).map((el) => {
-                  return autoCast(el) || el;
-                });
-            }
-            set(obj, kv[0], castVal);
-          }
-        });
-        return obj;
-
-      },
-
-      json: (v) => {
-        if (!JSON_EXP.test(v))
-          return null;
-        v = v.replace(/^"/, '').replace(/"$/, '');
-        return tryWrap(JSON.parse, v)();
-      },
-
-      array: (v) => {
-        if (!ARRAY_EXP.test(v))
-          return null;
-        return toArray(v);
-      },
-
-      number: (v) => {
-        if (!/[0-9]/g.test(v))
-          return null;
-        return castType(v, 'number');
-      },
-
-      date: (v) => {
-        return castType(v, 'date');
-      },
-
-      regexp: (v) => {
-        if (!REGEX_EXP.test(v))
-          return null;
-        return castType(val, 'regexp');
-      },
-
-      boolean: (v) => {
-        if (!/^(true|false)$/.test(v))
-          return null;
-        return castType(v, 'boolean');
-      }
-
-    };
-
-    to.integer = to.number;
-    to.float = to.number;
-
-    function autoCast(v) {
-
-      // Ensure type is set to auto.
-      const origType = type;
-      type = 'auto';
-
-      let _result;
-
-      let castMethods = [
-        to.object.bind(null, v),
-        to.json.bind(null, v),
-        to.array.bind(null, v),
-        to.regexp.bind(null, v),
-        to.date.bind(null, v, 'date'),
-        to.number.bind(null, v),
-        to.boolean.bind(null, v)
-      ];
-
-      // While no result iterate try to
-      // cast to known types. Return the
-      // result or the default value.
-      while (castMethods.length && !_result) {
-        const method = castMethods.shift();
-        _result = method();
-      }
-
-      type = origType;
-
-      return _result;
-
-    }
-
-    // If no value return default.
-    if (!val) return def;
-
-    // If not a special type just cast to the type.
-    if (type !== 'auto') {
-      result = to[type](val);
-    }
-
-    // Try to iterate and auto cast type.
-    else {
-      result = autoCast(val);
-    }
-
-    // If Auto no type checking.
-    if (isAuto)
-      return toDefault(result, def || val);
-
-    // Check if there is a default value if nothing is defined.
-    result = toDefault(result, def);
-
-    // Ensure valid type.
-    if (!is[type](result))
-      log.error(`expected type ${colurs.cyan(type)} but got ${colurs.cyan(getType(type))}.`);
-
-    return result;
 
   }
 
@@ -607,55 +630,64 @@ export class PargvCommand {
     return (opt && opt.name) || null;
   }
 
-  validate(argv: any[]) {
+  /**
+   * Stats
+   * Validates the arguments to be parsed return stats.
+   *
+   * @param argv the array of arguments to validate.
+   */
+  stats(argv: any[]) {
 
-    console.log();
-    console.log(this._usage);
-    console.log('arguments: ' + argv.join(' '));
-    console.log();
+    let clone = argv.slice(0);
+    argv = argv.slice(0);
 
     const opts = this.options;
-    const stats: any = {
-      commandsMissing: {},
+    const stats: IPargvOptionStats = {
+      commandsMissing: [],
       commandsRequiredCount: 0,
       commandsOptionalCount: 0,
       commandsMissingCount: 0,
-      flagsMissing: {},
+      flagsMissing: [],
       flagsRequiredCount: 0,
       flagsOptionalCount: 0,
-      flagsMissingCount: 0
+      flagsMissingCount: 0,
+      flagsDuplicates: []
     };
 
     let ctr = 0;
     const filteredCmds = [];
+    const filteredFlags = [];
 
+    // Filter out only commands no flags.
     argv.forEach((el, i) => {
       const opt = this.findOption(el);
       if (opt) {
-        if (opt.flag && opt.type !== 'boolean')
-          argv.splice(i + 1, 1);
+        if (opt.flag) {
+          if (opt.type !== 'boolean')
+            argv.splice(i + 1, 1);
+          filteredFlags.push(el);
+        }
       }
       if (!FLAG_EXP.test(el))
         filteredCmds.push(el);
     });
 
-    console.log(filteredCmds);
+    filteredFlags.sort().forEach((f, i) => {
+      const prev = filteredFlags[i - 1];
+      const next = filteredFlags[i + 1];
+      if (stats.flagsDuplicates.indexOf(f) < 0 && (prev === f || next === f))
+        stats.flagsDuplicates.push(f);
+    });
 
     for (let p in opts) {
 
-      const opt = opts[p];
+      let opt = opts[p];
       const names = [opt.name].concat(opt.aliases || []);
 
       // Don't process injected
       // debug options.
       if (/^--debug/.test(opt.name))
         continue;
-
-      // Store required and optiona total counts.
-      if (opt.required)
-        opt.flag ? stats.flagsRequiredCount++ : stats.commandsRequiredCount++;
-      else
-        opt.flag ? stats.flagsOptionalCount++ : stats.commandsOptionalCount++;
 
       let hasOpt;
 
@@ -664,62 +696,45 @@ export class PargvCommand {
         if (opt.required) {
           stats.flagsRequiredCount++;
           if (!hasOpt) {
-            stats.flagsMissing[opt.name] = opt;
+            stats.flagsMissing.push(opt);
             stats.flagsMissingCount++;
           }
         }
+        else {
+          stats.flagsOptionalCount++;
+        }
+        clone = clone.filter((el, i) => {
+          const tmpOpt = this.findOption(el);
+          if (tmpOpt.flag && tmpOpt.type !== 'boolean')
+            clone.splice(i + 1, 1);
+          return !contains(names, el);
+        });
       }
+
       else {
-
-
+        hasOpt = filteredCmds[opt.position];
+        if (opt.required) {
+          stats.commandsRequiredCount++;
+          if (!hasOpt) {
+            stats.commandsMissing.push(opt);
+            stats.commandsMissingCount++;
+          }
+        }
+        else {
+          stats.commandsOptionalCount++;
+        }
+        clone = clone.filter((el) => {
+          return el !== hasOpt;
+        });
       }
-
-      //console.log('match:', opt.name, names.join(', '), '-', hasOpt);
 
     }
 
+    // Save any uknown args.
+    stats.unknown = clone;
+
     return stats;
 
-  }
-
-  /**
-   * Command Count
-   * Gets the total sub command count and total required.
-   */
-  commandStats() {
-    let stats = {
-      cmds: {
-        required: [],
-        requiredAny: [],
-        total: []
-      },
-      flags: {
-        required: [],
-        requiredAny: [],
-        total: []
-      }
-    };
-    const cmds = stats.cmds;
-    const flags = stats.flags;
-    const opts = this.options;
-    for (let p in opts) {
-      const opt = opts[p];
-      if (!opt.flag) {
-        cmds.total.push(opt.name);
-        if (opt.required) {
-          cmds.required.push(opt.name);
-          cmds.requiredAny = cmds.requiredAny.concat([opt.name].concat(opt.aliases || []));
-        }
-      }
-      else {
-        flags.total.push(opt.name);
-        if (opt.required) {
-          flags.required.push(opt.name);
-          flags.requiredAny = flags.requiredAny.concat([opt.name].concat(opt.aliases || []));
-        }
-      }
-    }
-    return stats;
   }
 
   /**
@@ -729,9 +744,9 @@ export class PargvCommand {
    * @param val the option val to parse or option configuration object.
    * @param description the description for the option.
    * @param def the default value.
-   * @param type the expression, method or type for validating/casting.
+   * @param coerce the expression, method or type for validating/casting.
    */
-  option(val: string | IPargvCommandOption, description?: string, def?: any, type?: string | RegExp | CastCallback) {
+  option(val: string | IPargvCommandOption, description?: string, def?: any, coerce?: string | RegExp | CoerceCallback) {
     if (isPlainObject(val)) {
       const opt = <IPargvCommandOption>val;
       if (!opt.name)
@@ -740,14 +755,14 @@ export class PargvCommand {
     }
     else {
       const parsed: IPargvCommandOption = this.parseTokens(val as string)[0];
-      parsed.description = description || parsed.description;
+      parsed.description = description;
       parsed.default = def;
-      type = type || parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
-      if (isString(type) || isRegExp(type))
-        type = this.castToType.bind(this, type, def);
-      if (!isString(type) && !isFunction(type))
+      coerce = coerce || parsed.type || (this.pargv.options.auto ? 'auto' : 'string');
+      if (isString(coerce) || isRegExp(coerce))
+        coerce = castToType.bind(null, coerce, def);
+      if (!isString(coerce) && !isFunction(coerce))
         log.error('invalid cast type only string, RegExp or Callback Function are supported.');
-      parsed.cast = <CastCallback | string>type;
+      parsed.coerce = <CoerceCallback | string>coerce;
     }
     return this;
   }
@@ -826,7 +841,7 @@ export class PargvCommand {
    */
   action(fn: ActionCallback) {
     if (!fn) log.error('cannot add action with action method of undefined.');
-    this.onAction = fn;
+    this._action = fn;
     return this;
   }
 
@@ -842,23 +857,237 @@ export class PargvCommand {
     return this;
   }
 
+  /**
+   * Parse
+   * Parses the provided arguments inspecting for commands and options.
+   *
+   * @param argv the process.argv or custom args array.
+   */
+  parse(...argv: any[]) {
+    return this.pargv.parse;
+  }
+
+  /**
+   * Exec
+   * Parses arguments then executes command action if any.
+   *
+   * @param argv optional arguments otherwise defaults to process.argv.
+   */
+  exec(...argv: any[]) {
+    return this.pargv.exec;
+  }
+
 }
 
 // PARGV CONTAINER //
 
 export class Pargv {
 
-  private _usage: string;
-  private _parsed: any;
-  private _suppress: boolean = false;
+  private _name: string;
+  private _nameFont: string;
+  private _nameStyles: AnsiStyles[];
+  private _version: string;
+  private _description: string;
+  private _epilog: string;
+  private _helpDisabled: boolean = false;
+  private _helpHandler: HelpCallback;
 
   commands: IPargvCommands = {};
   options: IPargvOptions;
 
   constructor(options?: IPargvOptions) {
+
     this.options = extend<IPargvOptions>({}, DEFAULTS, options);
-    colurs = new Colurs({ enabled: this.options.colors });
+    colurs = new Colurs({ enabled: this.options.colorize });
+
+    // Set default help handler.
+    this._helpHandler = (command?: string) => {
+      if (this._helpDisabled === true)
+        return;
+      return this.compileHelp(command).get();
+    };
+
+    // Enable help command.
+    this.command('help.h')
+      .action(this.showHelp.bind(this));
+
+    // Add catch all command.
+    this.command('*', null)
+
   }
+
+  // PRIVATE
+
+  /**
+   * Compile Help
+   * Compiles help for all commands or single defined commnand.
+   *
+   * @param command the optional command to build help for.
+   */
+  private compileHelp(command?: string) {
+
+    const layout = this.layout();
+    const obj: any = {};
+
+    // Get single cmd in object or
+    // get all commands.
+    const cmds = command ? {}[command] = this.commands[command] : this.commands;
+    let helpCmd;
+
+    if (!command) {
+      helpCmd = cmds['help'];
+    }
+
+    // Define color vars.
+    const primary = this.options.colors.primary;
+    const alert = this.options.colors.alert;
+    const accent = this.options.colors.accent;
+    const muted = this.options.colors.muted;
+
+    const div = this.options.divider;
+    let ctr = 0;
+
+    // Builds option row help.
+    const buildOption = (opt) => {
+      const names = [opt.name].concat(opt.aliases);
+      const namesStr = names.join(', ');
+      const arr: any = ['\t\t' + names, opt.description || ''];
+      const lastCol = opt.required ? { text: colurs.applyAnsi('required', alert), align: 'right' } : '';
+      arr.push(lastCol);
+      layout.div(...arr);
+    };
+
+    // Builds commands and flags help.
+    const buildOptions = (cmd: PargvCommand) => {
+
+      const optKeys = keys(cmd.options);
+      let flagCt = 0;
+      let cmdCt = 0;
+
+      layout.section(<string>colurs.applyAnsi('Commands:', accent));
+
+      // Build sub commands.
+      optKeys.forEach((k) => {
+        const opt = cmd.options[k];
+        if (!opt.flag) {
+          buildOption(opt);
+          cmdCt++;
+        }
+      });
+
+      if (!cmdCt)
+        layout.div(colurs.applyAnsi('  none', muted));
+
+      layout.section(<string>colurs.applyAnsi('Flags:', accent));
+
+      // Build flags.
+      optKeys.forEach((k) => {
+        const opt = cmd.options[k];
+        if (opt.flag) {
+          buildOption(opt);
+          flagCt++;
+        }
+      });
+
+      if (!flagCt)
+        layout.div(colurs.applyAnsi('  none', muted));
+
+    };
+
+    // Builds the app name, version descript header.
+    const buildHeader = () => {
+
+      // Add the name to the layout.
+      if (this._name) {
+
+        if (!this._nameFont)
+          layout.repeat(<string>colurs.applyAnsi(div, muted));
+
+        let tmpName = this._name;
+        if (this._nameFont)
+          tmpName = this.logo(tmpName, this._nameFont, this._nameStyles).get();
+        else
+          tmpName = <string>colurs.applyAnsi(tmpName, this._nameStyles);
+
+        layout.div(tmpName);
+
+        if (this._nameFont)
+          layout.div();
+
+        // Add description to layout.
+        if (this._description)
+          layout.div(`${colurs.applyAnsi('Description:', accent)} ${padLeft(this._description, 3)}`);
+
+        // Add version to layout.
+        if (this._version)
+          layout.div(`${colurs.applyAnsi('Version:', accent)} ${padLeft(this._version, 7)}`);
+
+        // Add break in layout.
+        layout.repeat(<string>colurs.applyAnsi(div, muted));
+
+      }
+
+    };
+
+    // Builds the body of the help iterating
+    // over each command and its options.
+    const buildBody = () => {
+
+      // Iterate each command build option rows.
+      for (const p in cmds) {
+
+        if (ctr > 0)
+          layout.repeat(<string>colurs.applyAnsi('-', muted), 15);
+
+        const cmd = cmds[p];
+        const opts = cmd.options;
+
+        // Add usage to layout.
+        const usage = colurs.applyAnsi('Usage: ', primary) + cmd._usage;
+        layout.div(usage);
+        if (cmd._description) {
+          layout.div();
+          layout.div(colurs.applyAnsi(cmd._description, muted));
+        }
+
+        // Build option rows.
+        buildOptions(cmd);
+
+        ctr++;
+
+      }
+
+
+    };
+
+    const buildFooter = () => {
+
+      // Add epilog if any.
+      if (this._epilog) {
+        layout.div('');
+        layout.div(colurs.applyAnsi(this._epilog, muted));
+      }
+
+    };
+
+    // Build help for single command.
+    if (command) {
+      buildBody();
+    }
+
+    // Build help for all commands.
+    else {
+      buildHeader();
+      buildBody();
+      buildFooter();
+    }
+
+    // return the resulting layout.
+    return layout;
+
+  }
+
+  // GETTERS
 
   /**
    * UI
@@ -871,14 +1100,54 @@ export class Pargv {
   // USAGE & COMMANDS //
 
   /**
-   * Usage
-   * Simply a string denoting the general command and options layout.
-   * If not defined the usage statement for the first command is used.
+   * App
+   * Just adds a string to use as title of app, used in help.
    *
-   * @param val the usage string.
+   * @see http://flamingtext.com/tools/figlet/fontlist.html
+   * Simple Font examples
+   * standard, doom, ogre, slant, rounded, big, banner
+   *
+   * @param val the value to use as app name.
+   * @param font a Figlet font.
+   * @param styles an ansi color/style or array of styles.
    */
-  usage(val: string) {
-    this._usage = val;
+  name(val: string, styles?: AnsiStyles | AnsiStyles[], font?: string) {
+    this._name = val;
+    this._nameStyles = toArray<AnsiStyles>(styles, []);
+    this._nameFont = font;
+    return this;
+  }
+
+  /**
+   * Version
+   * Just adds a string to use as the version for your program, used in help.
+   *
+   * @param val the value to use as version name.
+   */
+  version(val: string) {
+    this._version = val;
+    return this;
+  }
+
+  /**
+   * Description
+   * The program's description or purpose.
+   *
+   * @param val the description string.
+   */
+  description(val: string) {
+    this._description = val;
+    return this;
+  }
+
+  /**
+   * Epilog
+   * Displays trailing message.
+   *
+   * @param val the trailing epilogue to be displayed.
+   */
+  epilog(val: string) {
+    this._epilog = val;
     return this;
   }
 
@@ -890,9 +1159,12 @@ export class Pargv {
    * @param description the description or options object.
    * @param options options object for the command.
    */
-  command(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig) {
+  command(config: IPargvCommandConfig): PargvCommand;
+  command(command: string): PargvCommand;
+  command(command: string, config: IPargvCommandConfig): PargvCommand;
+  command(command: string | IPargvCommandConfig, description?: string | IPargvCommandConfig, options?: IPargvCommandConfig): PargvCommand {
     const cmd = new PargvCommand(command, description, options, this);
-    this.commands[cmd.name] = cmd;
+    this.commands[cmd._name] = cmd;
     return cmd;
   }
 
@@ -906,6 +1178,7 @@ export class Pargv {
 
     let cmdStr: string = '';
     let parsedExec, action;
+    const isExec = last(argv) === '__exec__' ? argv.pop() : null;
 
     // if first arg is array then set as argv.
     if (isArray(argv[0]))
@@ -947,19 +1220,29 @@ export class Pargv {
 
     // Lookup the command.
     const cmd = this.commands[cmdStr];
-    const autoType = this.options.auto ? 'auto' : 'string';
     let ctr = 0;
 
     if (!cmd)
       log.error(`invalid command, the command ${cmdStr} was not found.`);
 
-    // Validate the arguments.
-    if (this.options.strict) {
+    const stats = cmd.stats(argv);
 
+    // Check if strict parsing is enabled.
+    if (this.options.strict && (stats.flagsMissingCount || stats.commandsMissingCount)) {
+      if (stats.commandsMissingCount) {
+        const missing = stats.commandsMissing[0];
+        log.error(`missing required command or subcommand - ${missing.name}.`);
+      }
+      if (stats.flagsMissingCount) {
+        const missing = stats.flagsMissing[0];
+        log.error(`missing required flag or option - ${missing.name}.`);
+      }
     }
 
-    const validation = cmd.validate(argv);
-    // console.log(validation);
+    // Check if duplicate flags are allowed.
+    if (!this.options.dupes && stats.flagsDuplicates.length) {
+      log.error(`whoops duplicate flags are prohibited, found duplicates - ${stats.flagsDuplicates.join(', ')}.`);
+    }
 
     // Iterate the args.
     argv.forEach((el, i) => {
@@ -967,42 +1250,49 @@ export class Pargv {
       const nextId = i + 1;
       let next = argv[nextId];
       const isFlag = FLAG_EXP.test(el);
-      // const prev = argv[i - 1];
-      // const isPrevFlag = FLAG_EXP.test(prev || '');
-      // const isNextFlag = FLAG_EXP.test(next || '');
-      // const isShortFlag = FLAG_SHORT_EXP.test(el);
-      // const isPrevShortFlag = FLAG_SHORT_EXP.test(prev);
-
       const isKeyVal = KEYVAL_EXP.test(next || '');
+      const isFlagNext = FLAG_EXP.test(next || '');
 
       // Lookup the defined option if any.
       const opt = isFlag ? cmd.findOption(el) : cmd.findOption(ctr);
 
       // No anonymous flags/commands allowed throw error.
-      if (!opt)
+      if (!opt && this.options.strict)
         log.error(`unknown argument ${el} is NOT allowed in strict mode.`);
+
+      const isNot = FLAG_NOT_EXP.test(el) ? true : false;
+      el = isNot ? el.replace(/^--no/, '') : el;
+      const key = el.replace(FLAG_EXP, '');
+      const keyName = camelcase((opt && opt.as) || key);
+      const isBool = (opt && !opt.as) || (!opt && (isFlagNext || !next));
+      const type = this.options.auto ? 'auto' : 'string';
+      const fn: CoerceCallback = !opt ? castToType.bind(null, type, next) : opt.coerce as CoerceCallback;
 
       // Is a flag.
       if (isFlag) {
 
-        const key = el.replace(FLAG_EXP, '');
-        const keyName = camelcase(opt.as || key);
-        const isBool = !opt.as;
-
-        const fn: CastCallback = opt.cast as CastCallback;
-        const val = isBool ? true : fn(next);
+        const val = isBool ? true : fn(next, opt, cmd);
 
         // If required and no value throw error.
         if (opt.required && !isValue(val))
-          log.error(`command ${cmd.name} requires missing option ${opt.name}.`);
+          log.error(`command ${cmd._name} requires missing option ${opt.name}.`);
 
         if (isValue(val)) {
+
           // If the result is an object use extend
           // in case the object is built over multiple flags.
-          if (isPlainObject(val))
-            result.flags[keyName] = extend({}, result.flags[keyName], val);
-          else
+          if (isPlainObject(val) || isDotNotation(key)) {
+
+            if (isDotNotation(key))
+              set(result.flags, key, val);
+            else
+              result.flags[keyName] = extend({}, result.flags[keyName], val);
+
+          }
+          else {
             result.flags[keyName] = val;
+          }
+
         }
 
         if (!isBool)
@@ -1013,16 +1303,27 @@ export class Pargv {
       // Is a sub command.
       else {
 
-        const fn: CastCallback = opt.cast as CastCallback;
-        const val = fn(el);
-        result.cmds.push(val);
+        const val = fn(el, opt, cmd);
+
+        if (isValue(val))
+          result.cmds.push(val);
 
         // Update position counter.
         ctr++;
 
       }
 
+
     });
+
+    // If called from exec pad
+    // cmds array for use with spread.
+    if (isExec) {
+      const totalArgs = stats.commandsOptionalCount + stats.commandsRequiredCount;
+      let offset = totalArgs - result.cmds.length;
+      while (offset > 0 && offset--)
+        result.cmds.push(null);
+    }
 
     return result;
 
@@ -1035,57 +1336,61 @@ export class Pargv {
    * @param argv optional arguments otherwise defaults to process.argv.
    */
   exec(...argv: any[]) {
-    const parsed: IPargvResult = this.parse(...argv);
+    const parsed: IPargvResult = this.parse(...argv, '__exec__');
     const cmd = this.commands[parsed.cmd];
-    // We should never hit the following.
-    if (!cmd)
-      log.error(`whoops successfully parsed args but command ${parsed.cmd} could not be found.`);
-    // Make clone of the sub commands.
-    let cmds = parsed.cmds.slice(0);
-    const stats = cmd.commandStats();
-    let offset = stats.cmds.total.length - cmds.length;
-    while (offset > 0 && offset--)
-      cmds.push(null);
-    if (isFunction(cmd.onAction))
-      cmd.onAction(...cmds, parsed, cmd);
+
+    if (isFunction(cmd._action))
+      cmd._action(...parsed.cmds, parsed, cmd);
   }
 
   /**
    * Help
-   * Displays the generated help or supplied help string.
+   * Helper method for defining custom help text.
    *
-   * @param val optional value to use instead of generated help.
+   * @param val callback for custom help or boolean to toggle enable/disable.
    */
-  help(val?: string) {
-
-    const layout = this.layout(95);
-
-    // Supported Types
-    const types = [
-      ['String', '- native string.'],
-      ['Boolean', '- native boolean.'],
-      ['Float', '- number containing decimal.'],
-      ['Integer', ' - number without decimal.'],
-      ['Number', '- native number.'],
-      ['Date', '- native date.'],
-      ['RegExp', '- native regular expression.'],
-      ['Array', '- native array.']
-    ];
-
-    const typesHelp = layout.join('\n', ...types.map((t) => {
-      colurs.yellow(t[0]);
-      return t.join('\t');
-    }));
-
+  help(disabled: boolean): Pargv;
+  help(fn: boolean | HelpCallback) {
+    if (isBoolean(fn)) {
+      this._helpDisabled = <boolean>fn;
+    }
+    else if (isFunction(fn)) {
+      this._helpDisabled = undefined;
+      this._helpHandler = (command) => {
+        return (fn as HelpCallback)(command, this.commands);
+      };
+    }
     return this;
+  }
 
+  /**
+   * Show Help
+   * Displays all help or help for provided command name.
+   *
+   * @param command optional name for displaying help for a particular command.
+   */
+  showHelp(command?: string | PargvCommand) {
+    const name = isPlainObject(command) ? (command as PargvCommand)._name : command;
+    const help = this._helpHandler(<string>name, this.commands);
+    console.log(help);
+    console.log();
+  }
+
+  /**
+   * Remove
+   * Removes an existing command from the collection.
+   *
+   * @param cmd the command name to be removed.
+   */
+  remove(cmd: string) {
+    delete this.commands[cmd];
   }
 
   // EXTENDED METHODS
 
   /**
    * Logo
-   * Displays an ASCII logo using Figlet.
+   * Builds or Displays an ASCII logo using Figlet.
    *
    * @param text the text to be displayed.
    * @param font the figlet font to be used.
@@ -1093,13 +1398,14 @@ export class Pargv {
    * @param horizontalLayout the horizontal layout mode.
    * @param verticalLayout the vertical layout mode.
    */
-  logo(text: string | IFigletOptions, font?: string) {
+  logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): ILogo {
 
     let result: string;
+    let methods: ILogo;
 
     let defaults: IFigletOptions = {
-      text: 'Pargv',
-      font: 'Doom',
+      text: 'App',
+      font: 'Ogre',
       horizontalLayout: 'default',
       verticalLayout: 'default'
     };
@@ -1115,35 +1421,48 @@ export class Pargv {
     // Process the text.
     result = figlet.textSync(options.text, options);
 
-    return {
+    // Apply ansi styles if any.
+    if (styles)
+      result = colurs.applyAnsi(result, styles) as string;
 
-      // Allows for modifiying the result like colorizing.
-      before: (fn: BeforeFigletRender): Pargv => {
-        result = fn(result);
-        return this;
-      },
+    /**
+     * Render
+     * Renders out the Figlet font logo.
+     */
+    function render() {
+      console.log(result);
+      return this;
+    }
 
-      // Outputs/shows the result in the console.
-      show: (): Pargv => {
-        console.log(result);
-        return this;
-      },
+    /**
+     * Fonts
+     * Lists Figlet Fonts.
+     */
+    function fonts() {
+      return figlet.fontsSync();
+    }
 
-      // Simply returns the current result.
-      result: (): string => {
-        return result;
-      }
+    /**
+     * Get
+     * Returns the Figlet font without rendering.
+     */
+    function get() {
+      return result;
+    }
+
+    const show = render;
+
+    methods = {
+
+      fonts,
+      show,
+      render,
+      get
 
     };
 
-  }
+    return methods;
 
-  /**
-   * Fonts
-   * Returns list of figlet fonts.
-   */
-  fonts() {
-    return figlet.fontsSync();
   }
 
   /**
@@ -1152,16 +1471,25 @@ export class Pargv {
     * Supports strings with \t \s \n or IUIOptions object.
     * @see https://www.npmjs.com/package/cliui
     *
+    *
+    *
     * @param width the width of the layout.
     * @param wrap if the layout should wrap.
     */
   layout(width?: number, wrap?: boolean): ILayout {
 
     // Base width of all divs.
-    width = width || 95;
+    width = width || 100;
 
     // Init cli ui.
     const ui = cliui({ width: width, wrap: wrap });
+
+    // Alignment.
+    const flowMap = {
+      '-1': null,
+      0: 'center',
+      1: 'right'
+    };
 
     function invalidExit(element, elements) {
       if (isString(element) && elements.length && isPlainObject(elements[0]))
@@ -1178,9 +1506,51 @@ export class Pargv {
      *
      * @param elements array of string or IUIOptions
      */
-    function div<T>(...elements: T[]) {
+    function div(...elements: any[]) {
       add('div', ...elements);
       return methods;
+    }
+
+    /**
+     * Flow
+     * Shortcut method to specify columns and their flow
+     * direction or alignment. Last arg must be number or
+     * and array matching the number or preceding elements.
+     *
+     * Supports flowing right or center.
+     * 1 = right
+     * 0 = center
+     *
+     * @example
+     * Flow the first and last elements to the right with the middle centered.
+     * flow('one', 'two', 'three', [1, 0, 1])
+     *
+     * @example
+     * Flow the last element to the right
+     * flow('one', 'two', 1)
+     *
+     * @param align the alignment direction or array of alignments.
+     * @param elements the column elements with last element as number or array.
+     */
+    function flow(align: number | number[], ...elements: any[]) {
+      align = toArray<number>(align);
+      const isLast = align.length === 1;
+      const lastIdx = elements.length - 1;
+      elements = elements.map((el, i) => {
+        if (isLast && i < lastIdx)
+          return el;
+        let dir = !isLast ? align[i] : align[0];
+        if (!dir || dir === null || dir === -1)
+          return el;
+        dir = flowMap[dir];
+        if (isPlainObject(el))
+          el.align = dir;
+        else
+          el = { text: el, align: dir };
+        return el;
+      });
+      add('div', ...elements);
+      return this;
     }
 
     /**
@@ -1189,8 +1559,47 @@ export class Pargv {
      *
      * @param elements array of string or IUIOptions
      */
-    function span<T>(...elements: T[]) {
+    function span(...elements: any[]) {
       add('span', ...elements);
+      return methods;
+    }
+
+    /**
+     * Repeat
+     * Simply repeats a character by layout width
+     * or specified length. Good for creating sections
+     * or dividers. If single integer is used for padding
+     * will use value for top padding then double for bottom.
+     *
+     * @param char the character to be repeated
+     * @param len optional lenth to repeat or width offset by 25 is used.
+     * @param padding number or array of numbers if single digit used for top/bottom.
+     */
+    function repeat(char: string, len?: number, padding?: number | number[]) {
+      len = len || (width - 1);
+      const _char = char;
+      while (len--)
+        char += _char;
+      this.section(char, padding);
+      return methods;
+    }
+
+    /**
+     * Section
+     * Helper to create a section header.
+     *
+     * When single integer is used for padding it will
+     * be applied to the top and bottom padding only where
+     * the bottom will be double the top.
+     *
+     * @param title the name of the section.
+     * @param padding the optional padding used for the section.
+     */
+    function section(title: string, padding?: number | number[]) {
+      padding = padding >= 0 ? padding : 1;
+      if (isNumber(padding))
+        padding = <number[]>[padding, 0, <number>padding, 0];
+      add('div', { text: title, padding: padding });
       return methods;
     }
 
@@ -1200,7 +1609,7 @@ export class Pargv {
      *
      * @param elements the elements to be created.
      */
-    function join<T>(by: string, ...elements: T[]) {
+    function join(by: string, ...elements: any[]) {
       add('div', elements.join(by));
       return methods;
     }
@@ -1220,7 +1629,7 @@ export class Pargv {
      *
      * @param elements optional elements to be defined at render.
      */
-    function render<T>(...elements: T[]) {
+    function render(...elements: any[]) {
       if (elements.length)
         add('div', ...elements);
       console.log(get());
@@ -1231,8 +1640,11 @@ export class Pargv {
 
     const methods = {
       div,
-      join,
       span,
+      repeat,
+      section,
+      flow,
+      join,
       get,
       render,
       show,

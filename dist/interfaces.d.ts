@@ -1,4 +1,5 @@
-import { PargvCommand } from './';
+import { PargvCommand, Pargv } from './';
+export declare type ErrorHandler = (err?: Error, pargv?: Pargv) => void;
 export declare type CoerceCallback = (val: any, command?: PargvCommand) => boolean;
 export declare type ActionCallback = (...args: any[]) => void;
 export declare type HelpCallback = (command: string, commands?: IMap<PargvCommand>) => string;
@@ -7,18 +8,27 @@ export declare type FigletLayout = 'default' | 'full' | 'fitted' | 'controlled s
 export interface IMap<T> {
     [key: string]: T;
 }
+export interface ILogger {
+    error(...args: any[]): void;
+    warn(...args: any[]): ILogger;
+    info(...args: any[]): ILogger;
+    write(...args: any[]): ILogger;
+    exit(code: any): void;
+}
 export interface IPargvOptions {
-    strict?: boolean;
     auto?: boolean;
     colorize?: boolean;
-    divider: string;
-    dupes?: boolean;
+    divider?: string;
     colors?: {
         primary: AnsiStyles | AnsiStyles[];
         accent: AnsiStyles | AnsiStyles[];
         alert: AnsiStyles | AnsiStyles[];
         muted: AnsiStyles | AnsiStyles[];
     };
+    extendCommands?: boolean;
+    allowAnonymous?: boolean;
+    ignoreTypeErrors?: boolean;
+    displayStackTrace?: boolean;
 }
 export interface IPargvOption {
     key?: string;
@@ -28,10 +38,30 @@ export interface IPargvOption {
     aliases?: string[];
     as?: string;
     index?: number;
-    type?: string;
+    type?: string | RegExp | CoerceCallback;
     flag?: boolean;
     bool?: boolean;
     required?: boolean;
+}
+export interface IPargvParsedResult {
+    $exec?: string;
+    $command?: string;
+    $commands?: string[];
+    $metadata?: {
+        source?: string[];
+        execPath?: string;
+        nodePath?: string;
+        globalPrefix?: string;
+    };
+    [key: string]: any;
+}
+export interface IPargvCoerceConfig {
+    fn: string | RegExp | CoerceCallback;
+    def?: any;
+}
+export interface IPargvWhenConfig {
+    demand: string;
+    converse?: boolean;
 }
 export interface IFigletOptions {
     text?: string;
@@ -42,11 +72,9 @@ export interface IFigletOptions {
 export interface ILayout {
     div(...elements: any[]): ILayout;
     span(...elements: any[]): ILayout;
-    flow(align: number | number[], ...elements: any[]): ILayout;
     repeat(char: string, len?: number, padding?: number | number[]): ILayout;
     section(title: string, padding?: number | number[]): ILayout;
     join(by: string, ...elements: any[]): ILayout;
-    render(...elements: any[]): void;
     show(...elements: any[]): void;
     get(): string;
     ui: any;

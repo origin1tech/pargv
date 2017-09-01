@@ -1,6 +1,6 @@
 export declare const KEYVAL_EXP: RegExp;
 export declare const CSV_EXP: RegExp;
-export declare const ARRAY_EXP: RegExp;
+export declare const LIST_EXP: RegExp;
 export declare const JSON_EXP: RegExp;
 export declare const REGEX_EXP: RegExp;
 export declare const REGEX_OPTS_EXP: RegExp;
@@ -11,3 +11,5 @@ export declare const FLAG_SHORT_EXP: RegExp;
 export declare const TOKEN_ANY_EXP: RegExp;
 export declare const TOKEN_PREFIX_EXP: RegExp;
 export declare const SPLIT_CHARS: string[];
+export declare const SPLIT_KEYVAL_EXP: RegExp;
+export declare const SPLIT_PAIRS_EXP: RegExp;

@@ -1,17 +1,40 @@
-import { IMap, IPargvOptions, ActionCallback, CoerceCallback, AnsiStyles, IFigletOptions, ILayout, ILogo } from './interfaces';
+import { IMap, IPargvOptions, ActionCallback, CoerceCallback, AnsiStyles, IFigletOptions, ILayout, ILogo, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler } from './interfaces';
 export declare class Pargv {
     private _helpDisabled;
     private _helpHandler;
+    private _errorHandler;
     private _command;
     _name: string;
     _nameFont: string;
     _nameStyles: AnsiStyles[];
     _version: string;
+    _license: string;
     _describe: string;
     _epilog: string;
-    commands: IMap<PargvCommand>;
+    _commands: IMap<PargvCommand>;
     options: IPargvOptions;
     constructor(options?: IPargvOptions);
+    /**
+     * Logger
+     * Formats messages for logging.
+     *
+     * @param args log arguments.
+     */
+    private logger(...args);
+    /**
+     * Error
+     * Handles error messages.
+     *
+     * @param args args to be formatted and logged.
+     */
+    error(...args: any[]): void;
+    /**
+     * Log
+     * Displays log messages after formatting, supports metadata.
+     *
+     * @param args the arguments to log.
+     */
+    private log(...args);
     /**
       * Compile Help
       * Compiles help for all commands or single defined commnand.
@@ -20,11 +43,12 @@ export declare class Pargv {
       */
     private compileHelp(command?);
     /**
-     * Find
-     * Methods for finding commands and options.
+     * Commands
+     * Helper methods for commands.
      */
-    readonly find: {
-        command: (key: string) => PargvCommand;
+    readonly commands: {
+        find: (key: string) => PargvCommand;
+        remove: (key: string) => this;
     };
     /**
      * UI
@@ -36,14 +60,13 @@ export declare class Pargv {
      * Alias to epilog.
      */
     readonly epilogue: (val: string) => this;
-    readonly option: (token: string, describe?: string, def?: any) => PargvCommand;
-    readonly alias: (key: string, ...alias: string[]) => PargvCommand;
-    readonly describe: (key: string, describe: string) => PargvCommand;
-    readonly coerce: (key: string, fn: string | RegExp | CoerceCallback, def?: any) => PargvCommand;
-    readonly demand: (key: string | string[], ...keys: string[]) => PargvCommand;
-    readonly demandIf: (key: string, when: string) => void;
-    readonly min: (count: number) => PargvCommand;
-    readonly action: (fn: ActionCallback) => PargvCommand;
+    /**
+     * Default Command
+     * Exposes default command for parsing anonymous arguments.
+     *
+     * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
+     */
+    readonly $: PargvCommand;
     /**
      * App
      * Just adds a string to use as title of app, used in help.
@@ -72,6 +95,13 @@ export declare class Pargv {
      */
     description(describe: string): this;
     /**
+     * License
+     * Stores license type for showing in help.
+     *
+     * @param val the license type.
+     */
+    license(val: string): this;
+    /**
      * Epilog
      * Displays trailing message.
      *
@@ -92,7 +122,7 @@ export declare class Pargv {
      *
      * @param argv the process.argv or custom args array.
      */
-    parse(...argv: any[]): any;
+    parse(...argv: any[]): IPargvParsedResult;
     /**
      * Exec
      * Parses arguments then executes command action if any.
@@ -101,6 +131,13 @@ export declare class Pargv {
      */
     exec(...argv: any[]): void;
     /**
+     * Help
+     * Helper method for defining custom help text.
+     *
+     * @param val callback for custom help or boolean to toggle enable/disable.
+     */
+    help(disabled: boolean): Pargv;
+    /**
       * Show Help
       * Displays all help or help for provided command name.
       *
@@ -108,12 +145,12 @@ export declare class Pargv {
       */
     showHelp(command?: string | PargvCommand): void;
     /**
-     * Help
-     * Helper method for defining custom help text.
+     * Fail
+     * Add custom on error handler.
      *
-     * @param val callback for custom help or boolean to toggle enable/disable.
+     * @param fn the error handler function.
      */
-    help(disabled: boolean): Pargv;
+    fail(fn: ErrorHandler): this;
     /**
      * Stats
      * Iterates array of arguments comparing to defined configuration.
@@ -126,22 +163,24 @@ export declare class Pargv {
         commands: any[];
         options: any[];
         anonymous: any[];
-        required: any[];
         missing: any[];
+        map: any[];
         normalized: any[];
+        whens: any;
     };
     /**
-     * Remove
-     * Removes a command from the collection.
-     *
-     * @param key the command key to be removed.
-     */
-    remove(key: string): this;
-    /**
      * Reset
-     * Resets the default command.
+     * Resets the default command and settings.
      */
     reset(): this;
+    /**
+     * Normalize Args
+     * Converts -abc to -a -b -c
+     * Converts --name=bob to --name bob
+     *
+     * @param args the arguments to normalize.
+     */
+    toNormalized(...args: any[]): any[];
     /**
      * Logo
      * Builds or Displays an ASCII logo using Figlet.
@@ -175,13 +214,31 @@ export declare class PargvCommand {
     _bools: string[];
     _aliases: IMap<string>;
     _usages: IMap<string[]>;
+    _defaults: IMap<any>;
     _describes: IMap<string>;
     _coercions: IMap<CoerceCallback>;
     _demands: string[];
+    _whens: IMap<string>;
     _min: number;
+    _examples: string[];
     _action: ActionCallback;
     _pargv: Pargv;
     constructor(token: string, describe?: string, pargv?: Pargv);
+    /**
+     * Parse Token
+     * Parses a usage token.
+     *
+     * @param token the token string to be parsed.
+     * @param next the next element in usage command.
+     */
+    private parseToken(token, next?);
+    /**
+     * Parse Command
+     * Parses a command token.
+     *
+     * @param token the command token string to parse.
+     */
+    private parseCommand(token?);
     /**
      * Expand Option
      * This breaks out the parsed option in to several
@@ -191,29 +248,28 @@ export declare class PargvCommand {
      * @param option the parsed PargvOption object.
      */
     private expandOption(option);
-    /**
-     * Parse Command
-     * Parses a command token.
-     *
-     * @param token the command token string to parse.
-     */
-    private parseCommand(token?);
-    /**
-     * Alias To Name
-     * Maps an alias key to primary command/flag name.
-     *
-     * @param key the key to map to name.
-     */
-    private aliasToKey(key);
+    readonly error: (...args: any[]) => void;
+    readonly colors: {
+        primary: "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
+        accent: "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
+        alert: "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
+        muted: "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
+    };
+    readonly parse: any;
+    readonly exec: any;
     /**
       * Option
       * Adds option to command.
+      * Supported to type strings: string, date, array,
+      * number, integer, float, json, regexp, boolean
+      * @example
       *
       * @param token the option token to parse as option.
       * @param describe the description for the option.
       * @param def an optional default value.
+      * @param type a string type, RegExp to match or Coerce method.
       */
-    option(token: string, describe?: string, def?: any): this;
+    option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceCallback): PargvCommand;
     /**
      * Alias
      * Maps alias keys to primary flag/command key.
@@ -221,7 +277,8 @@ export declare class PargvCommand {
      * @param key the key to map alias keys to.
      * @param alias keys to map as aliases.
      */
-    alias(key: string, ...alias: string[]): this;
+    alias(config: IMap<string[]>): PargvCommand;
+    alias(key: string, ...alias: string[]): PargvCommand;
     /**
      * Describe
      * Adds description for an option.
@@ -229,7 +286,8 @@ export declare class PargvCommand {
      * @param key the option key to add description to.
      * @param describe the associated description.
      */
-    describe(key: string, describe: string): this;
+    describe(config: IMap<string>): PargvCommand;
+    describe(key: string, describe?: string): PargvCommand;
     /**
      * Coerce
      * Coerce or transform the defined option when matched.
@@ -238,7 +296,8 @@ export declare class PargvCommand {
      * @param fn the string type, RegExp or coerce callback.
      * @param def an optional value when coercion fails.
      */
-    coerce(key: string, fn: string | RegExp | CoerceCallback, def?: any): this;
+    coerce(key: string | IMap<IPargvCoerceConfig>): PargvCommand;
+    coerce(key: string, type?: string | RegExp | CoerceCallback, def?: any): PargvCommand;
     /**
      * Demand
      * The commands or flag/option keys to demand.
@@ -246,15 +305,26 @@ export declare class PargvCommand {
      * @param key the key to demand.
      * @param keys additional keys to demand.
      */
-    demand(key: string | string[], ...keys: string[]): this;
+    demand(...keys: string[]): this;
     /**
-     * Demand If
-     * Demands a key when parent key is present.
+     * When
+     * When a specified key demand dependent key.
      *
      * @param key require this key.
-     * @param when this key is present.
+     * @param demand this key is present.
+     * @param converse when true the coverse when is also created.
      */
-    demandIf(key: string, when: string): void;
+    when(config: IMap<IPargvWhenConfig>): PargvCommand;
+    when(key: string, converse?: boolean): PargvCommand;
+    when(key: string, demand?: string, converse?: boolean): PargvCommand;
+    /**
+     * Default
+     * Sets a default value for a command or option.
+     *
+     * @param key the key to set the default for or an object of key/val.
+     * @param val the value to set for the provided key.
+     */
+    default(key: string | IMap<any>, val: any): this;
     /**
      * Min
      * A value indicating the minimum number of commands.
@@ -269,6 +339,59 @@ export declare class PargvCommand {
      * @param fn the callback function when parsed command matches.
      */
     action(fn: ActionCallback): this;
+    /**
+     * Example
+     * Stores and example for the command displayed in help.
+     *
+     * @param val string value representing an example.
+     */
+    example(example: string, describe?: string): void;
+    /**
+     * Cast To Type
+     * Casts a value to the specified time or fallsback to default.
+     *
+     * @param type the type to cast to.
+     * @param val the value to be cast.
+     */
+    castToType(key: string, type: string | RegExp, val?: any, def?: any): any;
+    /**
+     * Alias To Name
+     * Maps an alias key to primary command/flag name.
+     *
+     * @param key the key to map to name.
+     * @param def default value if alias is not found.
+     */
+    aliasToKey(key: string | number, def?: any): string;
+    /**
+     * Strip To Alias
+     * Strips tokens then returns alias or original key.
+     *
+     * @param key the key to retrieve alias for.
+     */
+    stripToAlias(key: string | number): string;
+    /**
+     * Find Aliases
+     * Looks up aliases for a given key.
+     *
+     * @param key the primary key to find aliases for.
+     */
+    findAliases(key: string): any[];
+    /**
+     * Stats
+     * Iterates arguments mapping to known options and commands
+     * finding required, anonymous and missing args.
+     *
+     * @param args the args to get stats for.
+     */
+    stats(args: any[]): {
+        commands: any[];
+        options: any[];
+        anonymous: any[];
+        missing: any[];
+        map: any[];
+        normalized: any[];
+        whens: any;
+    };
     /**
      * Has Command
      * Checks if a command exists by index or name.
@@ -295,12 +418,4 @@ export declare class PargvCommand {
      * @param key the option key to check.
      */
     isBool(key: string): boolean;
-    stats(args: any[]): {
-        commands: any[];
-        options: any[];
-        anonymous: any[];
-        required: any[];
-        missing: any[];
-        normalized: any[];
-    };
 }

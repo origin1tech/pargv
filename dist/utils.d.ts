@@ -1,5 +1,10 @@
 export * from 'chek';
 /**
+ * Get Prefix
+ * Returns the node prefix path.
+ */
+export declare function getPrefix(): any;
+/**
  * Is Flag
  * Checks if value is a flag (ex: -s or --save).
  *
@@ -39,14 +44,6 @@ export declare function mergeArgs(val: any | any[], ...args: any[]): any[];
  */
 export declare function splitToList(val: string): RegExp;
 /**
- * Normalize Args
- * Converts -abc to -a -b -c
- * Converts --name=bob to --name bob
- *
- * @param args the arguments to normalize.
- */
-export declare function normalizeArgs(args: any[]): any[];
-/**
  * To Option Tokens
  * Formats option string to support Pargv syntax.
  * @example
@@ -72,16 +69,3 @@ export declare function removeDuplicates(...args: any[]): any[];
  * @param val the array of values to concat.
  */
 export declare function concatTo(obj: any, key: string, val: any[]): any;
-export declare const logTypes: {
-    error: string;
-    warn: string;
-    info: string;
-    debug: string;
-};
-export declare function logger(colurs: any): {
-    error: (...args: any[]) => void;
-    info: (...args: any[]) => any;
-    warn: (...args: any[]) => any;
-    write: (...args: any[]) => void;
-    exit: (code?: number) => never;
-};

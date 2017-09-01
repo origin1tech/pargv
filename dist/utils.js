@@ -4,8 +4,17 @@ function __export(m) {
 }
 Object.defineProperty(exports, "__esModule", { value: true });
 var chek_1 = require("chek");
+var prefix = require("global-prefix");
 var constants_1 = require("./constants");
 __export(require("chek"));
+/**
+ * Get Prefix
+ * Returns the node prefix path.
+ */
+function getPrefix() {
+    return prefix;
+}
+exports.getPrefix = getPrefix;
 /**
  * Is Flag
  * Checks if value is a flag (ex: -s or --save).
@@ -72,31 +81,6 @@ function splitToList(val) {
 }
 exports.splitToList = splitToList;
 /**
- * Normalize Args
- * Converts -abc to -a -b -c
- * Converts --name=bob to --name bob
- *
- * @param args the arguments to normalize.
- */
-function normalizeArgs(args) {
-    var arr = [], idx;
-    args.forEach(function (el) {
-        if (/^--/.test(el) && ~(idx = el.indexOf('='))) {
-            arr.push(el.slice(0, idx), el.slice(idx + 1));
-        }
-        else if (constants_1.FLAG_SHORT_EXP.test(el)) {
-            el.replace(constants_1.FLAG_EXP, '').split('').forEach(function (s) {
-                arr.push('-' + s);
-            });
-        }
-        else {
-            arr.push(el);
-        }
-    });
-    return arr;
-}
-exports.normalizeArgs = normalizeArgs;
-/**
  * To Option Tokens
  * Formats option string to support Pargv syntax.
  * @example
@@ -152,53 +136,58 @@ function concatTo(obj, key, val) {
 }
 exports.concatTo = concatTo;
 // Simple Logger for Logging to Console
-exports.logTypes = {
-    error: 'red',
-    warn: 'yellow',
-    info: 'green',
-    debug: 'magenta'
-};
-function logger(colurs) {
-    var log = {
-        error: function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            args.unshift(colurs.bold[exports.logTypes['error']]('error:'));
-            console.log('');
-            console.log.apply(console, args);
-            console.log('');
-            log.exit(1);
-        },
-        info: function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            args.unshift(colurs.bold[exports.logTypes['info']]('info:'));
-            console.log.apply(console, args);
-            return log;
-        },
-        warn: function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            args.unshift(colurs.bold[exports.logTypes['warn']]('warn:'));
-            console.log.apply(console, args);
-            return log;
-        },
-        write: function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            console.log.apply(console, args);
-        },
-        exit: process.exit
-    };
-    return log;
-}
-exports.logger = logger;
+// export function logger(level, colurs): ILogger {
+//   const levels = {
+//     error: 'red',
+//     warn: 'yellow',
+//     info: 'green',
+//     debug: 'magenta'
+//   };
+//   const levelKeys = keys(levels);
+//   level = isValue(level) ? level : 'info';
+//   level = levelKeys.indexOf(level);
+//   function normalize(args) {
+//     let msg = args.shift();
+//     let meta;
+//     const tokens = isString(msg) && msg.match(/(%s|%d|%i|%f|%j|%o|%O|%%)/g);
+//     const isErrMsg = isError(msg);
+//     if (isPlainObject(last(args)) && (args.length > tokens.length))
+//       args[args.length - 1] = util.inspect(last(args), true, null, true);
+//     if (isPlainObject(msg))
+//       msg = util.inspect(msg, true, null, true);
+//     return util.format(msg, ...args);
+//   }
+//   function enabled(type) {
+//     type = levelKeys.indexOf(type);
+//     return type <= level;
+//   }
+//   const log = {
+//     error: (...args: any[]) => {
+//       if (!enabled('error')) return;
+//       const type = colurs.bold[levels.error]('error:');
+//       console.log('');
+//       console.log(type, normalize(args));
+//       console.log('');
+//       log.exit(1);
+//     },
+//     warn: (...args: any[]) => {
+//       if (!enabled('warn')) return;
+//       const type = colurs.bold[levels.warn]('warn:');
+//       console.log(type, normalize(args));
+//       return log;
+//     },
+//     info: (...args: any[]) => {
+//       if (!enabled('info')) return;
+//       const type = colurs.bold[levels.info]('info:');
+//       console.log(type, normalize(args));
+//       return log;
+//     },
+//     write: (...args: any[]) => {
+//       console.log.apply(null, args);
+//       return log;
+//     },
+//     exit: process.exit
+//   };
+//   return log;
+// }
 //# sourceMappingURL=utils.js.map

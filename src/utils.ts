@@ -1,8 +1,8 @@
-import * as util from 'util';
+import { format, inspect } from 'util';
 import { IPargvOption, ILogger } from './interfaces';
 import { isString, isArray, flatten, split, last, isFunction, isPlainObject, isError, isValue, keys, isUndefined, first, contains, noop } from 'chek';
 import * as prefix from 'global-prefix';
-import { FLAG_EXP, TOKEN_ANY_EXP, FLAG_SHORT_EXP, SPLIT_CHARS } from './constants';
+import { FLAG_EXP, TOKEN_ANY_EXP, FLAG_SHORT_EXP, SPLIT_CHARS, FORMAT_TOKENS_EXP } from './constants';
 
 export * from 'chek';
 
@@ -125,77 +125,44 @@ export function concatTo(obj: any, key: string, val: any[]) {
   return obj[key];
 }
 
-// Simple Logger for Logging to Console
+/**
+ * Levenshtein
+ * Computes the edit distance between two strings.
+ *
+ * Based on gist by Andrei Mackenzie
+ * @see https://gist.github.com/andrei-m/982927
+ *
+ * @param source the source string.
+ * @param compare the string to be compared.
+ */
+export function levenshtein(source, compare) {
+  let tmp;
+  if (source.length === 0) { return compare.length; }
+  if (compare.length === 0) { return source.length; }
+  if (source.length > compare.length) { tmp = source; source = compare; compare = tmp; }
 
-// export function logger(level, colurs): ILogger {
+  let i, j, res, alen = source.length, blen = compare.length, row = Array(alen);
+  for (i = 0; i <= alen; i++) { row[i] = i; }
 
-//   const levels = {
-//     error: 'red',
-//     warn: 'yellow',
-//     info: 'green',
-//     debug: 'magenta'
-//   };
+  for (i = 1; i <= blen; i++) {
+    res = i;
+    for (j = 1; j <= alen; j++) {
+      tmp = row[j - 1];
+      row[j - 1] = res;
+      res = compare[i - 1] === source[j - 1] ? tmp : Math.min(tmp + 1, Math.min(res + 1, row[j] + 1));
+    }
+  }
+  return res;
+}
 
-//   const levelKeys = keys(levels);
-//   level = isValue(level) ? level : 'info';
-//   level = levelKeys.indexOf(level);
+/**
+ * Pargv Error
+ */
+export class PargvError extends Error {
+  constructor(message: string, ...args: any[]) {
+    super(message);
+    this.name = `PargvError`; // TODO: add detailed types.
+    PargvError.captureStackTrace(this, PargvError);
+  }
+}
 
-//   function normalize(args) {
-
-//     let msg = args.shift();
-//     let meta;
-//     const tokens = isString(msg) && msg.match(/(%s|%d|%i|%f|%j|%o|%O|%%)/g);
-//     const isErrMsg = isError(msg);
-
-//     if (isPlainObject(last(args)) && (args.length > tokens.length))
-//       args[args.length - 1] = util.inspect(last(args), true, null, true);
-
-//     if (isPlainObject(msg))
-//       msg = util.inspect(msg, true, null, true);
-
-//     return util.format(msg, ...args);
-
-//   }
-
-//   function enabled(type) {
-//     type = levelKeys.indexOf(type);
-//     return type <= level;
-//   }
-
-//   const log = {
-
-//     error: (...args: any[]) => {
-//       if (!enabled('error')) return;
-//       const type = colurs.bold[levels.error]('error:');
-//       console.log('');
-//       console.log(type, normalize(args));
-//       console.log('');
-//       log.exit(1);
-//     },
-
-//     warn: (...args: any[]) => {
-//       if (!enabled('warn')) return;
-//       const type = colurs.bold[levels.warn]('warn:');
-//       console.log(type, normalize(args));
-//       return log;
-//     },
-
-//     info: (...args: any[]) => {
-//       if (!enabled('info')) return;
-//       const type = colurs.bold[levels.info]('info:');
-//       console.log(type, normalize(args));
-//       return log;
-//     },
-
-//     write: (...args: any[]) => {
-//       console.log.apply(null, args);
-//       return log;
-//     },
-
-//     exit: process.exit
-
-//   };
-
-//   return log;
-
-// }

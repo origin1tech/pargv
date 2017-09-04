@@ -15,3 +15,4 @@ export const TOKEN_PREFIX_EXP = /^(--?|<|\[)/;
 export const SPLIT_CHARS = ['|', ',', ' '];
 export const SPLIT_KEYVAL_EXP = /(('|")[^('|")]*('|"))|[^\:]+/g;
 export const SPLIT_PAIRS_EXP = /(('|")[^('|")]*('|"))|[^(\||+)]+/g;
+export const FORMAT_TOKENS_EXP = /(%s|%d)/g;

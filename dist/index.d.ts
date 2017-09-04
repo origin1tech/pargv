@@ -1,9 +1,10 @@
-import { IMap, IPargvOptions, ActionCallback, CoerceCallback, AnsiStyles, IFigletOptions, ILayout, ILogo, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler } from './interfaces';
+import { IMap, IPargvOptions, ActionCallback, CoerceCallback, AnsiStyles, HelpCallback, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler } from './interfaces';
 export declare class Pargv {
     private _helpDisabled;
     private _helpHandler;
     private _errorHandler;
     private _command;
+    private _exiting;
     _name: string;
     _nameFont: string;
     _nameStyles: AnsiStyles[];
@@ -15,26 +16,19 @@ export declare class Pargv {
     options: IPargvOptions;
     constructor(options?: IPargvOptions);
     /**
+     * Init
+     * Common method to initialize Pargv also used in .reset().
+     *
+     * @param options the Pargv options object.
+     */
+    private init(options?);
+    /**
      * Logger
      * Formats messages for logging.
      *
      * @param args log arguments.
      */
-    private logger(...args);
-    /**
-     * Error
-     * Handles error messages.
-     *
-     * @param args args to be formatted and logged.
-     */
-    error(...args: any[]): void;
-    /**
-     * Log
-     * Displays log messages after formatting, supports metadata.
-     *
-     * @param args the arguments to log.
-     */
-    private log(...args);
+    private formatLogMessage(...args);
     /**
       * Compile Help
       * Compiles help for all commands or single defined commnand.
@@ -54,7 +48,7 @@ export declare class Pargv {
      * UI
      * Alias to layout.
      */
-    readonly ui: (width?: number, wrap?: boolean) => ILayout;
+    readonly ui: (width?: number, wrap?: boolean) => IPargvLayout;
     /**
      * Epilogue
      * Alias to epilog.
@@ -91,9 +85,9 @@ export declare class Pargv {
      * Description
      * The program's description or purpose.
      *
-     * @param describe the description string.
+     * @param val the description string.
      */
-    description(describe: string): this;
+    description(val: string): this;
     /**
      * License
      * Stores license type for showing in help.
@@ -112,10 +106,10 @@ export declare class Pargv {
      * Command
      * A string containing Parv tokens to be parsed.
      *
-     * @param token the command token string to parse.
+     * @param command the command token string to parse.
      * @param describe a description describing the command.
      */
-    command(token: string, describe?: string): PargvCommand;
+    command(command: string, describe?: string): PargvCommand;
     /**
      * Parse
      * Parses the provided arguments inspecting for commands and options.
@@ -129,14 +123,14 @@ export declare class Pargv {
      *
      * @param argv optional arguments otherwise defaults to process.argv.
      */
-    exec(...argv: any[]): void;
+    exec(...argv: any[]): IPargvParsedResult;
     /**
      * Help
      * Helper method for defining custom help text.
      *
      * @param val callback for custom help or boolean to toggle enable/disable.
      */
-    help(disabled: boolean): Pargv;
+    help(fn: boolean | HelpCallback): this;
     /**
       * Show Help
       * Displays all help or help for provided command name.
@@ -152,14 +146,33 @@ export declare class Pargv {
      */
     fail(fn: ErrorHandler): this;
     /**
+     * Reset
+     * Deletes all commands and resets the default command.
+     */
+    reset(options?: IPargvOptions): this;
+    /**
+     * Error
+     * Handles error messages.
+     *
+     * @param args args to be formatted and logged.
+     */
+    error(...args: any[]): void;
+    /**
+     * Log
+     * Displays log messages after formatting, supports metadata.
+     *
+     * @param args the arguments to log.
+     */
+    log(...args: any[]): void;
+    /**
      * Stats
      * Iterates array of arguments comparing to defined configuration.
      * To get stats from default command use '__default__' as key name.
      *
-     * @param key the command key to get stats for.
+     * @param command the command key to get stats for.
      * @param args args to gets stats for.
      */
-    stats(key: string, ...args: any[]): {
+    stats(command: string, ...args: any[]): {
         commands: any[];
         options: any[];
         anonymous: any[];
@@ -168,11 +181,6 @@ export declare class Pargv {
         normalized: any[];
         whens: any;
     };
-    /**
-     * Reset
-     * Resets the default command and settings.
-     */
-    reset(): this;
     /**
      * Normalize Args
      * Converts -abc to -a -b -c
@@ -191,7 +199,7 @@ export declare class Pargv {
      * @param horizontalLayout the horizontal layout mode.
      * @param verticalLayout the vertical layout mode.
      */
-    logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): ILogo;
+    logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): IPargvLogo;
     /**
       * Layout
       * Creates a CLI layout much like creating divs in the terminal.
@@ -203,7 +211,7 @@ export declare class Pargv {
       * @param width the width of the layout.
       * @param wrap if the layout should wrap.
       */
-    layout(width?: number, wrap?: boolean): ILayout;
+    layout(width?: number, wrap?: boolean): IPargvLayout;
 }
 export declare class PargvCommand {
     _name: string;
@@ -219,9 +227,12 @@ export declare class PargvCommand {
     _coercions: IMap<CoerceCallback>;
     _demands: string[];
     _whens: IMap<string>;
-    _min: number;
     _examples: string[];
     _action: ActionCallback;
+    _maxCommands: number;
+    _maxOptions: number;
+    _minCommands: number;
+    _minOptions: number;
     _pargv: Pargv;
     constructor(token: string, describe?: string, pargv?: Pargv);
     /**
@@ -248,13 +259,30 @@ export declare class PargvCommand {
      * @param option the parsed PargvOption object.
      */
     private expandOption(option);
-    readonly error: (...args: any[]) => void;
+    readonly error: any;
     readonly colors: {
-        primary: "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
-        accent: "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
-        alert: "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
-        muted: "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
+        primary: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
+        accent: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
+        alert: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
+        muted: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
     };
+    /**
+     * Min
+     * Gets methods for adding min commands or options.
+     */
+    readonly min: {
+        commands: (count: number) => this;
+        options: (count: number) => this;
+    };
+    /**
+      * Max
+      * Gets methods for adding max commands or options.
+      */
+    readonly max: {
+        commands: (count: number) => this;
+        options: (count: number) => this;
+    };
+    readonly command: any;
     readonly parse: any;
     readonly exec: any;
     /**
@@ -326,13 +354,6 @@ export declare class PargvCommand {
      */
     default(key: string | IMap<any>, val: any): this;
     /**
-     * Min
-     * A value indicating the minimum number of commands.
-     *
-     * @param count the minimum command count.
-     */
-    min(count: number): this;
-    /**
      * Action
      * Adds an action event to be called when parsing matches command.
      *
@@ -345,7 +366,7 @@ export declare class PargvCommand {
      *
      * @param val string value representing an example.
      */
-    example(example: string, describe?: string): void;
+    example(example: string, describe?: string): this;
     /**
      * Cast To Type
      * Casts a value to the specified time or fallsback to default.
@@ -418,4 +439,25 @@ export declare class PargvCommand {
      * @param key the option key to check.
      */
     isBool(key: string): boolean;
+    /**
+     * Help
+     * Wrapper method to parent help method.
+     *
+     * @param fn boolean or custom HelpCallback method.
+     */
+    help(fn: boolean | HelpCallback): PargvCommand;
+    /**
+     * Fail
+     * Add custom on error handler.
+     *
+     * @param fn the error handler function.
+     */
+    fail(fn: ErrorHandler): this;
+    /**
+     * Epilog
+     * Displays trailing message.
+     *
+     * @param val the trailing epilogue to be displayed.
+     */
+    epilog(val: string): this;
 }

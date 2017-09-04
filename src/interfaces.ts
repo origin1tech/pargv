@@ -1,6 +1,6 @@
 import { PargvCommand, Pargv } from './';
 
-export type ErrorHandler = (err?: Error, pargv?: Pargv) => void;
+export type ErrorHandler = (message: string, args: any[], pargv?: Pargv) => void;
 export type CoerceCallback = (val: any, command?: PargvCommand) => boolean;
 export type ActionCallback = (...args: any[]) => void;
 export type HelpCallback = (command: string, commands?: IMap<PargvCommand>) => string;
@@ -29,10 +29,13 @@ export interface IPargvOptions {
     alert: AnsiStyles | AnsiStyles[];
     muted: AnsiStyles | AnsiStyles[];
   };
+  locale?: string;
+  localeDir?: string;
   extendCommands?: boolean;
   allowAnonymous?: boolean;
   ignoreTypeErrors?: boolean;
   displayStackTrace?: boolean;
+  exitOnError?: boolean;
 }
 
 export interface IPargvOption {
@@ -79,20 +82,26 @@ export interface IFigletOptions {
   verticalLayout?: FigletLayout;
 }
 
-export interface ILayout {
-  div(...elements: any[]): ILayout;
-  span(...elements: any[]): ILayout;
-  repeat(char: string, len?: number, padding?: number | number[]): ILayout;
-  section(title: string, padding?: number | number[]): ILayout;
-  join(by: string, ...elements: any[]): ILayout;
+export interface IPargvLayout {
+  div(...elements: any[]): IPargvLayout;
+  span(...elements: any[]): IPargvLayout;
+  repeat(char: string, len?: number, padding?: number | number[]): IPargvLayout;
+  section(title: string, padding?: number | number[]): IPargvLayout;
+  join(by: string, ...elements: any[]): IPargvLayout;
   show(...elements: any[]): void;
   get(): string;
   ui: any;
 }
 
-export interface ILogo {
+export interface IPargvLogo {
   fonts(): any[];
-  render(): void;
   show(): void;
   get(): string;
+}
+
+export interface IY18nOptions {
+  directory?: string;
+  updateFiles?: boolean;
+  locale?: string;
+  fallbackToLanguage?: boolean;
 }

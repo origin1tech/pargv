@@ -2,5 +2,3 @@
 .tmp/
 typedoc.json
 tslint.json
-temp.js
-src/temp.ts

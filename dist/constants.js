@@ -15,4 +15,5 @@ exports.TOKEN_PREFIX_EXP = /^(--?|<|\[)/;
 exports.SPLIT_CHARS = ['|', ',', ' '];
 exports.SPLIT_KEYVAL_EXP = /(('|")[^('|")]*('|"))|[^\:]+/g;
 exports.SPLIT_PAIRS_EXP = /(('|")[^('|")]*('|"))|[^(\||+)]+/g;
+exports.FORMAT_TOKENS_EXP = /(%s|%d)/g;
 //# sourceMappingURL=constants.js.map

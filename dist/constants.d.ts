@@ -13,3 +13,4 @@ export declare const TOKEN_PREFIX_EXP: RegExp;
 export declare const SPLIT_CHARS: string[];
 export declare const SPLIT_KEYVAL_EXP: RegExp;
 export declare const SPLIT_PAIRS_EXP: RegExp;
+export declare const FORMAT_TOKENS_EXP: RegExp;

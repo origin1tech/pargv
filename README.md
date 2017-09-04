@@ -1,276 +1,397 @@
-# Pargv
+# Pargv 2.x
 
-Minimal utility for parsing command line arguments in Node.
+Pargv has been rewritten in TypeScript as of version **2.0.0**. If you need the last legacy version you can install **1.5.1**. Pargv now automatically builds help based on your configuration but you can also manually create your own help using built in helpers which leverage [cliui](https://www.npmjs.com/package/cliui).
 
-## BREAKING CHANGE
+The best way to describe the Pargv cli argument parsing lib is that it is a mix of [commander](https://github.com/tj/commander.js) and [yargs](https://github.com/yargs/yargs). The most unique aspect of Pargv is how commands can be written which simplifies your configuration. Although you can chain calls for various features just like other parsing libs you can also enter them as a string and Pargv will parse out your config. The result is many command configurations can be written in a single. line.
 
-Starting with version "1.5.0" Pargv no longer initializes automatically. This has been changed in favor of creating an instance to better suit Typescript and exporting of types. See below under **"usage"**.
+## Installation
 
-## What is Pargv
-
-Parv is a minimilistic parser for node process.argv arguments. It does NOT for example handle creating help and usage information like you might find with Yargs or Commander. The reason for this is that more often than not as good as Yargs or Commander (and others) are there are always scenarios where they don't quite build out the help/usage as you need.
-
-## Install Using npm
+You can probably do this in your sleep but for completeness...
 
 ```sh
-$ npm install pargv
+$ npm install pargv -save
 ```
 
-## Usage
+## Quick Start
 
-```js
-// ES5
-var Pargv = require('pargv').Pargv;
-var pargv = new Pargv(/* options */);
+Import or require then new up an instance of Pargv.
 
-// ES6
+### Basic Example
+
+```ts
 import { Pargv } from 'pargv';
-const pargv = new Pargv(/* options */);
+
+// For ES5
+// const Pargv = require('pargv').Pargv;
+
+const pargv = new Pargv(/* your options */);
+
+pargv.command('generate <template>')
+  .action((template, parsed, command) => {
+    // template - the <template> sub command you defined in your command.
+    // parsed - the resulting parsed object see more on this below.
+    // command - the command instance that Pargv generated.
+  });
+
+const parsed = pargv.parse(); // if array of args not passed process.argv will be used.
 ```
 
-## Configure Options
+### Advanced Example
 
-See comments for each option.
+```ts
+import { Pargv } from 'pargv';
 
-```js
+// For ES5
+// const Pargv = require('pargv').Pargv;
 
-var defaults = {
+const pargv = new Pargv({ locale: 'en', divider: '#', extendCommands: true });
 
-	// Index of primary command.
-	// Typically you want this at 2
-	// because you want to ignore node
-	// path. This will result in the command
-	// being the file called. Set to 0
-	// if you wish to parse all arguments.
-	index: 2,
+// Command requires template name with optiona directory path.
+pargv.command('generate <template> [directory]')
 
-	// When not false assumes 1 argument after adjusting for
-	// node path and above index is the primary command.
-	setCommand: undefined,
+  // Creates option extension with description.
+  .option('--extension, --ext [ext]', 'The template\'s extension.')
 
-	// When NOT false parser attempts to cast to the
-	// appropriate type. As we're dealing with strings
-	// this is not bullet proof in some scenarios.
-	castTypes: undefined,
+  // Option to mock force.
+  .option('--force, -f', 'When present forces overwrite')
 
-	// When NOT false colors are enabled for logger.
-	colors: undefined,
+  // Adds alias for extension.
+  .alias('--extension', '-e')
 
-	// The allowed log level where error = 0,
-	// warn = 1, info = 2 and debug = 3;
-	logLevel: 2,
+  // Adds description for "directory" sub command.
+  .describe('directory', 'The directory path to save the template to.')
 
-	// Callback called on message logged.
-	// function (type, args, instance) {
-	// 		// type = the log type eg: error, warn, info, debug.
-	// 		// args = array of all arguments passed.
-	//  	// instance = the logger instance itself.
-	// }
-	logCallback: undefined,
+  // Not very practical but if force is defined required extention.
+  // Note we specific --ext, we could also specify -e or --extension
+  // Pargv will figure it out meaning u can use the primary or an alias
+  // as your key.
+  .when('--force', '--ext')
 
-	// When NOT false on parse defined actions are called
-	// when a command is matched.
-	autoActions: undefined
+  // Sets a default value for the extension option.
+  .default('--extension', '.html')
 
-};
+  // Ensures the value for extension is contained in our expression.
+  .coerce('--extension', /^\.(html|hbs|ejs)$/, 'could set default val here as well')
+
+  .action((template, parsed, command) => {
+    // template - the <template> sub command you defined in your command.
+    // parsed - the resulting parsed object see more on this below.
+    // command - the command instance that Pargv generated.
+  })
+  .exec(); // the above action will be called.
 ```
 
-## Parsing Arguments
+## Options
 
-```js
-// Require Pargv.
-var pargv = require('pargv');
-
-// Parse using defaults.
-pargv.parse();
-```
-
-## Data Types & Parsers
-
-Pargv attempts to parse known data types when processing arguments. The supported data types out of the box are as follows.
+Below are the options supported by Pargv and their uses/descriptions.
 
 <table>
-	<thead>
-		<tr>
-			<th>Type</th><th>Description</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>Date</td><td>import to note numbers (epochs) are not parsed only strings to date.</td>
-			<td>Number</td><td>if string contains only digits will be parsed as number.</td>
-			<td>Boolean</td><td>	will parse "true" or "false" strings as true or false.</td>
-			<td>Array</td><td>csv type string one,two,three 22 becomes ['one', 'two', 'three', 22 ]</td>
-			<td>Key Value</td><td>"key:value" results in { key: 'value' }</td>
-			<td>JSON</td><td>'"{ "name": "Jim", "age": 25 }"' results in JavaScript Object.</td>
-			<td>RegExp</td><td>"/^config/i" results in valid RegExp.</td>
-		</tr>
-	</tbody>
+  <thead>
+    <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>auto</td><td>When true Pargv tries to auto cast values to type.</td><td>True</td></tr>
+    <tr><td>colorize</td><td>Whether to use colors in help/log messages.</td><td>True</td></tr>
+    <tr><td>divider</td><td>A string to repeat as divider in help text.</td><td>=</td></tr>
+    <tr><td>locale</td><td>The i18n locale to use for messages/help.</td><td>en</td></tr>
+    <tr><td>localeDir</td><td>A directory for locales if u wish to roll your own.</td><td>undefined</td></tr>
+    <tr><td>extendCommands</td><td>When true known sub commands extended as properties in result.</td><td>False</td></tr>
+    <tr><td>allowAnonymous</td><td>When true anonymous sub commands and options are allowed.</td><td>True</td></tr>
+    <tr><td>ignoreTypeErrors</td><td>When true type checking is ignored.</td><td>False</td></tr>
+    <tr><td>displayStackTrace</td><td>When true stack trace is displayed for errors.</td><td>True</td></tr>
+    <tr><td>exitOnError</td><td>When true Pargv exists after errors.</td><td>True</td></tr>
+    <tr><td>colors</td><td>
+    <table>
+      <thead>
+       <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>primary</td><td>The primary color in help.</td><td>blue</td></tr>
+      <tr><td>accent</td><td>The accent color in help.</td><td>cyan</td></tr>
+      <tr><td>alert</td><td>The alert, error or required color in help.</td><td>red</td></tr>
+      <tr><td>muted</td><td>The muted color in help.</td><td>gray</td></tr>
+      </tbody>
+    </table>
+    </td><td></td>
+    </tr>
+  </tbody>
 </table>
 
-**IMPORTANT** Note the single/double quote encapsulation on JSON like strings This is required to preserve the internal quotes of the literal. Basically just take valid JSON and wrap it with '"{ }"'. This will enable all formatting to be preserved within the brackets.
+### Colors
 
-**PRO-TIP** If you don't like all those quotes (I don't!) just do the following:
+For supported colors see [colurs](https://github.com/origin1tech/colurs). The below
+colors property in options suports single string value or array of strings
+supported in colurs.
 
-```sh
-bash$ SOME_CMD  --user.name "Bob" --user.age 25
-```
+For example if you wanted the primary color in help to have a background you
+might set your options as follows:
 
-which will result in...
-
-```js
-{
-	name: "Bob",
-	age: 25
+```ts
+const opts = {
+  colors: {
+    primary: ['bold', 'bgBlue', 'white'] // result: bold white text with blue background.
+  }
 }
 ```
 
-or use key:value separated by commas.
+## Parse & Execute
 
-```sh
-bash$ SOME_CMD  --user.name "Bob" --user age:33,nickname:Bobby
+Using our above example to call the action associated with **generate** we would call the exec method. Calling the exec method parses your arguments and then calls the associated action.
+
+If you do not wish to execute the action you can simply parse and handle the result yourself.
+
+#### Exec Method
+
+```ts
+pargv.exec(process.argv);
 ```
 
-which will result in...
+#### Parse Method
 
-```js
-{
-	name: "Bob",
-	nickname: 'Bobby',
-	age: 25
+```ts
+const parsed = pargv.parse(process.argv)
+```
+
+#### Parsed Result
+
+Consider the following executed in your terminal and its corresponding configuration below:
+
+```sh
+$ app generate about --ext .html
+```
+
+```ts
+const parsed = pargv.command('generate <template> --ext <ext>')
+  .parse(process.argv);
+```
+
+The parsed result would be:
+
+```ts
+parsed = {
+  '$exec': 'example',
+  '$command': 'generate',
+  '$commands': [ 'about' ],
+  '$metadata':
+   {
+     source: [ 'generate', 'about', '--ext', '.html' ],
+     execPath: '/some/path/example',
+     nodePath: '/usr/local/bin/node',
+     globalPrefix: '/usr/local'
+   },
+  ext: '.html'
 }
 ```
 
-Working with objects/JSON via a command should be limited though because it kinda sucks to deal with but in a pinch it can be handy.
+## Convention Syntax & Types
 
-If you wish to add additional parsers you can do so as shown below. Parsers are called sequentially until a truthy result is found. Custom parsers are called first before known types. If your parser does not return a truthy value it will fall though to internal parsers.
+The following section describes how Pargv parses tokens and conventions in your commands and options as well as how built in Type casting and type checks work.
 
-```js
+### Pargv Syntax
 
-// Parsers are called with Pargv's context
-// for conveninece and chaining.
+Commands and options have a handy syntax that limits the need for
+chained calls. For example to denote an argument as required simply
+wrap in **<value>**. See below for more examples.
 
-pargv.addParser('name', function (val) {
-	// do something then return parsed value
-	// or return false to continue down the
-	// chain of parsers.
-	return val;
-});
+#### Tokens
 
-// If the parser already exists just pass "true"
-// as a third argument and then it will overwrite.
-pargv.addParser('name', function () {}, true);
+<table>
+  <thead>
+    <tr><th>Argument</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>< value ></td><td>denotes a required command or option.</td></tr>
+    <tr><td>[ value ]</td><td>denotes an optional command or option.</td></tr>
+    <tr><td>--option</td><td>denotes an option flag.</td></tr>
+    <tr><td>-o</td><td>denotes short option flag.</td></tr>
+    <tr><td>generate.gen.g</td><td>results in gen & g as aliases for generate command.</td></tr>
+    <tr><td>--extension.ext.e</td><td>results in ext & e as aliases for extension option.</td></tr>
+    <tr><td>[ value:float ]</td><td>value should be of type float.</td></tr>
+    <tr><td>-fsb</td><td>single - breaks out to '-f', '-s', '-b'</td></tr>
+    <tr><td>--ext=.html</td><td>is the same as --ext .html</td></tr>
+  </tbody>
+</table>
 
-// You can also add an object of parsers.
-pargv.addParser({
-	one: (val) => { /* do something */ },
-	two: (val) => { /* do something */ }
-});
+### Commands, Options & Chaining API
 
+You can create your commands and options using Pargv's syntax or using the
+chaining API. Both do exactly the same and support either or as well as both.
+There are some features which are only available through the chaining API but
+we'll get to those in a moment.
+
+```ts
+// Command: login           Aliases: log, l
+// Sub Command: url        (required)
+// Option: username         Aliases: --user, -u
+// Option: password         Aliases: --pass, -p
+pargv.command('login.log.l <url> --username.user.u [username] --password.pass.p [password]');
+
+// The below is the same as above.
+pargv.command('login <url>')
+  .alias('login', 'log', 'l') // or .alias('login', ['log', 'l'])
+  .option('--username, --user, -u [username]')
+  .option('--password, --pass, -p [password]');
 ```
-## Commands
 
-```js
-// Casts the value by iterating custom and internal parsers.
-var result = pargv.cast('some_value');
+### Spcifying Types
 
-// Gets only the flags from the parsed result.
-var flags = pargv.getFlags();
+When creating a command or option you can specify types
+for sub commands and options which take values. Pargv will then
+attempt to cast to these types where applicable and also do some
+type checking to ensure the result is the correct type. If you wish
+you can allow casting but disable type checking when initializing
+Pargv (see options).
 
-// Check if has command.
-var exists = pargv.hasCmd('some_command');
+Essentially these types are nothing more than internal coercions methods.
+If you choose to pass a custom coercion method then any defined types
+will be ignored as Pargv assumes you want to handle that manually.
 
-// The following checks if ANY command exists.
-var exists = pargv.hasCmd(['command1', 'command2'])
-var exists = pargv.hasCmd('command1', 'command2', 'command3');
+The following are the current supported types:
 
+date, boolean, array, regexp, object
+number, float, integer, string, json
+
+```ts
+// Creates Command: query
+// Requires sub command: table
+// Option: start          Type: date
+// Option: end            Type: date
+// Option: max            Type: integer
+pargv.command('query <table> --start [start:date] --end [end:date] --max [max:integer]');
+```
+
+### Argument Conventions
+
+Arguments can be entered in your terminal in a couple different ways for certain types and options. For example you can enter flag options as follows:
+
+```sh
+$ generate contact --ext .html
+```
+
+**OR**
+
+```sh
+$ generate contact --ext=.html
+```
+For puposes of this example assume we have the following option flags
+in our config. In this case we're mocking overwriting a template
+after backing it up and then we want to publish our changes. Again
+This is just all a mock but you get the idea.
+
+NOTE: In our example below how -fbp are all together. This is possible
+when prefixed with a single -.
+
+Pargv will then breakout each flag to its own argument.
+
+-f force
+-b backup
+-p publish
+
+```sh
+$ generate aboutus --ext .html -fbp
+```
+
+**Becomes**
+
+```ts
+const args = ['generate', 'aboutus', '--ext', '.html', '-f', '-b', '-p'];
 ```
 
 ## API
 
-<table>
-	<caption>LEGEND</caption>
-	<thead>
-		<tr>
-			<th>Token</th><th>Description</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>[]</td><td>Optional param.</td>
-			<td>*</td><td>Indicates any type.</td>
-			<td>|</td><td>Indicates or</td>
-			<td>...</td><td>Spread operator.</td>
-		</tr>
-	</tbody>
-</table>
+This section describes both Pargv api methods as well as PargvCommand api methods. One of the things that many find confusing when using parsing libs with chaining is how they work with multiple commands or nesting commands. Lets first cover the methods for each and then explain how they work together to accomplish what you need.
+
+You will notice a few special characters in the "arguments" for the method's signature. This is taken from TypeScript. If you are not using TypeScript that's fine and has no relevance other than to denote the characteristics of each argument. TypeScript simply uses these tokens for realtime type checking.
+
+Again if you are not using TypeScirpt don't worry they aren't needed it's just a way of describing what each method expects.
+
++ **any**       - means any type
++ **?**         - means it's optional.
++ **[]**        - means an array of some type like string[].
++ **...**       - indicates a spread operator.
++ **T**         - indicates generic type (if not using TypeScript you can ignore).
+
+For the following take a look at the [interfaces](https://github.com/origin1tech/pargv/blob/master/dist/interfaces.d.ts) for more on what these objects contain.
+
++ **IPargvOptions** - denotes the Pargv options object.
++ **IPargvResult** - the resulting object after parse is called.
++ **IPargvLayout** - helpers/wrapper to [cliui](https://github.com/yargs/cliui) for displaying help text.
++ **IPargvLogo** - helpers/wrapper to [figlet](https://github.com/patorjk/figlet.js)
++ **AnsiStyles** - type containing supported [colurs](https://github.com/origin1tech/colurs) styles.
++ **HelpCallback** - an override callback to be called for help.
++ **CoerceCallback** - callback used for custom coercion.
++ **IPargvCoerceConfig** - an object containing coerce configuration.
++ **IPargvWhenConfig** - an object containing when configuration.
++ **ErrorHandler** - custom handler for handling errors.
++ **IMap<T>**   - simple type which basically represents an object literal.
+
+### Pargv
 
 <table>
-	<caption>API METHODS</caption>
-	<thead>
-		<tr>
-			<th>Method</th><th>Description</th><th>Deprecated</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>.configure</td><td>([number] | [options], [options]) - accepts cmd and/or config options.</td><td>TRUE</td>
-			<td>.parse</td><td>	([array]) - parses process.argv or provided args.</td><td></td>
-			<td>.addParser</td><td>(string, function, [boolean]) - name, parser callback and true to overwrite.</td><td></td>
-			<td>.cast</td><td>(*) - calls parsers returning cast value.</td><td></td>
-			<td>.getFlags</td><td>() gets stored flags or parses provided args for flags.</td><td></td>
-			<td>.hasCmd</td><td>(* | array | ...) - check if has command.</td><td></td>
-			<td>.getCmd</td><td>(number) - gets command by index.</td><td></td>
-			<td>.flagsToArray</td><td>([defaults], [strip]) - returns an array of flags with optional defaults.</td><td></td>
-			<td>.flagsToString</td><td>([defaults], [char]) returns a string of flags w/ optional defaults separated by char,</td><td></td>
-			<td>.stripExec</td><td>() - returns all args less the node path and the executed path.</td><td></td>
-			<td>.fonts</td><td>	() returns an array of usable figlet fonts.</td><td></td>
-			<td>.logo</td><td>(string, [string], [string]) - pass text, color, font to return ascii logo.</td><td></td>
-			<td>.ui</td><td>([number]) - pass width to return ui layout helpers.</td><td></td>
-			<td>.action</td><td>(string, string, function) the command to match, aliases and the callback function on listening for command.</td><td></td>
-			<td>.reset</td><td>() - resets used when parsing args manually.</td><td></td>
-		</tr>
-	</tbody>
+  <thead>
+    <tr><th>Method</th><th>Description</th><th>Params</th><th>Returns</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>$</td><td>returns a default instance you can use to parse args without a command.</td><td>n/a</td><td>PargvCommand</td></tr>
+    <tr><td>name</td><td>name of your program.</td><td>val: string, styles?: AnsiStyles | AnsiStyles[], font?: string</td><td>Pargv</td></tr>
+    <tr><td>version</td><td>program version.</td><td>val: string</td><td>Pargv</td></tr>
+    <tr><td>description</td><td>program description.</td><td>val: string</td><td>Pargv</td></tr>
+    <tr><td>license</td><td>program license type.</td><td>val: string</td><td>Pargv</td></tr>
+    <tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
+    <tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
+    <tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+    <tr><td>exec</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+    <tr><td>help</td><td>creates custom help method or disables.</td><td>fn: boolean | HelpCallback</td><td>Pargv</td></tr>
+    <tr><td>showHelp</td><td>displays help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
+    <tr><td>fail</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
+    <tr><td>reset</td><td>deletes all commands and updates options if provided.</td><td>options?: IPargvOptions</td><td>Pargv</td></tr>
+    <tr><td>commands.find</td><td>returns a command instance if found.</td><td>key: string</td><td>PargvCommand</td></tr>
+    <tr><td>commands.remove</td><td>removes a command instance if found.</td><td>key: string</td><td>Pargv</td></tr>
+    <tr><td>stats</td><td>compares args to command config returning stats/metadata.</td><td>command: string, ...args: any[]</td><td>Pargv</td></tr>
+    <tr><td>logo</td><td>wrapper to output Figlet type logo.</td><td>text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]</td><td>IPargvLogo</td></tr>
+    <tr><td>layout</td><td>wrapper/helper for building help using cliui.</td><td>width?: number, wrap?: boolean</td><td>IPargvLogo</td></tr>
+  </tbody>
 </table>
 
-## Bonus
+### Pargv Command
 
-Typically re-exporting packages is a bad idea but in this case it makes it rather convenient. This is because it is rather handy to have a command line parser with logging, colurs, layout ui helper for help menus and ascii art generator for simply CLI logos. In a large majority of cases these tools will be exactly what you're after.
+<table>
+  <thead>
+    <tr><th>Method</th><th>Description</th><th>Params</th><th>Returns</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
+    <tr><td>option</td><td>adds an option to the command.</td><td>token: string, describe?: string, def?: any, type?: string | RegExp | CoerceCallback</td><td>PargvCommand</td></tr>
+    <tr><td>alias</td><td>adds an alias to the command.</td><td>key: string | IMap< string[] >, ...alias: string[]</td><td>PargvCommand</td></tr>
+    <tr><td>describe</td><td>adds a description for command or option.</td><td>key: string | IMap< string >, describe?: string</td><td>PargvCommand</td></tr>
+    <tr><td>coerce</td><td>adds a coercion type/method to the specified command or option.</td><td>key: string | IMap< IPargvCoerceConfig >, fn?: string | RegExp | CoerceCallback, def?: any</td><td>PargvCommand</td></tr>
+    <tr><td>demand</td><td>adds a demand requiring the specified command or option.</td><td>...keys: string[]</td><td>PargvCommand</td></tr>
+    <tr><td>when</td><td>requires sibling command or option when present.</td><td>key: string | IMap< IPargvWhenConfig >, demand?: string | boolean, converse?: boolean</td><td>PargvCommand</td></tr>
+    <tr><td>default</td><td>adds a default value for command or option.</td><td>key: string | IMap< any >, val: any</td><td>PargvCommand</td></tr>
+    <tr><td>min</td><td>add min requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
+    <tr><td>max</td><td>add max requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
+    <tr><td>action</td><td>an action to be called when a command is matched on exec.</td><td>fn: ActionCallback</td><td>PargvCommand</td></tr>
+    <tr><td>example</td><td>adds an example for the given command.</td><td>example: string, describe?: string</td><td>PargvCommand</td></tr>
+    <tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+    <tr><td>exec</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+    <tr><td>help</td><td>creates custom help method or disables.</td><td>fn: boolean | HelpCallback</td><td>Pargv</td></tr>
+    <tr><td>fail</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
+    <tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
+  </tbody>
+</table>
 
-### Logger
+## Examples
 
-There's a handy logger built in for simple tasks. It has 6 methods error, warn, info, debug, write and exit. See options for configurations. By default the log level is 3 or "info". Set ".logLevel" to change the level allowed or set "colors" in your options to false to disable colors. You can also set "logCallback" which is called on message logged. This is useful for writing the log message to file or other.
+See [EXAMPLES.md](EXAMPLES.md)
 
-The logger does not attempt to be a full blown solution rather is designed to handle simple logging tasks for a CLI without the need for another dependency. That said it works perfectly fine.
+## Change
 
-```js
-pargv.log.warn('the command %2 is not valid', pargv.cmd);
-```
+See [CHANGE.md](CHANGE.md)
 
-### Ascii Art
+## TODO
 
-Pargv has figlet built in for simple cli ascii art. Handy if you want to dress up your cli. Just call the ".logo" method.
-
-see: https://www.npmjs.com/package/figlet for fonts.
-
-```js
-// Define the text, the color and an available figlet font name.
-pargv.logo('My Text Logo', 'cyan', 'figlet font name');
-```
-
-![Ascii Art](https://raw.github.com/origin1tech/pargv/master/ascii-art.jpg)
-
-### Colurs
-
-The chalk constructor is also exported. Just new up an instance. Like the logger and ASCII art these modules are exposed so that a complete CLI solution can be created quickly. In short Chalk is needed for the logger hence we just export it for convenience.
-
-```js
-const Chalk = require('pargv').Chalk;
-const chalk = new Chalk();
-```
-
-
+Probably need to implement tab completion or a hood to make it easier to do manually :) Any thoughts? File an issue if you do.
 
 ## License
 
-See [LICENSE.md](License.md)
+See [LICENSE.md](LICENSE.md)

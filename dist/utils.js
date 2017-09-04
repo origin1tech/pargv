@@ -1,4 +1,14 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
@@ -135,59 +145,60 @@ function concatTo(obj, key, val) {
     return obj[key];
 }
 exports.concatTo = concatTo;
-// Simple Logger for Logging to Console
-// export function logger(level, colurs): ILogger {
-//   const levels = {
-//     error: 'red',
-//     warn: 'yellow',
-//     info: 'green',
-//     debug: 'magenta'
-//   };
-//   const levelKeys = keys(levels);
-//   level = isValue(level) ? level : 'info';
-//   level = levelKeys.indexOf(level);
-//   function normalize(args) {
-//     let msg = args.shift();
-//     let meta;
-//     const tokens = isString(msg) && msg.match(/(%s|%d|%i|%f|%j|%o|%O|%%)/g);
-//     const isErrMsg = isError(msg);
-//     if (isPlainObject(last(args)) && (args.length > tokens.length))
-//       args[args.length - 1] = util.inspect(last(args), true, null, true);
-//     if (isPlainObject(msg))
-//       msg = util.inspect(msg, true, null, true);
-//     return util.format(msg, ...args);
-//   }
-//   function enabled(type) {
-//     type = levelKeys.indexOf(type);
-//     return type <= level;
-//   }
-//   const log = {
-//     error: (...args: any[]) => {
-//       if (!enabled('error')) return;
-//       const type = colurs.bold[levels.error]('error:');
-//       console.log('');
-//       console.log(type, normalize(args));
-//       console.log('');
-//       log.exit(1);
-//     },
-//     warn: (...args: any[]) => {
-//       if (!enabled('warn')) return;
-//       const type = colurs.bold[levels.warn]('warn:');
-//       console.log(type, normalize(args));
-//       return log;
-//     },
-//     info: (...args: any[]) => {
-//       if (!enabled('info')) return;
-//       const type = colurs.bold[levels.info]('info:');
-//       console.log(type, normalize(args));
-//       return log;
-//     },
-//     write: (...args: any[]) => {
-//       console.log.apply(null, args);
-//       return log;
-//     },
-//     exit: process.exit
-//   };
-//   return log;
-// }
+/**
+ * Levenshtein
+ * Computes the edit distance between two strings.
+ *
+ * Based on gist by Andrei Mackenzie
+ * @see https://gist.github.com/andrei-m/982927
+ *
+ * @param source the source string.
+ * @param compare the string to be compared.
+ */
+function levenshtein(source, compare) {
+    var tmp;
+    if (source.length === 0) {
+        return compare.length;
+    }
+    if (compare.length === 0) {
+        return source.length;
+    }
+    if (source.length > compare.length) {
+        tmp = source;
+        source = compare;
+        compare = tmp;
+    }
+    var i, j, res, alen = source.length, blen = compare.length, row = Array(alen);
+    for (i = 0; i <= alen; i++) {
+        row[i] = i;
+    }
+    for (i = 1; i <= blen; i++) {
+        res = i;
+        for (j = 1; j <= alen; j++) {
+            tmp = row[j - 1];
+            row[j - 1] = res;
+            res = compare[i - 1] === source[j - 1] ? tmp : Math.min(tmp + 1, Math.min(res + 1, row[j] + 1));
+        }
+    }
+    return res;
+}
+exports.levenshtein = levenshtein;
+/**
+ * Pargv Error
+ */
+var PargvError = (function (_super) {
+    __extends(PargvError, _super);
+    function PargvError(message) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
+        var _this = _super.call(this, message) || this;
+        _this.name = "PargvError"; // TODO: add detailed types.
+        PargvError.captureStackTrace(_this, PargvError);
+        return _this;
+    }
+    return PargvError;
+}(Error));
+exports.PargvError = PargvError;
 //# sourceMappingURL=utils.js.map

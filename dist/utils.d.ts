@@ -69,3 +69,20 @@ export declare function removeDuplicates(...args: any[]): any[];
  * @param val the array of values to concat.
  */
 export declare function concatTo(obj: any, key: string, val: any[]): any;
+/**
+ * Levenshtein
+ * Computes the edit distance between two strings.
+ *
+ * Based on gist by Andrei Mackenzie
+ * @see https://gist.github.com/andrei-m/982927
+ *
+ * @param source the source string.
+ * @param compare the string to be compared.
+ */
+export declare function levenshtein(source: any, compare: any): any;
+/**
+ * Pargv Error
+ */
+export declare class PargvError extends Error {
+    constructor(message: string, ...args: any[]);
+}

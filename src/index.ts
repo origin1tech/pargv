@@ -1,19 +1,21 @@
 // IMPORTS //
 
-import * as path from 'path';
+import { parse, resolve } from 'path';
 import * as util from 'util';
 import * as cliui from 'cliui';
 import * as figlet from 'figlet';
 import * as prefix from 'global-prefix';
 import { Colurs, IColurs } from 'colurs';
 import * as utils from './utils';
-import { IMap, IPargvOptions, IPargvOption, ActionCallback, CoerceCallback, AnsiStyles, HelpCallback, IFigletOptions, ILayout, ILogo, ILogger, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler } from './interfaces';
-import { TOKEN_PREFIX_EXP, LIST_EXP, KEYVAL_EXP, JSON_EXP, REGEX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, SPLIT_KEYVAL_EXP, SPLIT_PAIRS_EXP, DOT_EXP } from './constants';
+import * as y18n from 'y18n';
+import { IMap, IPargvOptions, IPargvOption, ActionCallback, CoerceCallback, AnsiStyles, HelpCallback, IFigletOptions, IPargvLayout, IPargvLogo, ILogger, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler, IY18nOptions } from './interfaces';
+import { TOKEN_PREFIX_EXP, LIST_EXP, KEYVAL_EXP, JSON_EXP, REGEX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, SPLIT_KEYVAL_EXP, SPLIT_PAIRS_EXP, DOT_EXP, FORMAT_TOKENS_EXP } from './constants';
 
 // VARIABLES & CONSTANTS //
 
 let colurs: IColurs;
-let log: ILogger;
+let __, __n;
+const PargvError = utils.PargvError;
 
 const DEFAULTS: IPargvOptions = {
   auto: true,         // when true parsed values are auto cast to type if not defined.
@@ -25,10 +27,13 @@ const DEFAULTS: IPargvOptions = {
     alert: 'red',
     muted: 'gray'
   },
-  extendCommands: true, // when true known commands extended to result object.
+  locale: 'en',           // localization code.
+  localeDir: './locales',
+  extendCommands: false, // when true known commands extended to result object.
   allowAnonymous: true,  // when true anonymous commands options allowed.
   ignoreTypeErrors: false, // when true type check errors are ignored.
-  displayStackTrace: false // when true stacktrace is displayed on errors.
+  displayStackTrace: true, // when true stacktrace is displayed on errors.
+  exitOnError: true        // when true Pargv will exit on error.
 };
 
 // CLASSES //
@@ -39,6 +44,7 @@ export class Pargv {
   private _helpHandler: HelpCallback;
   private _errorHandler: ErrorHandler;
   private _command: PargvCommand;
+  private _exiting: boolean;
 
   _name: string;
   _nameFont: string;
@@ -52,11 +58,31 @@ export class Pargv {
   options: IPargvOptions;
 
   constructor(options?: IPargvOptions) {
+    this.init(options);
+  }
+
+  // PRIVATE //
+
+  /**
+   * Init
+   * Common method to initialize Pargv also used in .reset().
+   *
+   * @param options the Pargv options object.
+   */
+  private init(options?: IPargvOptions) {
 
     this.options = utils.extend<IPargvOptions>({}, DEFAULTS, options);
 
     colurs = new Colurs({ enabled: this.options.colorize });
-    // log = utils.logger(this.options.logLevel, colurs);
+
+    const locOpts: IY18nOptions = {
+      locale: this.options.locale,
+      directory: resolve(process.cwd(), this.options.localeDir)
+    };
+
+    const localization = y18n(locOpts);
+    __ = localization.__;
+    __n = localization.__n;
 
     this.command('__default__');                    // Default Command.
 
@@ -66,26 +92,51 @@ export class Pargv {
       return this.compileHelp(command).get();
     };
 
-    this._errorHandler = (err: Error) => {
-      const msg = err.message;
+    this._errorHandler = (message: string) => {  // Default error handler.
+      const err = new PargvError(message);
+      let name = err.name;
+      let msg = err.message;
       let stack;
       if (err.stack) {
         stack = err.stack.split('\n');
-        stack.shift(); // remove first line.
-        stack.map((el) => {
-          return '   ' + el;
-        });
+        stack = stack.slice(3, stack.length).join('\n'); // remove message & error call.
       }
-      if (this.options.displayStackTrace && stack)
-        console.log(stack);
+      msg = colurs.bold.red(name) + ': ' + msg;
+
+      const output = () => {
+        console.log();
+        console.log(msg);
+        if (this.options.displayStackTrace && stack) {
+          console.log();
+          console.log(stack);
+        }
+        console.log();
+      };
+
+      process.nextTick(() => {
+
+        if (this._exiting)
+          return;
+
+        if (this.options.exitOnError) {
+          output();
+          process.exit(1);
+        }
+        else {
+          this._exiting = true;
+          output();
+        }
+
+      });
+
     };
 
     this.command('help.h')                     // Default help command.
       .action(this.showHelp.bind(this));
 
-  }
+    return this;
 
-  // PRIVATE //
+  }
 
   /**
    * Logger
@@ -93,41 +144,28 @@ export class Pargv {
    *
    * @param args log arguments.
    */
-  private logger(...args: any[]) {
+  private formatLogMessage(...args: any[]) {
     let msg = args.shift();
     let meta;
     if (utils.isPlainObject(utils.last(args)))
       meta = args.pop();
-    if (utils.isPlainObject(msg)) {
-      meta = util.inspect(meta, null, null, this.options.colorize);
-      msg = '';
+    if (utils.isPlainObject(msg) || meta) {
+      const obj = meta ? meta : msg;
+      meta = util.inspect(obj, null, null, this.options.colorize);
     }
-    const tokens = utils.isString(msg) && msg.match(/(%s|%d|%i|%f|%j|%o|%O|%%)/g);
-    if (tokens && tokens.length && args.length)
-      msg = util.format(msg, args);
-    return meta ? msg + ' ' + meta : msg;
-  }
-
-  /**
-   * Error
-   * Handles error messages.
-   *
-   * @param args args to be formatted and logged.
-   */
-  error(...args: any[]) {
-    const formatted = this.logger(...args);
-    const err = new Error(formatted);
-    console.log(err);
-  }
-
-  /**
-   * Log
-   * Displays log messages after formatting, supports metadata.
-   *
-   * @param args the arguments to log.
-   */
-  private log(...args: any[]) {
-    console.log(this.logger(...args));
+    let tokens = (msg || '').match(FORMAT_TOKENS_EXP);
+    if (tokens && tokens.length) {
+      tokens = args.slice(0, tokens.length);
+      args = args.slice(tokens.length);
+      msg = util.format(msg || '', tokens);
+      args.unshift(msg);
+    }
+    else if (msg) {
+      args.unshift(msg);
+    }
+    if (meta)
+      args.push(meta);
+    return args.join(' ');
   }
 
   /**
@@ -152,52 +190,59 @@ export class Pargv {
     const muted = this.options.colors.muted;
 
     const div = this.options.divider;
-    const pad = '   ';
     let ctr = 0;
 
     // Builds commands and flags help.
     const buildOptions = (cmd: PargvCommand) => {
 
+      let cmdsStr, optsStr, noneStr, exStr, reqStr;
+      cmdsStr = __('Commands');
+      optsStr = __('Options');
+      exStr = __('Examples');
+      noneStr = __('none');
+      reqStr = __('required');
+
+
       if (!cmd._commands.length && !cmd._options.length)
         return;
 
-      layout.section(<string>colurs.applyAnsi('Commands:', accent));
+      layout.section(<string>colurs.applyAnsi(`${cmdsStr}:`, accent));
 
       cmd._commands.forEach((el) => { // build commands.
         const isRequired = utils.contains(cmd._demands, el);
-        const arr: any = [pad + el, colurs.applyAnsi(cmd._describes[el] || '', muted), '', ''];
-        const lastCol = isRequired ? { text: colurs.applyAnsi('required', alert), align: 'right' } : '';
+        const arr: any = [{ text: el, padding: [0, 0, 0, 1] }, { text: colurs.applyAnsi(cmd._describes[el] || '', muted) }];
+        const lastCol = isRequired ? { text: colurs.applyAnsi(`${reqStr}`, alert), align: 'right' } : '';
         arr.push(lastCol);
         layout.div(...arr);
       });
 
       if (!cmd._commands.length) // no commands set "none".
-        layout.div(colurs.applyAnsi(pad + 'none', muted));
+        layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 1] });
 
-      layout.section(<string>colurs.applyAnsi('Flags:', accent));
+      layout.section(<string>colurs.applyAnsi(`${optsStr}:`, accent));
 
       cmd._options.sort().forEach((el) => { // build options.
         const isRequired = utils.contains(cmd._demands, el);
         const aliases = cmd.findAliases(el).sort();
         const names = [el].concat(aliases).join(', ');
-        const arr: any = [pad + names, colurs.applyAnsi(cmd._describes[el] || '', muted)];
-        const lastCol = isRequired ? { text: colurs.applyAnsi('required', alert), align: 'right' } : '';
+        const arr: any = [{ text: names, padding: [0, 0, 0, 1] }, { text: colurs.applyAnsi(cmd._describes[el] || '', muted) }];
+        const lastCol = isRequired ? { text: colurs.applyAnsi(`${reqStr}`, alert), align: 'right' } : '';
         arr.push(lastCol);
         layout.div(...arr);
       });
 
       if (!cmd._options.length) // no options set "none".
-        layout.div(colurs.applyAnsi(pad + 'none', muted));
+        layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 1] });
 
       if (cmd._examples.length) {
-        layout.section(<string>colurs.applyAnsi('Examples:', accent));
+        layout.section(<string>colurs.applyAnsi(`${exStr}:`, accent));
 
         cmd._examples.forEach((el, i) => {
           // const ex1 = colurs.applyAnsi(pad + `example ${i + 1}:`, muted);
           if (!/^.*\$\s/.test(el))
             el = '$ ' + el;
           const ex2 = colurs.applyAnsi(el, muted);
-          layout.div(pad + ex2, '');
+          layout.div({ text: ex2, padding: [0, 0, 0, 1] }, '');
         });
       }
 
@@ -206,8 +251,15 @@ export class Pargv {
     // Builds the app name, version descript header.
     const buildHeader = () => {
 
+      let descStr, verStr, licStr;
+      descStr = __('Description');
+      verStr = __('Version');
+      licStr = __('License');
+
       // Add the name to the layout.
       if (this._name) {
+
+        layout.div();
 
         if (!this._nameFont)
           layout.repeat(<string>colurs.applyAnsi(div, muted));
@@ -227,14 +279,14 @@ export class Pargv {
 
         // Add description to layout.
         if (this._describe)
-          layout.div(`${colurs.applyAnsi('Description:', accent)} ${utils.padLeft(colurs.applyAnsi(this._describe, muted) as string, 3)}`);
+          layout.div(`${colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._describe, muted) as string, 3)}`);
 
         // Add version to layout.
         if (this._version)
-          layout.div(`${colurs.applyAnsi('Version:', accent)} ${utils.padLeft(colurs.applyAnsi(this._version, muted) as string, 7)}`);
+          layout.div(`${colurs.applyAnsi(`${verStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._version, muted) as string, 7)}`);
 
         if (this._license)
-          layout.div(`${colurs.applyAnsi('License:', accent)} ${utils.padLeft(colurs.applyAnsi(this._license, muted) as string, 7)}`);
+          layout.div(`${colurs.applyAnsi(`${licStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._license, muted) as string, 7)}`);
 
 
         // Add break in layout.
@@ -248,7 +300,9 @@ export class Pargv {
     // over each command and its options.
     const buildBody = () => {
 
-      let cmdKeys;
+      let cmdKeys, usageStr, aliasStr;
+      usageStr = __('Usage');
+      aliasStr = __('Alias');
 
       if (command) {
         cmdKeys = [command];
@@ -267,7 +321,7 @@ export class Pargv {
 
         const aliases = cmd.findAliases(cmd._name); // get aliases.
 
-        layout.div(colurs.applyAnsi('Usage: ', primary) + cmd._usage, colurs.applyAnsi('Alias: ', primary) as string + aliases);
+        layout.div(colurs.applyAnsi(`${usageStr}: `, primary) + cmd._usage, colurs.applyAnsi(`${aliasStr}: `, primary) as string + aliases);
 
         if (cmd._describe) {
           layout.div();
@@ -419,10 +473,10 @@ export class Pargv {
    * Description
    * The program's description or purpose.
    *
-   * @param describe the description string.
+   * @param val the description string.
    */
-  description(describe: string) {
-    this._describe = describe;
+  description(val: string) {
+    this._describe = val;
     return this;
   }
 
@@ -454,12 +508,12 @@ export class Pargv {
    * Command
    * A string containing Parv tokens to be parsed.
    *
-   * @param token the command token string to parse.
+   * @param command the command token string to parse.
    * @param describe a description describing the command.
    */
-  command(token: string, describe?: string) {
-    const cmd = new PargvCommand(token, describe, this);
-    if (token !== '__default__')
+  command(command: string, describe?: string) {
+    const cmd = new PargvCommand(command, describe, this);
+    if (command !== '__default__')
       this._commands[cmd._name] = cmd;
     else
       this._command = cmd;
@@ -482,7 +536,7 @@ export class Pargv {
     const isExec = utils.last(argv) === '__exec__' ? argv.pop() : null;
     argv = argv && argv.length ? argv : process.argv;   // process.argv or user args.
     const procArgv = process.argv.slice(0);         // get process.argv.
-    const parsedExec = path.parse(procArgv[1]);     // parse the node execution path.
+    const parsedExec = parse(procArgv[1]);     // parse the node execution path.
 
     let normalized = this.toNormalized(argv.slice(0));   // normalize the args.
     const source = normalized.slice(0);               // store source args.
@@ -511,19 +565,42 @@ export class Pargv {
       }
     };
 
-    if (!this.options.allowAnonymous && stats.anonymous.length) // no anon in strict mode.
-      this.error(`cannot parse in ${colurs.applyAnsi('strict mode', colors.accent)} using anonymous arg(s)`, colurs.applyAnsi(stats.anonymous.join(', ') + '.', colors.accent));
+    if (!this.options.allowAnonymous && stats.anonymous.length) {
+      this.error(__('parse failed: anonymous argument(s) %s prohibited in strict mode.', colurs.applyAnsi(stats.anonymous.join(', '), colors.accent)));
+    } // no anon in strict mode.
 
-    if (stats.missing.length)       // throw error when missing args.
-      this.error(`failed to parse required arg(s)`, colurs.applyAnsi(stats.missing.join(', '), colors.accent), 'are missing and/or have no default value.');
+    if (stats.missing.length) {
+      this.error(__('parse failed: missing required argument(s) %s or have no default value.', colurs.applyAnsi(stats.missing.join(', '), colors.accent)));
+    }     // throw error when missing args.
 
-    if (stats.whens.length) {
+    if (stats.whens.length) { // just display first.
       const when = stats.whens.shift();
-      this.error(`parsing failed ${colurs.applyAnsi(when[0], colors.accent)} requires ${colurs.applyAnsi(when[1], colors.accent)} but is missing.`);
+      this.error(__('parse failed: %s requires %s but is missing.', colurs.applyAnsi(when[0], colors.accent), colurs.applyAnsi(when[1], colors.accent)));
     }
 
-    if (cmd._min > 0 && stats.commands.length < cmd._min)
-      this.error(`parsing failed at least ${cmd._min} commands are requried by got ${stats.commands.length}.`);
+    const cmdStr = __('Commands');
+    const optStr = __('Options');
+    const optsLen = stats.options.map(o => FLAG_EXP.test(o)).length;
+
+    // Handle min commands/options requirement.
+
+    if (cmd._minCommands > 0 && stats.commands.length < cmd._minCommands) {
+      this.error(__('parse failed: at least %s are required but got %s.', colurs.applyAnsi(cmd._minCommands + ' ' + cmdStr, colors.accent), colurs.applyAnsi(stats.commands.length + '', colors.accent)));
+    }
+
+    if (cmd._minOptions > 0 && optsLen < cmd._minOptions) {
+      this.error(__('parse failed: at least %s are required but got %s.', colurs.applyAnsi(cmd._minOptions + ' ' + optStr, colors.accent), colurs.applyAnsi(optsLen + '', colors.accent)));
+    }
+
+    // Handle max commands/options requirement.
+
+    if (cmd._maxCommands > 0 && stats.commands.length > cmd._maxCommands) {
+      this.error(__('parse failed: got %s but no more than %s are allowed.', colurs.applyAnsi(stats.commands.length + '', colors.accent), colurs.applyAnsi(cmd._maxCommands + ' ' + cmdStr, colors.accent)));
+    }
+
+    if (cmd._maxOptions > 0 && stats.commands.length > cmd._maxOptions) {
+      this.error(__('parse failed: got %s but no more than %s are allowed.', colurs.applyAnsi(optsLen + '', colors.accent), colurs.applyAnsi(cmd._maxOptions + ' ' + optStr, colors.accent)));
+    }
 
     // Normalize value and call user coerce method if exists.
     const coerceWrapper = (key, type, isBool) => {
@@ -554,8 +631,9 @@ export class Pargv {
         (isFlag && (!next || cmd.isBool(key) || isFlagNext)); // is boolean key.
       let coercion: CoerceCallback = cmd._coercions[key];  // lookup user coerce function.
 
-      if (isNot && !isBool)  // Prevent --no option when not bool flag.
-        this.error(`cannot set option ${colurs.applyAnsi(key, colors.accent)} to false a value is expected.`);
+      if (isNot && !isBool) {
+        this.error(__('set failed: cannot set option %s to boolean a value is expected.', colurs.applyAnsi(key, colors.accent)));
+      } // Prevent --no option when not bool flag.
 
       let wrapper = coerceWrapper(key, coercion, isBool);  // get coerce wrapper.
 
@@ -604,6 +682,7 @@ export class Pargv {
     const cmd = this._commands[parsed.$command];
     if (utils.isFunction(cmd._action))
       cmd._action(...parsed.$commands, parsed, cmd);
+    return parsed;
   }
 
   // HELP & ERRORS //
@@ -614,7 +693,6 @@ export class Pargv {
    *
    * @param val callback for custom help or boolean to toggle enable/disable.
    */
-  help(disabled: boolean): Pargv;
   help(fn: boolean | HelpCallback) {
     if (utils.isBoolean(fn)) {
       this._helpDisabled = <boolean>fn;
@@ -653,35 +731,58 @@ export class Pargv {
     return this;
   }
 
+  /**
+   * Reset
+   * Deletes all commands and resets the default command.
+   */
+  reset(options?: IPargvOptions) {
+    this._commands = {};
+    return this.init(options);
+  }
+
   // UTIL METHODS //
+
+  /**
+   * Error
+   * Handles error messages.
+   *
+   * @param args args to be formatted and logged.
+   */
+  error(...args: any[]) {
+    const formatted = this.formatLogMessage(...args);
+    this._errorHandler(formatted, args, this);
+  }
+
+  /**
+   * Log
+   * Displays log messages after formatting, supports metadata.
+   *
+   * @param args the arguments to log.
+   */
+  log(...args: any[]) {
+    console.log(this.formatLogMessage(...args));
+  }
 
   /**
    * Stats
    * Iterates array of arguments comparing to defined configuration.
    * To get stats from default command use '__default__' as key name.
    *
-   * @param key the command key to get stats for.
+   * @param command the command key to get stats for.
    * @param args args to gets stats for.
    */
-  stats(key: string, ...args: any[]) {
+  stats(command: string, ...args: any[]) {
     if (utils.isArray(args[0]))
       args = args[0];
-    if (!args.length)
-      this.error('whoops cannot get stats for arguments of undefined.');
+    if (!args.length) {
+      this.error(__('invalid argument(s): cannot get stats with arguments of undefined.'));
+    }
     args = this.toNormalized(args);               // normalize args to known syntax.
-    const cmd = this.commands.find(key);
-    if (!cmd)
-      this.error(`cannot get stats for unknown command ${key}`);
+    const cmd = this.commands.find(command);
+    if (!cmd) {
+      this.error(__('unknown command: cannot get stats using command of undefined.'));
+    }
     return cmd.stats(args);
-  }
-
-  /**
-   * Reset
-   * Resets the default command and settings.
-   */
-  reset() {
-    this.command('__default__');
-    return this;
   }
 
   /**
@@ -727,10 +828,10 @@ export class Pargv {
    * @param horizontalLayout the horizontal layout mode.
    * @param verticalLayout the vertical layout mode.
    */
-  logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): ILogo {
+  logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): IPargvLogo {
 
     let result: string;
-    let methods: ILogo;
+    let methods: IPargvLogo;
 
     let defaults: IFigletOptions = {
       text: 'App',
@@ -758,7 +859,7 @@ export class Pargv {
      * Render
      * Renders out the Figlet font logo.
      */
-    function render() {
+    function show() {
       console.log(result);
       return this;
     }
@@ -779,13 +880,10 @@ export class Pargv {
       return result;
     }
 
-    const show = render;
-
     methods = {
 
       fonts,
       show,
-      render,
       get
 
     };
@@ -805,7 +903,7 @@ export class Pargv {
     * @param width the width of the layout.
     * @param wrap if the layout should wrap.
     */
-  layout(width?: number, wrap?: boolean): ILayout {
+  layout(width?: number, wrap?: boolean): IPargvLayout {
 
     const self = this;
 
@@ -814,18 +912,6 @@ export class Pargv {
 
     // Init cli ui.
     const ui = cliui({ width: width, wrap: wrap });
-
-    // Alignment.
-    const flowMap = {
-      '-1': null,
-      0: 'center',
-      1: 'right'
-    };
-
-    function invalidExit(element, elements) {
-      if (utils.isString(element) && elements.length && utils.isPlainObject(elements[0]))
-        this.error('invalid element(s) cannot mix string element with element options objects.');
-    }
 
     function add(type: string, ...elements: any[]) {
       ui[type](...elements);
@@ -840,48 +926,6 @@ export class Pargv {
     function div(...elements: any[]) {
       add('div', ...elements);
       return methods;
-    }
-
-    /**
-     * Flow
-     * Shortcut method to specify columns and their flow
-     * direction or alignment. Last arg must be number or
-     * and array matching the number or preceding elements.
-     *
-     * Supports flowing right or center.
-     * 1 = right
-     * 0 = center
-     *
-     * @example
-     * Flow the first and last elements to the right with the middle centered.
-     * flow('one', 'two', 'three', [1, 0, 1])
-     *
-     * @example
-     * Flow the last element to the right
-     * flow('one', 'two', 1)
-     *
-     * @param align the alignment direction or array of alignments.
-     * @param elements the column elements with last element as number or array.
-     */
-    function flow(align: number | number[], ...elements: any[]) {
-      align = utils.toArray<number>(align);
-      const isLast = align.length === 1;
-      const lastIdx = elements.length - 1;
-      elements = elements.map((el, i) => {
-        if (isLast && i < lastIdx)
-          return el;
-        let dir = !isLast ? align[i] : align[0];
-        if (!dir || dir === null || dir === -1)
-          return el;
-        dir = flowMap[dir];
-        if (utils.isPlainObject(el))
-          el.align = dir;
-        else
-          el = { text: el, align: dir };
-        return el;
-      });
-      add('div', ...elements);
-      return this;
     }
 
     /**
@@ -982,12 +1026,6 @@ export class Pargv {
 
   }
 
-  // DEFAULT COMMAND METHODS //
-
-  // option(token: string, describe?: string, def?: any): PargvCommand {
-  //   return this._command.option.bind(this._command);
-  // }
-
 }
 
 export class PargvCommand {
@@ -1005,9 +1043,12 @@ export class PargvCommand {
   _coercions: IMap<CoerceCallback> = {};
   _demands: string[] = [];
   _whens: IMap<string> = {};
-  _min: number = 0;
   _examples: string[] = [];
   _action: ActionCallback;
+  _maxCommands: number = 0;
+  _maxOptions: number = 0;
+  _minCommands: number = 0;
+  _minOptions: number = 0;
 
   _pargv: Pargv;
 
@@ -1032,8 +1073,9 @@ export class PargvCommand {
     let tokens = token.split(':');                // <age:number> to ['<age', 'number>'];
     let key = tokens[0];                          // first element is command/option key.
 
-    if (!TOKEN_PREFIX_EXP.test(key))              // ensure valid token.
-      this.error(`parsing token ${colurs.bgRed.white(key)} failed, missing/invalid token or unwated space.`);
+    if (!TOKEN_PREFIX_EXP.test(key)) {
+      this.error(__('invalid token: the token %s is missing, invalid or has unwanted space.', colurs.bgRed.white(key)));
+    }          // ensure valid token.
     const isRequired = /^</.test(key);            // starts with <.
     let type;
     if (utils.isString(tokens[1]))                // strip < or [ from type if any.
@@ -1141,10 +1183,15 @@ export class PargvCommand {
 
     this._name = name;                                 // Save the commmand name.
     this._describe = this._describe ||                 // Ensure command description.
-      `The ${name} command.`;
+      `${name} command.`;
     this._usage = usage.join(' ');                     // create usage string.
     this.alias(name, ...aliases);                      // Map aliases to command name.
     this.alias(name, name);
+
+    // Placeholde for tab completion.
+    // const compNames = name + (aliases.length ? '|' + aliases.join('|') : '');
+    // let compUsage = usage.slice(0);
+    // compUsage[0] = compNames;
 
   }
 
@@ -1187,11 +1234,83 @@ export class PargvCommand {
   // GETTERS //
 
   get error() {
-    return this._pargv.error;
+    return this._pargv.error.bind(this._pargv);
   }
 
   get colors() {
     return this._pargv.options.colors;
+  }
+
+  /**
+   * Min
+   * Gets methods for adding min commands or options.
+   */
+  get min() {
+
+    return {
+
+      /**
+       * Min Commands
+       * Sets minimum command count.
+       *
+       * @param count the minimum number of commands.
+       */
+      commands: (count: number) => {
+        this._minCommands = count;
+        return this;
+      },
+
+      /**
+       * Min Options
+       * Sets minimum option count.
+       *
+       * @param count the minimum number of options.
+       */
+      options: (count: number) => {
+        this._minOptions = count;
+        return this;
+      }
+
+    };
+
+  }
+
+  /**
+    * Max
+    * Gets methods for adding max commands or options.
+    */
+  get max() {
+
+    return {
+
+      /**
+       * Max Commands
+       * Sets maximum command count.
+       *
+       * @param count the maximum number of commands.
+       */
+      commands: (count: number) => {
+        this._maxCommands = count;
+        return this;
+      },
+
+      /**
+       * Max Options
+       * Sets maximum option count.
+       *
+       * @param count the maximum number of options.
+       */
+      options: (count: number) => {
+        this._maxOptions = count;
+        return this;
+      }
+
+    };
+
+  }
+
+  get command() {
+    return this._pargv.command.bind(this._pargv);
   }
 
   get parse() {
@@ -1219,6 +1338,7 @@ export class PargvCommand {
   option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceCallback): PargvCommand {
     token = utils.toOptionToken(token);
     const tokens = utils.split(token.trim(), SPLIT_CHARS);
+    console.log(tokens);
     tokens.forEach((el, i) => {
       let next;
       if (tokens.length > 1) {
@@ -1245,7 +1365,7 @@ export class PargvCommand {
   alias(key: string, ...alias: string[]): PargvCommand;
   alias(key: string | IMap<string[]>, ...alias: string[]): PargvCommand {
     let obj: any = key;
-    const clrs = this.colors;
+    const colors = this.colors;
     if (utils.isString(key)) {
       key = this.stripToAlias(<string>key);
       obj = {};
@@ -1254,8 +1374,9 @@ export class PargvCommand {
     for (let k in obj) {
       k = this.stripToAlias(<string>k);
       const v = obj[k];
-      if (!utils.isValue(v) || !utils.isArray(v))
-        this.error(`failed to set alias for ${colurs.applyAnsi(k, clrs.accent)} value must be an array.`);
+      if (!utils.isValue(v) || !utils.isArray(v)) {
+        this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('alias', colors.accent), colurs.applyAnsi(k, colors.accent)));
+      }
       v.forEach((el) => {
         el = utils.stripToken(el, /(<|>|\[|\])/g);
         this._aliases[el] = k;
@@ -1275,7 +1396,7 @@ export class PargvCommand {
   describe(key: string, describe?: string): PargvCommand;
   describe(key: string | IMap<string>, describe?: string): PargvCommand {
     let obj: any = key;
-    const clrs = this.colors;
+    const colors = this.colors;
     if (utils.isString(key)) {
       key = this.stripToAlias(<string>key);
       obj = {};
@@ -1285,7 +1406,7 @@ export class PargvCommand {
       k = this.stripToAlias(<string>k);
       const v = obj[k];
       if (!utils.isValue(v))
-        this.error(`failed to set describe for ${colurs.applyAnsi(k, clrs.accent)} with value of undefined.`);
+        this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('describe', colors.accent), colurs.applyAnsi(k, colors.accent)));
       this._describes[k] = v;
     }
     return this;
@@ -1304,7 +1425,7 @@ export class PargvCommand {
   coerce(key: string | IMap<IPargvCoerceConfig>, fn?: string | RegExp | CoerceCallback, def?: any): PargvCommand {
 
     let obj: any = key;
-    const clrs = this.colors;
+    const colors = this.colors;
     if (utils.isString(key)) {
       key = this.stripToAlias(<string>key);
       obj = {};
@@ -1317,9 +1438,7 @@ export class PargvCommand {
       k = this.stripToAlias(<string>k);
       const v = obj[k];
       if (!utils.isValue(v))
-        this.error(`cannot set coerce for ${colurs.applyAnsi(k, clrs.accent)} with value of undefined.`);
-      // if (!utils.isFunction(v.fn))
-      //   v.fn = this.castToType.bind(this, k, v.fn);
+        this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('coerce', colors.accent), colurs.applyAnsi(k, colors.accent)));
       if (v.def) this.default(k, v.def);
       this._coercions[k] = v.fn;
     }
@@ -1354,7 +1473,7 @@ export class PargvCommand {
   when(key: string, demand?: string, converse?: boolean): PargvCommand;
   when(key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): PargvCommand {
     let obj: any = key;
-    const clrs = this.colors;
+    const colors = this.colors;
     if (utils.isString(key)) {
       key = this.stripToAlias(<string>key);
       demand = this.stripToAlias(<string>demand);
@@ -1369,7 +1488,7 @@ export class PargvCommand {
       let v = obj[k];
       v.demand = this.stripToAlias(v.demand);
       if (!utils.isValue(v.demand))
-        this.error(`failed to set describe for ${colurs.applyAnsi(k, clrs.accent)} with demand value of undefined.`);
+        this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('when', colors.accent), colurs.applyAnsi(k, colors.accent)));
       this._whens[k] = v.demand;
       if (v.converse)
         this._whens[v.demand] = k;
@@ -1386,7 +1505,7 @@ export class PargvCommand {
    */
   default(key: string | IMap<any>, val: any) {
     let obj: any = key;
-    const clrs = this.colors;
+    const colors = this.colors;
     if (utils.isString(key)) {
       key = this.stripToAlias(<string>key);
       obj = {};
@@ -1396,20 +1515,9 @@ export class PargvCommand {
       k = this.stripToAlias(<string>k);
       const v = obj[k];
       if (!utils.isValue(v))
-        this.error(`no can do...failed to set default for ${colurs.applyAnsi(k, clrs.accent)} with value of undefined.`);
+        this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('default', colors.accent), colurs.applyAnsi(k, colors.accent)));
       this._defaults[k] = v;
     }
-    return this;
-  }
-
-  /**
-   * Min
-   * A value indicating the minimum number of commands.
-   *
-   * @param count the minimum command count.
-   */
-  min(count: number) {
-    this._min = count;
     return this;
   }
 
@@ -1420,7 +1528,9 @@ export class PargvCommand {
    * @param fn the callback function when parsed command matches.
    */
   action(fn: ActionCallback) {
-    if (!fn) this.error('cannot add action using method of undefined.');
+    const colors = this._pargv.options.colors;
+    if (!fn)
+      this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('action', colors.accent), colurs.applyAnsi(this._name, colors.accent)));
     this._action = fn;
     return this;
   }
@@ -1433,6 +1543,7 @@ export class PargvCommand {
    */
   example(example: string, describe?: string) {
     this._examples = this._examples.concat(example);
+    return this;
   }
 
   // UTILS //
@@ -1485,7 +1596,6 @@ export class PargvCommand {
       // Never called in autoCast method.
       list: (v) => {
         const exp = utils.isRegExp(listexp) ? listexp : utils.splitToList(<string>listexp);
-        console.log(exp.toString());
         const match = v.match(exp);
         result = match && match[0];
       },
@@ -1628,10 +1738,10 @@ export class PargvCommand {
     if (!utils.isValue(result) || !is[<string>type](result)) {
       if (!opts.ignoreTypeErrors) {
         if (!isListType) {
-          this.error(`expected type ${colurs.applyAnsi(<string>type, colors.accent)} but got ${colurs.applyAnsi(utils.getType(type), colors.accent)}.`);
+          this.error(__('type mismatch: expected type %s but got %s instead.', colurs.applyAnsi(<string>type, colors.accent), colurs.applyAnsi(utils.getType(type), colors.accent)));
         }
         else {
-          this.error(`expected list or expression ${colurs.applyAnsi(listexp, colors.accent)} to contain result but got ${colurs.applyAnsi(origVal, colors.accent)}.`);
+          this.error(__('type mismatch: expected list or expression %s to contain value %s.', colurs.applyAnsi(listexp, colors.accent), colurs.applyAnsi(origVal, colors.accent)));
         }
       }
       else {
@@ -1840,6 +1950,41 @@ export class PargvCommand {
   isBool(key: string) {
     key = this.aliasToKey(key);
     return utils.contains(this._bools, key);
+  }
+
+  // PARGV WRAPPERS //
+
+  /**
+   * Help
+   * Wrapper method to parent help method.
+   *
+   * @param fn boolean or custom HelpCallback method.
+   */
+  help(fn: boolean | HelpCallback): PargvCommand {
+    this._pargv.help(fn);
+    return this;
+  }
+
+  /**
+   * Fail
+   * Add custom on error handler.
+   *
+   * @param fn the error handler function.
+   */
+  fail(fn: ErrorHandler) {
+    this._pargv.fail(fn);
+    return this;
+  }
+
+  /**
+   * Epilog
+   * Displays trailing message.
+   *
+   * @param val the trailing epilogue to be displayed.
+   */
+  epilog(val: string) {
+    this._pargv.epilog(val);
+    return this;
   }
 
 }

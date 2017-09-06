@@ -1,6 +1,6 @@
 {
   "parse failed: anonymous argument(s) %s prohibited in strict mode.": "parse failed: анонимный аргумент (ы) %s запрещен в строгом режиме.",
-  "parse failed: missing required argument(s) %s or have no default value.": "'parse failed: отсутствует требуемый аргумент (ы) %s или не имеет значения по умолчанию.",
+  "parse failed: missing required argument(s) %s or have no default value.": "parse failed: отсутствует требуемый аргумент (ы) %s или не имеет значения по умолчанию.",
   "parse failed: %s requires %s but is missing.": "parse failed: %s требует %s, но отсутствует.",
   "set failed: cannot set option %s to boolean a value is expected.": "set failed: невозможно установить опцию %s для логического значения.",
   "invalid argument(s): cannot get stats with arguments of undefined.": "Недопустимый аргумент (ы): невозможно получить статистику с аргументами неопределенного.",
@@ -9,7 +9,8 @@
   "parse failed: cannot set %s for %s using value of undefined.": "parse failed: невозможно установить %s за %s, используя значение undefined.",
   "type mismatch: expected type %s but got %s instead.": "тип несоответствия: ожидаемый тип %s, но вместо этого получил %s.",
   "type mismatch: expected list or expression %s to contain value %s.": "тип несоответствия: ожидаемый список или выражение %s, чтобы содержать значение %s.",
-  "parse failed: at least %d commands are required by got %d.": "parse failed: по крайней мере %d требуется команда got %d.",
+  "parse failed: at least %s are required but got %s.": "parse failed: требуется не менее %s, но получено %s.",
+  "parse failed: got %s but no more than %s are allowed.": "parse failed: получил %s, но не более %s разрешено.",
   "Commands": "команды",
   "Options": "Опции",
   "Examples": "Примеры",

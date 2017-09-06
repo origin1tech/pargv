@@ -13,15 +13,16 @@
   },
   "scripts": {
     "clean": "node ./build/clean",
-    "copy": "node ./build/copy",
     "compile": "node ./node_modules/typescript/bin/tsc -p ./src/tsconfig.json",
     "bump": "node ./build/bump",
-    "build": "npm run clean && npm run copy && npm run compile",
+    "build": "npm run clean && npm run compile && npm run docs",
+    "build-trans": "npm run build && npm run translate",
     "commit": "git add . && git commit -am 'auto commit' && git push",
     "translate": "node ./build/translate",
     "docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs ./src --options ./typedoc.json --tsconfig ./src/tsconfig.json",
     "test": "mocha --opts ./src/mocha.opts",
-    "release": "npm run build && npm run docs && npm run commit && npm run bump && npm publish"
+    "release": "npm run build && npm run commit && npm run bump && npm publish",
+    "release-trans": "npm run build-trans && npm run commit && npm run bump && npm publish"
   },
   "keywords": [
     "cli",
@@ -48,8 +49,8 @@
   },
   "devDependencies": {
     "@google-cloud/translate": "^1.0.0",
-    "@types/chai": "^4.0.2",
-    "@types/mocha": "^2.2.41",
+    "@types/chai": "^4.0.4",
+    "@types/mocha": "^2.2.42",
     "@types/node": "^8.0.20",
     "chai": "^3.5.0",
     "del": "^3.0.0",

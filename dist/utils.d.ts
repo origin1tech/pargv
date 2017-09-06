@@ -1,9 +1,24 @@
 export * from 'chek';
 /**
- * Get Prefix
- * Returns the node prefix path.
+ * Env Paths
+ * Gets paths for the environment including executed path.
  */
-export declare function getPrefix(): any;
+export declare function environment(): {
+    EXEC: string;
+    EXEC_PATH: string;
+    NODE_PATH: string;
+    GLOBAL_PATH: any;
+    NODE_ENV: string;
+    HOME_PATH: string;
+};
+/**
+ * Clear Screen
+ * Clears the screen and resets cursor.
+ * PLACEHOLDER future use.
+ *
+ * @param reset when not false cursor is reset.
+ */
+export declare function clearScreen(reset?: boolean): void;
 /**
  * Is Flag
  * Checks if value is a flag (ex: -s or --save).

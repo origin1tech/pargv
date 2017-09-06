@@ -90,14 +90,18 @@ Below are the options supported by Pargv and their uses/descriptions.
     <tr><th>Option</th><th>Description</th><th>Default</th></tr>
   </thead>
   <tbody>
-    <tr><td>auto</td><td>When true Pargv tries to auto cast values to type.</td><td>True</td></tr>
+    <tr><td>cast</td><td>When true Pargv tries to auto cast values to type.</td><td>True</td></tr>
     <tr><td>colorize</td><td>Whether to use colors in help/log messages.</td><td>True</td></tr>
-    <tr><td>divider</td><td>A string to repeat as divider in help text.</td><td>=</td></tr>
+    <tr><td>headingDivider</td><td>A string repeated for heading/footing in help.</td><td>=</td></tr>
+    <tr><td>itemDivider</td><td>A string divider repeated between command help.</td><td>=</td></tr>
     <tr><td>locale</td><td>The i18n locale to use for messages/help.</td><td>en</td></tr>
     <tr><td>localeDir</td><td>A directory for locales if u wish to roll your own.</td><td>undefined</td></tr>
+    <tr><td>autoHelp</td><td>When true help is displayed when exec cannot find matching command.</td><td>True</td></tr>
+    <tr><td>defaultHelp</td><td>When true commands automatically to help.</td><td>True</td></tr>
     <tr><td>extendCommands</td><td>When true known sub commands extended as properties in result.</td><td>False</td></tr>
     <tr><td>allowAnonymous</td><td>When true anonymous sub commands and options are allowed.</td><td>True</td></tr>
     <tr><td>ignoreTypeErrors</td><td>When true type checking is ignored.</td><td>False</td></tr>
+    <tr><td>castBeforeCoerce</td><td>When true will attempt to cast to type before coerce is called.</td><td>True</td></tr>
     <tr><td>displayStackTrace</td><td>When true stack trace is displayed for errors.</td><td>True</td></tr>
     <tr><td>exitOnError</td><td>When true Pargv exists after errors.</td><td>True</td></tr>
     <tr><td>colors</td><td>
@@ -318,14 +322,16 @@ For the following take a look at the [interfaces](https://github.com/origin1tech
 + **IPargvLayout** - helpers/wrapper to [cliui](https://github.com/yargs/cliui) for displaying help text.
 + **IPargvLogo** - helpers/wrapper to [figlet](https://github.com/patorjk/figlet.js)
 + **AnsiStyles** - type containing supported [colurs](https://github.com/origin1tech/colurs) styles.
-+ **HelpCallback** - an override callback to be called for help.
-+ **CoerceCallback** - callback used for custom coercion.
++ **HelpHandler** - an override callback to be called for help.
++ **CoerceHandlerk** - callback used for custom coercion.
 + **IPargvCoerceConfig** - an object containing coerce configuration.
 + **IPargvWhenConfig** - an object containing when configuration.
 + **ErrorHandler** - custom handler for handling errors.
-+ **IMap<T>**   - simple type which basically represents an object literal.
++ **IMap`<T>`**   - simple type which basically represents an object literal.
 
 ### Pargv
+
+Always check [docs](docs/index.html) the below is for conveience and may not represent all methods.
 
 <table>
   <thead>
@@ -341,12 +347,15 @@ For the following take a look at the [interfaces](https://github.com/origin1tech
     <tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
     <tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
     <tr><td>exec</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
-    <tr><td>help</td><td>creates custom help method or disables.</td><td>fn: boolean | HelpCallback</td><td>Pargv</td></tr>
-    <tr><td>showHelp</td><td>displays help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
-    <tr><td>fail</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
+    <tr><td>onHelp</td><td>overrides default help handler.</td><td>fn: HelpHandler</td><td>Pargv</td></tr>
+    <tr><td>show.help</td><td>displays help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
+    <tr><td>get.help</td><td>gets help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
+    <tr><td>get.completion</td><td>gets the completion script for manual install.</td><td>n/a</td><td>string</td></tr>
+    <tr><td>show.completion</td><td>shows the completion script for manual in terminal.</td><td>n/a</td><td>void</td></tr>
+    <tr><td>find.command</td><td>returns a command instance if found.</td><td>key: string</td><td>PargvCommand</td></tr>
+    <tr><td>remove.command</td><td>removes a command instance if found.</td><td>key: string</td><td>Pargv</td></tr>
+    <tr><td>onError</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
     <tr><td>reset</td><td>deletes all commands and updates options if provided.</td><td>options?: IPargvOptions</td><td>Pargv</td></tr>
-    <tr><td>commands.find</td><td>returns a command instance if found.</td><td>key: string</td><td>PargvCommand</td></tr>
-    <tr><td>commands.remove</td><td>removes a command instance if found.</td><td>key: string</td><td>Pargv</td></tr>
     <tr><td>stats</td><td>compares args to command config returning stats/metadata.</td><td>command: string, ...args: any[]</td><td>Pargv</td></tr>
     <tr><td>logo</td><td>wrapper to output Figlet type logo.</td><td>text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]</td><td>IPargvLogo</td></tr>
     <tr><td>layout</td><td>wrapper/helper for building help using cliui.</td><td>width?: number, wrap?: boolean</td><td>IPargvLogo</td></tr>
@@ -355,16 +364,18 @@ For the following take a look at the [interfaces](https://github.com/origin1tech
 
 ### Pargv Command
 
+Always check [docs](docs/index.html) the below is for conveience and may not represent all methods.
+
 <table>
   <thead>
     <tr><th>Method</th><th>Description</th><th>Params</th><th>Returns</th></tr>
   </thead>
   <tbody>
     <tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
-    <tr><td>option</td><td>adds an option to the command.</td><td>token: string, describe?: string, def?: any, type?: string | RegExp | CoerceCallback</td><td>PargvCommand</td></tr>
-    <tr><td>alias</td><td>adds an alias to the command.</td><td>key: string | IMap< string[] >, ...alias: string[]</td><td>PargvCommand</td></tr>
+    <tr><td>option</td><td>adds an option to the command.</td><td>token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler</td><td>PargvCommand</td></tr>
+    <tr><td>alias</td><td>adds an alias to the command.</td><td>key: string | IMap< string[], ...alias: string[]</td><td>PargvCommand</td></tr>
     <tr><td>describe</td><td>adds a description for command or option.</td><td>key: string | IMap< string >, describe?: string</td><td>PargvCommand</td></tr>
-    <tr><td>coerce</td><td>adds a coercion type/method to the specified command or option.</td><td>key: string | IMap< IPargvCoerceConfig >, fn?: string | RegExp | CoerceCallback, def?: any</td><td>PargvCommand</td></tr>
+    <tr><td>coerce</td><td>adds a coercion type/method to the specified command or option.</td><td>key: string | IMap< IPargvCoerceConfig >, fn?: string | RegExp | CoerceHandler, def?: any</td><td>PargvCommand</td></tr>
     <tr><td>demand</td><td>adds a demand requiring the specified command or option.</td><td>...keys: string[]</td><td>PargvCommand</td></tr>
     <tr><td>when</td><td>requires sibling command or option when present.</td><td>key: string | IMap< IPargvWhenConfig >, demand?: string | boolean, converse?: boolean</td><td>PargvCommand</td></tr>
     <tr><td>default</td><td>adds a default value for command or option.</td><td>key: string | IMap< any >, val: any</td><td>PargvCommand</td></tr>
@@ -374,7 +385,7 @@ For the following take a look at the [interfaces](https://github.com/origin1tech
     <tr><td>example</td><td>adds an example for the given command.</td><td>example: string, describe?: string</td><td>PargvCommand</td></tr>
     <tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
     <tr><td>exec</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
-    <tr><td>help</td><td>creates custom help method or disables.</td><td>fn: boolean | HelpCallback</td><td>Pargv</td></tr>
+    <tr><td>help</td><td>creates custom help method or disables.</td><td>fn: boolean | HelpHandler</td><td>Pargv</td></tr>
     <tr><td>fail</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
     <tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
   </tbody>

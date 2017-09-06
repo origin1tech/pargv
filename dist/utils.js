@@ -13,18 +13,61 @@ function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 Object.defineProperty(exports, "__esModule", { value: true });
+var path_1 = require("path");
 var chek_1 = require("chek");
-var prefix = require("global-prefix");
 var constants_1 = require("./constants");
+var prefix = require("global-prefix");
+var constants_2 = require("./constants");
 __export(require("chek"));
 /**
- * Get Prefix
- * Returns the node prefix path.
+ * Env Paths
+ * Gets paths for the environment including executed path.
  */
-function getPrefix() {
-    return prefix;
+function environment() {
+    var exec = constants_1.ARGV
+        .slice(0, 2)
+        .map(function (v, i) {
+        if (i === 0 && constants_1.EXE_EXP.test(v))
+            return;
+        var rebased = path_1.relative(constants_1.CWD, v);
+        return v.match(/^(\/|([a-zA-Z]:)?\\)/) &&
+            rebased.length < v.length ? rebased : v;
+    }).join(' ').trim();
+    if (constants_1.NODE_PATH !== undefined && constants_1.ARGV[1] === constants_1.NODE_PATH)
+        exec = constants_1.NODE_PATH.replace(path_1.dirname(constants_1.EXEC_PATH) + '/', '');
+    return {
+        EXEC: exec,
+        EXEC_PATH: constants_1.EXEC_PATH || constants_1.ARGV[1],
+        NODE_PATH: constants_1.NODE_PATH || constants_1.ARGV[0],
+        GLOBAL_PATH: prefix,
+        NODE_ENV: process.env.NODE_ENV,
+        HOME_PATH: process.env.HOME
+    };
 }
-exports.getPrefix = getPrefix;
+exports.environment = environment;
+/**
+ * Clear Screen
+ * Clears the screen and resets cursor.
+ * PLACEHOLDER future use.
+ *
+ * @param reset when not false cursor is reset.
+ */
+function clearScreen(reset) {
+    if (reset === void 0) { reset = true; }
+    var out = '\x1B[2J';
+    var newline = '\n';
+    if (chek_1.isWindows()) {
+        newline = '\r\n';
+        out = '';
+        var lines = process.stdout['getWindowSize']()[1] || [];
+        lines.forEach(function (line) {
+            out += '\r\n';
+        });
+    }
+    out += '\x1B[0f';
+    process.stdout.write(out);
+}
+exports.clearScreen = clearScreen;
 /**
  * Is Flag
  * Checks if value is a flag (ex: -s or --save).
@@ -32,7 +75,7 @@ exports.getPrefix = getPrefix;
  * @param val the value to inspect.
  */
 function isFlag(val) {
-    return chek_1.isString(val) && constants_1.FLAG_EXP.test(val);
+    return chek_1.isString(val) && constants_2.FLAG_EXP.test(val);
 }
 exports.isFlag = isFlag;
 /**
@@ -55,7 +98,7 @@ exports.isDotNotation = isDotNotation;
  * @param val the value to be stripped.
  */
 function stripToken(val, exp) {
-    exp = exp || constants_1.TOKEN_ANY_EXP;
+    exp = exp || constants_2.TOKEN_ANY_EXP;
     return val.trim().replace(exp, '');
 }
 exports.stripToken = stripToken;
@@ -109,7 +152,7 @@ function toOptionToken(token) {
         pre = token.slice(0, idx);
         suffix = token.slice(idx);
     }
-    pre = chek_1.split(pre.trim(), constants_1.SPLIT_CHARS).join('.').replace(/\s/g, '');
+    pre = chek_1.split(pre.trim(), constants_2.SPLIT_CHARS).join('.').replace(/\s/g, '');
     return pre + ' ' + suffix;
 }
 exports.toOptionToken = toOptionToken;

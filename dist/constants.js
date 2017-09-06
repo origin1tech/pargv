@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.KEYVAL_EXP = /^((.+:.+)(\||\+)?)$/;
+exports.KEYVAL_EXP = /^(([.'"a-z0-9_-]+):\s?(['"a-z0-9_-]+)[+|]?){1,}$/i;
 exports.CSV_EXP = /^(.+,.+){1,}$/;
 exports.LIST_EXP = /^(.+(,|\||\s).+){1,}$/;
 exports.JSON_EXP = /^"?{.+}"?$/;
@@ -9,11 +9,16 @@ exports.REGEX_OPTS_EXP = /(g|i|m)?([m,i,u,y]{1,4})?$/;
 exports.DOT_EXP = /^(.+\..+)$/;
 exports.FLAG_EXP = /^--?/;
 exports.COMMAND_VAL_EXP = /^(<|\[)/;
-exports.FLAG_SHORT_EXP = /^-[a-zA-Z0-9]/;
+exports.FLAG_SHORT_EXP = /^-[a-zA-Z0-9]/i;
 exports.TOKEN_ANY_EXP = /(^--?|^<|>$|^\[|\]$)/g;
 exports.TOKEN_PREFIX_EXP = /^(--?|<|\[)/;
 exports.SPLIT_CHARS = ['|', ',', ' '];
 exports.SPLIT_KEYVAL_EXP = /(('|")[^('|")]*('|"))|[^\:]+/g;
 exports.SPLIT_PAIRS_EXP = /(('|")[^('|")]*('|"))|[^(\||+)]+/g;
 exports.FORMAT_TOKENS_EXP = /(%s|%d)/g;
+exports.EXE_EXP = /\b(node|iojs)(\.exe)?$/;
+exports.CWD = process.cwd();
+exports.ARGV = process.argv;
+exports.NODE_PATH = process.env._;
+exports.EXEC_PATH = process.execPath;
 //# sourceMappingURL=constants.js.map

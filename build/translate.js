@@ -7,7 +7,7 @@ const TOKEN_EXP = /(%s|%d|\$\$|##)/g;
 
 const argv = process.argv.slice(2);
 let langs = argv[0] || 'es,fr,hi,it,ja,ru,zh_CN,zh_TW' // first arg are langs.
-let localePath = argv[1] || path.join(__dirname, '../src/locales/en.json');
+let localePath = argv[1] || path.join(__dirname, '../locales/en.json');
 const parsedPath = path.parse(localePath);
 const baseDir = parsedPath.dir;
 const normalized = [];

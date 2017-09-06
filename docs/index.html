@@ -64,9 +64,317 @@
 	<div class="row">
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
-				<h1 id="pargv">Pargv</h1>
+				<h1 id="pargv-2-x">Pargv 2.x</h1>
+				<p>Pargv has been rewritten in TypeScript as of version <strong>2.0.0</strong>. If you need the last legacy version you can install <strong>1.5.1</strong>. Pargv now automatically builds help based on your configuration but you can also manually create your own help using built in helpers which leverage <a href="https://www.npmjs.com/package/cliui">cliui</a>.</p>
+				<p>The best way to describe the Pargv cli argument parsing lib is that it is a mix of <a href="https://github.com/tj/commander.js">commander</a> and <a href="https://github.com/yargs/yargs">yargs</a>. The most unique aspect of Pargv is how commands can be written which simplifies your configuration. Although you can chain calls for various features just like other parsing libs you can also enter them as a string and Pargv will parse out your config. The result is many command configurations can be written in a single. line.</p>
+				<h2 id="installation">Installation</h2>
+				<p>You can probably do this in your sleep but for completeness...</p>
+				<pre><code class="lang-sh">$ npm install pargv -save
+</code></pre>
+				<h2 id="quick-start">Quick Start</h2>
+				<p>Import or require then new up an instance of Pargv.</p>
+				<h3 id="basic-example">Basic Example</h3>
+				<pre><code class="lang-ts"><span class="hljs-keyword">import</span> { Pargv } <span class="hljs-keyword">from</span> <span class="hljs-string">'pargv'</span>;
+
+<span class="hljs-comment">// For ES5</span>
+<span class="hljs-comment">// const Pargv = require('pargv').Pargv;</span>
+
+<span class="hljs-keyword">const</span> pargv = <span class="hljs-keyword">new</span> Pargv(<span class="hljs-comment">/* your options */</span>);
+
+pargv.command(<span class="hljs-string">'generate &lt;template&gt;'</span>)
+  .action(<span class="hljs-function">(<span class="hljs-params">template, parsed, command</span>) =&gt;</span> {
+    <span class="hljs-comment">// template - the &lt;template&gt; sub command you defined in your command.</span>
+    <span class="hljs-comment">// parsed - the resulting parsed object see more on this below.</span>
+    <span class="hljs-comment">// command - the command instance that Pargv generated.</span>
+  });
+
+<span class="hljs-keyword">const</span> parsed = pargv.parse(); <span class="hljs-comment">// if array of args not passed process.argv will be used.</span>
+</code></pre>
+				<h3 id="advanced-example">Advanced Example</h3>
+				<pre><code class="lang-ts"><span class="hljs-keyword">import</span> { Pargv } <span class="hljs-keyword">from</span> <span class="hljs-string">'pargv'</span>;
+
+<span class="hljs-comment">// For ES5</span>
+<span class="hljs-comment">// const Pargv = require('pargv').Pargv;</span>
+
+<span class="hljs-keyword">const</span> pargv = <span class="hljs-keyword">new</span> Pargv({ locale: <span class="hljs-string">'en'</span>, divider: <span class="hljs-string">'#'</span>, extendCommands: <span class="hljs-literal">true</span> });
+
+<span class="hljs-comment">// Command requires template name with optiona directory path.</span>
+pargv.command(<span class="hljs-string">'generate &lt;template&gt; [directory]'</span>)
+
+  <span class="hljs-comment">// Creates option extension with description.</span>
+  .option(<span class="hljs-string">'--extension, --ext [ext]'</span>, <span class="hljs-string">'The template\'s extension.'</span>)
+
+  <span class="hljs-comment">// Option to mock force.</span>
+  .option(<span class="hljs-string">'--force, -f'</span>, <span class="hljs-string">'When present forces overwrite'</span>)
+
+  <span class="hljs-comment">// Adds alias for extension.</span>
+  .alias(<span class="hljs-string">'--extension'</span>, <span class="hljs-string">'-e'</span>)
+
+  <span class="hljs-comment">// Adds description for "directory" sub command.</span>
+  .describe(<span class="hljs-string">'directory'</span>, <span class="hljs-string">'The directory path to save the template to.'</span>)
+
+  <span class="hljs-comment">// Not very practical but if force is defined required extention.</span>
+  <span class="hljs-comment">// Note we specific --ext, we could also specify -e or --extension</span>
+  <span class="hljs-comment">// Pargv will figure it out meaning u can use the primary or an alias</span>
+  <span class="hljs-comment">// as your key.</span>
+  .when(<span class="hljs-string">'--force'</span>, <span class="hljs-string">'--ext'</span>)
+
+  <span class="hljs-comment">// Sets a default value for the extension option.</span>
+  .default(<span class="hljs-string">'--extension'</span>, <span class="hljs-string">'.html'</span>)
+
+  <span class="hljs-comment">// Ensures the value for extension is contained in our expression.</span>
+  .coerce(<span class="hljs-string">'--extension'</span>, <span class="hljs-regexp">/^\.(html|hbs|ejs)$/</span>, <span class="hljs-string">'could set default val here as well'</span>)
+
+  .action(<span class="hljs-function">(<span class="hljs-params">template, parsed, command</span>) =&gt;</span> {
+    <span class="hljs-comment">// template - the &lt;template&gt; sub command you defined in your command.</span>
+    <span class="hljs-comment">// parsed - the resulting parsed object see more on this below.</span>
+    <span class="hljs-comment">// command - the command instance that Pargv generated.</span>
+  })
+  .exec(); <span class="hljs-comment">// the above action will be called.</span>
+</code></pre>
+				<h2 id="options">Options</h2>
+				<p>Below are the options supported by Pargv and their uses/descriptions.</p>
+				<table>
+					<thead>
+						<tr><th>Option</th><th>Description</th><th>Default</th></tr>
+					</thead>
+					<tbody>
+						<tr><td>cast</td><td>When true Pargv tries to auto cast values to type.</td><td>True</td></tr>
+						<tr><td>colorize</td><td>Whether to use colors in help/log messages.</td><td>True</td></tr>
+						<tr><td>divider</td><td>A string to repeat as divider in help text.</td><td>=</td></tr>
+						<tr><td>locale</td><td>The i18n locale to use for messages/help.</td><td>en</td></tr>
+						<tr><td>localeDir</td><td>A directory for locales if u wish to roll your own.</td><td>undefined</td></tr>
+						<tr><td>extendCommands</td><td>When true known sub commands extended as properties in result.</td><td>False</td></tr>
+						<tr><td>allowAnonymous</td><td>When true anonymous sub commands and options are allowed.</td><td>True</td></tr>
+						<tr><td>ignoreTypeErrors</td><td>When true type checking is ignored.</td><td>False</td></tr>
+						<tr><td>castBeforeCoerce</td><td>When true will attempt to cast to type before coerce is called.</td><td>True</td></tr>
+						<tr><td>displayStackTrace</td><td>When true stack trace is displayed for errors.</td><td>True</td></tr>
+						<tr><td>exitOnError</td><td>When true Pargv exists after errors.</td><td>True</td></tr>
+						<tr><td>colors</td><td>
+								<table>
+									<thead>
+										<tr><th>Option</th><th>Description</th><th>Default</th></tr>
+									</thead>
+									<tbody>
+										<tr><td>primary</td><td>The primary color in help.</td><td>blue</td></tr>
+										<tr><td>accent</td><td>The accent color in help.</td><td>cyan</td></tr>
+										<tr><td>alert</td><td>The alert, error or required color in help.</td><td>red</td></tr>
+										<tr><td>muted</td><td>The muted color in help.</td><td>gray</td></tr>
+									</tbody>
+								</table>
+							</td><td></td>
+						</tr>
+					</tbody>
+				</table>
+				<h3 id="colors">Colors</h3>
+				<p>For supported colors see <a href="https://github.com/origin1tech/colurs">colurs</a>. The below
+					colors property in options suports single string value or array of strings
+				supported in colurs.</p>
+				<p>For example if you wanted the primary color in help to have a background you
+				might set your options as follows:</p>
+				<pre><code class="lang-ts"><span class="hljs-keyword">const</span> opts = {
+  colors: {
+    primary: [<span class="hljs-string">'bold'</span>, <span class="hljs-string">'bgBlue'</span>, <span class="hljs-string">'white'</span>] <span class="hljs-comment">// result: bold white text with blue background.</span>
+  }
+}
+</code></pre>
+				<h2 id="parse-execute">Parse &amp; Execute</h2>
+				<p>Using our above example to call the action associated with <strong>generate</strong> we would call the exec method. Calling the exec method parses your arguments and then calls the associated action.</p>
+				<p>If you do not wish to execute the action you can simply parse and handle the result yourself.</p>
+				<h4 id="exec-method">Exec Method</h4>
+				<pre><code class="lang-ts">pargv.exec(process.argv);
+</code></pre>
+				<h4 id="parse-method">Parse Method</h4>
+				<pre><code class="lang-ts"><span class="hljs-keyword">const</span> parsed = pargv.parse(process.argv)
+</code></pre>
+				<h4 id="parsed-result">Parsed Result</h4>
+				<p>Consider the following executed in your terminal and its corresponding configuration below:</p>
+				<pre><code class="lang-sh">$ app generate about --ext .html
+</code></pre>
+				<pre><code class="lang-ts"><span class="hljs-keyword">const</span> parsed = pargv.command(<span class="hljs-string">'generate &lt;template&gt; --ext &lt;ext&gt;'</span>)
+  .parse(process.argv);
+</code></pre>
+				<p>The parsed result would be:</p>
+				<pre><code class="lang-ts">parsed = {
+  <span class="hljs-string">'$exec'</span>: <span class="hljs-string">'example'</span>,
+  <span class="hljs-string">'$command'</span>: <span class="hljs-string">'generate'</span>,
+  <span class="hljs-string">'$commands'</span>: [ <span class="hljs-string">'about'</span> ],
+  <span class="hljs-string">'$metadata'</span>:
+   {
+     source: [ <span class="hljs-string">'generate'</span>, <span class="hljs-string">'about'</span>, <span class="hljs-string">'--ext'</span>, <span class="hljs-string">'.html'</span> ],
+     execPath: <span class="hljs-string">'/some/path/example'</span>,
+     nodePath: <span class="hljs-string">'/usr/local/bin/node'</span>,
+     globalPrefix: <span class="hljs-string">'/usr/local'</span>
+   },
+  ext: <span class="hljs-string">'.html'</span>
+}
+</code></pre>
+				<h2 id="convention-syntax-types">Convention Syntax &amp; Types</h2>
+				<p>The following section describes how Pargv parses tokens and conventions in your commands and options as well as how built in Type casting and type checks work.</p>
+				<h3 id="pargv-syntax">Pargv Syntax</h3>
+				<p>Commands and options have a handy syntax that limits the need for
+					chained calls. For example to denote an argument as required simply
+				wrap in <strong><value></strong>. See below for more examples.</p>
+				<h4 id="tokens">Tokens</h4>
+				<table>
+					<thead>
+						<tr><th>Argument</th><th>Description</th></tr>
+					</thead>
+					<tbody>
+						<tr><td>&lt; value &gt;</td><td>denotes a required command or option.</td></tr>
+						<tr><td>[ value ]</td><td>denotes an optional command or option.</td></tr>
+						<tr><td>--option</td><td>denotes an option flag.</td></tr>
+						<tr><td>-o</td><td>denotes short option flag.</td></tr>
+						<tr><td>generate.gen.g</td><td>results in gen &amp; g as aliases for generate command.</td></tr>
+						<tr><td>--extension.ext.e</td><td>results in ext &amp; e as aliases for extension option.</td></tr>
+						<tr><td>[ value:float ]</td><td>value should be of type float.</td></tr>
+						<tr><td>-fsb</td><td>single - breaks out to &#39;-f&#39;, &#39;-s&#39;, &#39;-b&#39;</td></tr>
+						<tr><td>--ext=.html</td><td>is the same as --ext .html</td></tr>
+					</tbody>
+				</table>
+				<h3 id="commands-options-chaining-api">Commands, Options &amp; Chaining API</h3>
+				<p>You can create your commands and options using Pargv&#39;s syntax or using the
+					chaining API. Both do exactly the same and support either or as well as both.
+					There are some features which are only available through the chaining API but
+				we&#39;ll get to those in a moment.</p>
+				<pre><code class="lang-ts"><span class="hljs-comment">// Command: login           Aliases: log, l</span>
+<span class="hljs-comment">// Sub Command: url        (required)</span>
+<span class="hljs-comment">// Option: username         Aliases: --user, -u</span>
+<span class="hljs-comment">// Option: password         Aliases: --pass, -p</span>
+pargv.command(<span class="hljs-string">'login.log.l &lt;url&gt; --username.user.u [username] --password.pass.p [password]'</span>);
+
+<span class="hljs-comment">// The below is the same as above.</span>
+pargv.command(<span class="hljs-string">'login &lt;url&gt;'</span>)
+  .alias(<span class="hljs-string">'login'</span>, <span class="hljs-string">'log'</span>, <span class="hljs-string">'l'</span>) <span class="hljs-comment">// or .alias('login', ['log', 'l'])</span>
+  .option(<span class="hljs-string">'--username, --user, -u [username]'</span>)
+  .option(<span class="hljs-string">'--password, --pass, -p [password]'</span>);
+</code></pre>
+				<h3 id="spcifying-types">Spcifying Types</h3>
+				<p>When creating a command or option you can specify types
+					for sub commands and options which take values. Pargv will then
+					attempt to cast to these types where applicable and also do some
+					type checking to ensure the result is the correct type. If you wish
+					you can allow casting but disable type checking when initializing
+				Pargv (see options).</p>
+				<p>Essentially these types are nothing more than internal coercions methods.
+					If you choose to pass a custom coercion method then any defined types
+				will be ignored as Pargv assumes you want to handle that manually.</p>
+				<p>The following are the current supported types:</p>
+				<p>date, boolean, array, regexp, object
+				number, float, integer, string, json</p>
+				<pre><code class="lang-ts"><span class="hljs-comment">// Creates Command: query</span>
+<span class="hljs-comment">// Requires sub command: table</span>
+<span class="hljs-comment">// Option: start          Type: date</span>
+<span class="hljs-comment">// Option: end            Type: date</span>
+<span class="hljs-comment">// Option: max            Type: integer</span>
+pargv.command(<span class="hljs-string">'query &lt;table&gt; --start [start:date] --end [end:date] --max [max:integer]'</span>);
+</code></pre>
+				<h3 id="argument-conventions">Argument Conventions</h3>
+				<p>Arguments can be entered in your terminal in a couple different ways for certain types and options. For example you can enter flag options as follows:</p>
+				<pre><code class="lang-sh">$ generate contact --ext .html
+</code></pre>
+				<p><strong>OR</strong></p>
+				<pre><code class="lang-sh">$ generate contact --ext=.html
+</code></pre>
+				<p>For puposes of this example assume we have the following option flags
+					in our config. In this case we&#39;re mocking overwriting a template
+					after backing it up and then we want to publish our changes. Again
+				This is just all a mock but you get the idea.</p>
+				<p>NOTE: In our example below how -fbp are all together. This is possible
+				when prefixed with a single -.</p>
+				<p>Pargv will then breakout each flag to its own argument.</p>
+				<p>-f force
+					-b backup
+				-p publish</p>
+				<pre><code class="lang-sh">$ generate aboutus --ext .html -fbp
+</code></pre>
+				<p><strong>Becomes</strong></p>
+				<pre><code class="lang-ts"><span class="hljs-keyword">const</span> args = [<span class="hljs-string">'generate'</span>, <span class="hljs-string">'aboutus'</span>, <span class="hljs-string">'--ext'</span>, <span class="hljs-string">'.html'</span>, <span class="hljs-string">'-f'</span>, <span class="hljs-string">'-b'</span>, <span class="hljs-string">'-p'</span>];
+</code></pre>
+				<h2 id="api">API</h2>
+				<p>This section describes both Pargv api methods as well as PargvCommand api methods. One of the things that many find confusing when using parsing libs with chaining is how they work with multiple commands or nesting commands. Lets first cover the methods for each and then explain how they work together to accomplish what you need.</p>
+				<p>You will notice a few special characters in the &quot;arguments&quot; for the method&#39;s signature. This is taken from TypeScript. If you are not using TypeScript that&#39;s fine and has no relevance other than to denote the characteristics of each argument. TypeScript simply uses these tokens for realtime type checking.</p>
+				<p>Again if you are not using TypeScirpt don&#39;t worry they aren&#39;t needed it&#39;s just a way of describing what each method expects.</p>
+				<ul>
+					<li><strong>any</strong>       - means any type</li>
+					<li><strong>?</strong>         - means it&#39;s optional.</li>
+					<li><strong>[]</strong>        - means an array of some type like string[].</li>
+					<li><strong>...</strong>       - indicates a spread operator.</li>
+					<li><strong>T</strong>         - indicates generic type (if not using TypeScript you can ignore).</li>
+				</ul>
+				<p>For the following take a look at the <a href="https://github.com/origin1tech/pargv/blob/master/dist/interfaces.d.ts">interfaces</a> for more on what these objects contain.</p>
+				<ul>
+					<li><strong>IPargvOptions</strong> - denotes the Pargv options object.</li>
+					<li><strong>IPargvResult</strong> - the resulting object after parse is called.</li>
+					<li><strong>IPargvLayout</strong> - helpers/wrapper to <a href="https://github.com/yargs/cliui">cliui</a> for displaying help text.</li>
+					<li><strong>IPargvLogo</strong> - helpers/wrapper to <a href="https://github.com/patorjk/figlet.js">figlet</a></li>
+					<li><strong>AnsiStyles</strong> - type containing supported <a href="https://github.com/origin1tech/colurs">colurs</a> styles.</li>
+					<li><strong>HelpCallback</strong> - an override callback to be called for help.</li>
+					<li><strong>CoerceCallback</strong> - callback used for custom coercion.</li>
+					<li><strong>IPargvCoerceConfig</strong> - an object containing coerce configuration.</li>
+					<li><strong>IPargvWhenConfig</strong> - an object containing when configuration.</li>
+					<li><strong>ErrorHandler</strong> - custom handler for handling errors.</li>
+					<li><strong>IMap<T></strong>   - simple type which basically represents an object literal.</li>
+				</ul>
+				<h3 id="pargv">Pargv</h3>
+				<table>
+					<thead>
+						<tr><th>Method</th><th>Description</th><th>Params</th><th>Returns</th></tr>
+					</thead>
+					<tbody>
+						<tr><td>$</td><td>returns a default instance you can use to parse args without a command.</td><td>n/a</td><td>PargvCommand</td></tr>
+						<tr><td>name</td><td>name of your program.</td><td>val: string, styles?: AnsiStyles | AnsiStyles[], font?: string</td><td>Pargv</td></tr>
+						<tr><td>version</td><td>program version.</td><td>val: string</td><td>Pargv</td></tr>
+						<tr><td>description</td><td>program description.</td><td>val: string</td><td>Pargv</td></tr>
+						<tr><td>license</td><td>program license type.</td><td>val: string</td><td>Pargv</td></tr>
+						<tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
+						<tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
+						<tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+						<tr><td>exec</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+						<tr><td>help</td><td>creates custom help method or disables.</td><td>fn: boolean | HelpCallback</td><td>Pargv</td></tr>
+						<tr><td>showHelp</td><td>displays help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
+						<tr><td>fail</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
+						<tr><td>reset</td><td>deletes all commands and updates options if provided.</td><td>options?: IPargvOptions</td><td>Pargv</td></tr>
+						<tr><td>commands.find</td><td>returns a command instance if found.</td><td>key: string</td><td>PargvCommand</td></tr>
+						<tr><td>commands.remove</td><td>removes a command instance if found.</td><td>key: string</td><td>Pargv</td></tr>
+						<tr><td>stats</td><td>compares args to command config returning stats/metadata.</td><td>command: string, ...args: any[]</td><td>Pargv</td></tr>
+						<tr><td>logo</td><td>wrapper to output Figlet type logo.</td><td>text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]</td><td>IPargvLogo</td></tr>
+						<tr><td>layout</td><td>wrapper/helper for building help using cliui.</td><td>width?: number, wrap?: boolean</td><td>IPargvLogo</td></tr>
+					</tbody>
+				</table>
+				<h3 id="pargv-command">Pargv Command</h3>
+				<table>
+					<thead>
+						<tr><th>Method</th><th>Description</th><th>Params</th><th>Returns</th></tr>
+					</thead>
+					<tbody>
+						<tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
+						<tr><td>option</td><td>adds an option to the command.</td><td>token: string, describe?: string, def?: any, type?: string | RegExp | CoerceCallback</td><td>PargvCommand</td></tr>
+						<tr><td>alias</td><td>adds an alias to the command.</td><td>key: string | IMap&lt; string[] &gt;, ...alias: string[]</td><td>PargvCommand</td></tr>
+						<tr><td>describe</td><td>adds a description for command or option.</td><td>key: string | IMap&lt; string &gt;, describe?: string</td><td>PargvCommand</td></tr>
+						<tr><td>coerce</td><td>adds a coercion type/method to the specified command or option.</td><td>key: string | IMap&lt; IPargvCoerceConfig &gt;, fn?: string | RegExp | CoerceCallback, def?: any</td><td>PargvCommand</td></tr>
+						<tr><td>demand</td><td>adds a demand requiring the specified command or option.</td><td>...keys: string[]</td><td>PargvCommand</td></tr>
+						<tr><td>when</td><td>requires sibling command or option when present.</td><td>key: string | IMap&lt; IPargvWhenConfig &gt;, demand?: string | boolean, converse?: boolean</td><td>PargvCommand</td></tr>
+						<tr><td>default</td><td>adds a default value for command or option.</td><td>key: string | IMap&lt; any &gt;, val: any</td><td>PargvCommand</td></tr>
+						<tr><td>min</td><td>add min requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
+						<tr><td>max</td><td>add max requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
+						<tr><td>action</td><td>an action to be called when a command is matched on exec.</td><td>fn: ActionCallback</td><td>PargvCommand</td></tr>
+						<tr><td>example</td><td>adds an example for the given command.</td><td>example: string, describe?: string</td><td>PargvCommand</td></tr>
+						<tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+						<tr><td>exec</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+						<tr><td>help</td><td>creates custom help method or disables.</td><td>fn: boolean | HelpCallback</td><td>Pargv</td></tr>
+						<tr><td>fail</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
+						<tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
+					</tbody>
+				</table>
+				<h2 id="examples">Examples</h2>
+				<p>See <a href="EXAMPLES.md">EXAMPLES.md</a></p>
+				<h2 id="change">Change</h2>
+				<p>See <a href="CHANGE.md">CHANGE.md</a></p>
+				<h2 id="todo">TODO</h2>
+				<p>Probably need to implement tab completion or a hood to make it easier to do manually :) Any thoughts? File an issue if you do.</p>
 				<h2 id="license">License</h2>
-				<p>See <a href="License.md">LICENSE.md</a></p>
+				<p>See <a href="LICENSE.md">LICENSE.md</a></p>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">

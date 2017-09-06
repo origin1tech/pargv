@@ -14,3 +14,8 @@ export declare const SPLIT_CHARS: string[];
 export declare const SPLIT_KEYVAL_EXP: RegExp;
 export declare const SPLIT_PAIRS_EXP: RegExp;
 export declare const FORMAT_TOKENS_EXP: RegExp;
+export declare const EXE_EXP: RegExp;
+export declare const CWD: string;
+export declare const ARGV: string[];
+export declare const NODE_PATH: string;
+export declare const EXEC_PATH: string;

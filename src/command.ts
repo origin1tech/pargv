@@ -1,3 +1,3 @@
 import * as utils from './utils';
 import { Pargv } from './';
-import { IMap, CoerceCallback, IPargvCoerceConfig, ActionCallback } from './interfaces';
+import { IMap, CoerceHandler, IPargvCoerceConfig, ActionHandler } from './interfaces';

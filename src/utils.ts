@@ -1,17 +1,60 @@
 import { format, inspect } from 'util';
-import { IPargvOption, ILogger } from './interfaces';
-import { isString, isArray, flatten, split, last, isFunction, isPlainObject, isError, isValue, keys, isUndefined, first, contains, noop } from 'chek';
+import { relative, dirname } from 'path';
+import { IPargvCommandOption, IPargvEnv } from './interfaces';
+import { isString, isArray, flatten, split, last, isFunction, isPlainObject, isError, isValue, keys, isUndefined, first, contains, noop, isWindows } from 'chek';
+import { CWD, NODE_PATH, ARGV, EXEC_PATH, EXE_EXP } from './constants';
 import * as prefix from 'global-prefix';
 import { FLAG_EXP, TOKEN_ANY_EXP, FLAG_SHORT_EXP, SPLIT_CHARS, FORMAT_TOKENS_EXP } from './constants';
 
 export * from 'chek';
 
+
 /**
- * Get Prefix
- * Returns the node prefix path.
+ * Env Paths
+ * Gets paths for the environment including executed path.
  */
-export function getPrefix() {
-  return prefix;
+export function environment() {
+  let exec = ARGV
+    .slice(0, 2)
+    .map((v, i) => {
+      if (i === 0 && EXE_EXP.test(v))
+        return;
+      const rebased = relative(CWD, v);
+      return v.match(/^(\/|([a-zA-Z]:)?\\)/) &&
+        rebased.length < v.length ? rebased : v;
+    }).join(' ').trim();
+  if (NODE_PATH !== undefined && ARGV[1] === NODE_PATH)
+    exec = NODE_PATH.replace(dirname(EXEC_PATH) + '/', '');
+  return {
+    EXEC: exec,
+    EXEC_PATH: EXEC_PATH || ARGV[1],
+    NODE_PATH: NODE_PATH || ARGV[0],
+    GLOBAL_PATH: prefix,
+    NODE_ENV: process.env.NODE_ENV,
+    HOME_PATH: process.env.HOME
+  };
+}
+
+/**
+ * Clear Screen
+ * Clears the screen and resets cursor.
+ * PLACEHOLDER future use.
+ *
+ * @param reset when not false cursor is reset.
+ */
+export function clearScreen(reset: boolean = true) {
+  let out = '\x1B[2J';
+  let newline = '\n';
+  if (isWindows()) { // hack cause windows sucks!
+    newline = '\r\n';
+    out = '';
+    const lines = process.stdout['getWindowSize']()[1] || [];
+    lines.forEach((line) => {
+      out += '\r\n';
+    });
+  }
+  out += '\x1B[0f';
+  process.stdout.write(out);
 }
 
 /**

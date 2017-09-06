@@ -1,6 +1,6 @@
 {
   "parse failed: anonymous argument(s) %s prohibited in strict mode.": "l'analyse a échoué: anonymat (s) %s interdit en mode strict.",
-  "parse failed: missing required argument(s) %s or have no default value.": "'analyse a échoué: manque d'arguments requis ($) ou n'a pas de valeur par défaut.",
+  "parse failed: missing required argument(s) %s or have no default value.": "l'analyse a échoué: manque d'arguments requis ($) ou n'a pas de valeur par défaut.",
   "parse failed: %s requires %s but is missing.": "l'analyse a échoué: %s nécessite %s mais manque.",
   "set failed: cannot set option %s to boolean a value is expected.": "set failed: impossible de définir l'option %s à boolean, une valeur est attendue.",
   "invalid argument(s): cannot get stats with arguments of undefined.": "argument (s) invalide (s): impossible d'obtenir des statistiques avec des arguments non définis.",
@@ -9,7 +9,8 @@
   "parse failed: cannot set %s for %s using value of undefined.": "l'analyse a échoué: ne peut pas définir %s pour %s en utilisant la valeur de indéfinie.",
   "type mismatch: expected type %s but got %s instead.": "Type de désadaptation: type attendu %s, mais a obtenu %s à la place.",
   "type mismatch: expected list or expression %s to contain value %s.": "type incompatibilité: liste prévue ou expression %s pour contenir la valeur %s.",
-  "parse failed: at least %d commands are required by got %d.": "l'analyse a échoué: au moins les commandes %d sont requises par get %d.",
+  "parse failed: at least %s are required but got %s.": "l'analyse a échoué: au moins %s sont obligatoires mais ont obtenu %s.",
+  "parse failed: got %s but no more than %s are allowed.": "l'analyse a échoué: obtenu %s mais pas plus que %s sont autorisés.",
   "Commands": "Commandes",
   "Options": "Options",
   "Examples": "Exemples",

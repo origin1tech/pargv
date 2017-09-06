@@ -5,39 +5,46 @@ var path_1 = require("path");
 var util = require("util");
 var cliui = require("cliui");
 var figlet = require("figlet");
-var prefix = require("global-prefix");
 var colurs_1 = require("colurs");
 var utils = require("./utils");
 var y18n = require("y18n");
+var fs_1 = require("fs");
 var constants_1 = require("./constants");
 // VARIABLES & CONSTANTS //
 var colurs;
 var __, __n;
 var PargvError = utils.PargvError;
 var DEFAULTS = {
-    auto: true,
+    cast: true,
     colorize: true,
-    divider: '=',
+    headingDivider: '><><',
+    itemDivider: '.',
+    locale: 'en',
+    localeDir: './locales',
+    autoHelp: true,
+    defaultHelp: true,
+    layoutWidth: 82,
+    castBeforeCoerce: false,
+    extendCommands: false,
+    allowAnonymous: true,
+    ignoreTypeErrors: false,
+    displayStackTrace: false,
+    exitOnError: true,
     colors: {
         primary: 'blue',
         accent: 'cyan',
         alert: 'red',
         muted: 'gray'
     },
-    locale: 'en',
-    localeDir: './locales',
-    extendCommands: false,
-    allowAnonymous: true,
-    ignoreTypeErrors: false,
-    displayStackTrace: true,
-    exitOnError: true // when true Pargv will exit on error.
 };
+// Just checks if we are running tests.
+var MOCHA_TESTING = /_mocha$/.test(process.argv[1]);
 // CLASSES //
 var Pargv = (function () {
     function Pargv(options) {
-        this._helpDisabled = false;
         this._commands = {};
         this.init(options);
+        this._env = utils.environment();
     }
     // PRIVATE //
     /**
@@ -47,7 +54,6 @@ var Pargv = (function () {
      * @param options the Pargv options object.
      */
     Pargv.prototype.init = function (options) {
-        var _this = this;
         this.options = utils.extend({}, DEFAULTS, options);
         colurs = new colurs_1.Colurs({ enabled: this.options.colorize });
         var locOpts = {
@@ -58,45 +64,11 @@ var Pargv = (function () {
         __ = localization.__;
         __n = localization.__n;
         this.command('__default__'); // Default Command.
-        this._helpHandler = function (command) {
-            if (_this._helpDisabled === true)
-                return;
-            return _this.compileHelp(command).get();
-        };
-        this._errorHandler = function (message) {
-            var err = new PargvError(message);
-            var name = err.name;
-            var msg = err.message;
-            var stack;
-            if (err.stack) {
-                stack = err.stack.split('\n');
-                stack = stack.slice(3, stack.length).join('\n'); // remove message & error call.
-            }
-            msg = colurs.bold.red(name) + ': ' + msg;
-            var output = function () {
-                console.log();
-                console.log(msg);
-                if (_this.options.displayStackTrace && stack) {
-                    console.log();
-                    console.log(stack);
-                }
-                console.log();
-            };
-            process.nextTick(function () {
-                if (_this._exiting)
-                    return;
-                if (_this.options.exitOnError) {
-                    output();
-                    process.exit(1);
-                }
-                else {
-                    _this._exiting = true;
-                    output();
-                }
-            });
-        };
-        this.command('help.h') // Default help command.
-            .action(this.showHelp.bind(this));
+        this._helpHandler = this.helpHandler; // default help handler.
+        this._errorHandler = this.errorHandler; // default error handler.
+        this._completionHandler = this.completionHandler; // default completion handler.
+        this.command('help.h [command]') // Default help command.
+            .action(this.show.help.bind(this));
         return this;
     };
     /**
@@ -140,7 +112,8 @@ var Pargv = (function () {
       */
     Pargv.prototype.compileHelp = function (command) {
         var _this = this;
-        var layout = this.layout();
+        var layoutWidth = this.options.layoutWidth;
+        var layout = this.layout(layoutWidth);
         var obj = {};
         // Get single cmd in object or
         // get all commands.
@@ -150,7 +123,9 @@ var Pargv = (function () {
         var alert = this.options.colors.alert;
         var accent = this.options.colors.accent;
         var muted = this.options.colors.muted;
-        var div = this.options.divider;
+        var div = this.options.headingDivider;
+        var itmDiv = this.options.itemDivider;
+        var itmDivMulti = Math.round(((layoutWidth / itmDiv.length) / 3) * 2);
         var ctr = 0;
         // Builds commands and flags help.
         var buildOptions = function (cmd) {
@@ -162,36 +137,39 @@ var Pargv = (function () {
             reqStr = __('required');
             if (!cmd._commands.length && !cmd._options.length)
                 return;
-            layout.section(colurs.applyAnsi(cmdsStr + ":", accent));
+            layout.section(colurs.applyAnsi(cmdsStr + ":", accent), [1, 0, 1, 1]);
             cmd._commands.forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
-                var arr = [{ text: el, padding: [0, 0, 0, 1] }, { text: colurs.applyAnsi(cmd._describes[el] || '', muted) }];
+                var arr = [{ text: el, padding: [0, 0, 0, 2] }, { text: colurs.applyAnsi(cmd._describes[el] || '', muted) }];
                 var lastCol = isRequired ? { text: colurs.applyAnsi("" + reqStr, alert), align: 'right' } : '';
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
             if (!cmd._commands.length)
-                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 1] });
-            layout.section(colurs.applyAnsi(optsStr + ":", accent));
+                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
+            layout.section(colurs.applyAnsi(optsStr + ":", accent), [1, 0, 1, 1]);
             cmd._options.sort().forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
                 var aliases = cmd.findAliases(el).sort();
                 var names = [el].concat(aliases).join(', ');
-                var arr = [{ text: names, padding: [0, 0, 0, 1] }, { text: colurs.applyAnsi(cmd._describes[el] || '', muted) }];
+                var arr = [{ text: names, padding: [0, 0, 0, 2] }, { text: colurs.applyAnsi(cmd._describes[el] || '', muted) }];
                 var lastCol = isRequired ? { text: colurs.applyAnsi("" + reqStr, alert), align: 'right' } : '';
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
             if (!cmd._options.length)
-                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 1] });
+                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
             if (cmd._examples.length) {
-                layout.section(colurs.applyAnsi(exStr + ":", accent));
-                cmd._examples.forEach(function (el, i) {
-                    // const ex1 = colurs.applyAnsi(pad + `example ${i + 1}:`, muted);
-                    if (!/^.*\$\s/.test(el))
-                        el = '$ ' + el;
-                    var ex2 = colurs.applyAnsi(el, muted);
-                    layout.div({ text: ex2, padding: [0, 0, 0, 1] }, '');
+                layout.section(colurs.applyAnsi(exStr + ":", accent), [1, 0, 0, 1]);
+                cmd._examples.forEach(function (tuple) {
+                    var ex = tuple[0];
+                    var desc = tuple[1] || null;
+                    if (desc)
+                        desc = colurs.applyAnsi(desc, muted);
+                    if (!/^.*\$\s/.test(ex))
+                        ex = '$ ' + ex;
+                    ex = colurs.applyAnsi(ex, muted);
+                    layout.div({ text: ex, padding: [0, 0, 0, 2] }, desc || '');
                 });
             }
         };
@@ -203,7 +181,6 @@ var Pargv = (function () {
             licStr = __('License');
             // Add the name to the layout.
             if (_this._name) {
-                layout.div();
                 if (!_this._nameFont)
                     layout.repeat(colurs.applyAnsi(div, muted));
                 var tmpName = _this._name;
@@ -224,7 +201,10 @@ var Pargv = (function () {
                 if (_this._license)
                     layout.div(colurs.applyAnsi(licStr + ":", accent) + " " + utils.padLeft(colurs.applyAnsi(_this._license, muted), 7));
                 // Add break in layout.
-                layout.repeat(colurs.applyAnsi(div, muted));
+                if (div)
+                    layout.repeat(colurs.applyAnsi(div, muted));
+                else
+                    layout.div();
             }
         };
         // Builds the body of the help iterating
@@ -242,10 +222,10 @@ var Pargv = (function () {
                     .filter(function (v) { return v !== 'help'; }).concat(['help']);
             }
             cmdKeys.forEach(function (el, i) {
-                var cmd = _this.commands.find(el);
+                var cmd = _this.find.command(el);
                 if (i > 0)
-                    layout.repeat(colurs.applyAnsi('-', muted), 15);
-                var aliases = cmd.findAliases(cmd._name); // get aliases.
+                    layout.repeat(colurs.applyAnsi(itmDiv, muted), itmDivMulti);
+                var aliases = cmd.findAliases(cmd._name).join(', '); // get aliases.
                 layout.div(colurs.applyAnsi(usageStr + ": ", primary) + cmd._usage, colurs.applyAnsi(aliasStr + ": ", primary) + aliases);
                 if (cmd._describe) {
                     layout.div();
@@ -257,7 +237,10 @@ var Pargv = (function () {
         var buildFooter = function () {
             // Add epilog if any.
             if (_this._epilog) {
-                layout.repeat(colurs.applyAnsi(div, muted));
+                if (div)
+                    layout.repeat(colurs.applyAnsi(div, muted));
+                else
+                    layout.div();
                 layout.div(colurs.applyAnsi(_this._epilog, muted));
             }
         };
@@ -273,54 +256,83 @@ var Pargv = (function () {
         // return the resulting layout.
         return layout;
     };
-    Object.defineProperty(Pargv.prototype, "commands", {
-        // GETTERS //
-        /**
-         * Commands
-         * Helper methods for commands.
-         */
-        get: function () {
-            var _this = this;
-            return {
-                /**
-                 * Command
-                 * Finds a command by name.
-                 *
-                 * @param key the name of the command to find.
-                 */
-                find: function (key) {
-                    var cmds = _this._commands;
-                    var cmd = cmds[key];
-                    if (cmd)
-                        return cmd;
-                    for (var p in cmds) {
-                        if (cmd)
-                            break;
-                        var tmp = cmds[p];
-                        if (tmp._aliases[key])
-                            cmd = tmp;
-                    }
-                    return cmd;
-                },
-                /**
-                 * Remove
-                 * Removes a command from the collection.
-                 *
-                 * @param key the command key/name to be removed.
-                 */
-                remove: function (key) {
-                    var cmd = _this.commands.find(key);
-                    if (!cmd)
-                        return _this;
-                    delete _this._commands[cmd._name];
-                    return _this;
-                }
-            };
-        },
-        enumerable: true,
-        configurable: true
-    });
+    /**
+     * Help Handler
+     * The default help handler.
+     *
+     * @param command optional command to get help for.
+     */
+    Pargv.prototype.helpHandler = function (command) {
+        if (this._helpEnabled === false)
+            return;
+        return this.compileHelp(command).get();
+    };
+    Pargv.prototype.completionHandler = function (args, fn) {
+        var completions = [];
+        var current = args.length ? utils.last(args) : '';
+        var cmd = args.length ? utils.first(args) : '';
+        if (cmd)
+            cmd = this.find.command(cmd); // try to find cmd.
+        if (!cmd) {
+            for (var k in this._commands) {
+            }
+        }
+        else {
+        }
+    };
+    /**
+     * Error Handler
+     * The default error handler.
+     *
+     * @param message the error message to display.
+     * @param err the PargvError instance.
+     */
+    Pargv.prototype.errorHandler = function (message, err) {
+        if (MOCHA_TESTING)
+            throw err;
+        var name = err.name;
+        var msg = err.message;
+        var stack = err.stack;
+        msg = colurs.bold.red(name) + ': ' + msg;
+        console.log();
+        console.log(msg);
+        if (this.options.displayStackTrace && stack) {
+            console.log();
+            console.log(stack);
+        }
+        console.log();
+        if (this.options.exitOnError)
+            process.exit(1);
+    };
+    /**
+     * Build Help
+     * Common method to get help before show or return.
+     *
+     * @param command optional command to get help for.
+     */
+    Pargv.prototype.buildHelp = function (command) {
+        var name = utils.isPlainObject(command) ? command._name : command;
+        return this._helpHandler.call(this, name, this._commands);
+    };
+    /**
+     * Generate Completion Script
+     * Generates the completion script for use in terminal.
+     *
+     * @param name the name of the program.
+     * @param command the command name for getting completions.
+     */
+    Pargv.prototype.generateCompletionScript = function (name, command) {
+        command = command || '--get-completions';
+        var script = fs_1.readFileSync(path_1.resolve(__dirname, 'completion.sh.tpl'), 'utf-8');
+        var base = path_1.basename(name); // get the basename from path.
+        if (name.match(/\.js$/))
+            name = "./" + name; // add if not yet installed as bin.
+        script = script.replace(/{{app_name}}/g, base); // replace app name.
+        script = script.replace(/{{app_command}})/g, command); // replace the command.
+        return script.replace(/{{app_path}}/g, name); // replace the path.
+    };
     Object.defineProperty(Pargv.prototype, "ui", {
+        // GETTERS //
         /**
          * UI
          * Alias to layout.
@@ -343,8 +355,6 @@ var Pargv = (function () {
         configurable: true
     });
     Object.defineProperty(Pargv.prototype, "$", {
-        // DEFAULT COMMAND //
-        // exposes parsing features without need for a command.
         /**
          * Default Command
          * Exposes default command for parsing anonymous arguments.
@@ -357,7 +367,163 @@ var Pargv = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(Pargv.prototype, "get", {
+        /**
+         * Gets help, completion script, completions...
+         */
+        get: function () {
+            var _this = this;
+            return {
+                /**
+                 * Help
+                 * Gets help text.
+                 *
+                 * @param command optional command to show help for.
+                 */
+                help: function (command) {
+                    return _this.buildHelp(command);
+                },
+                /**
+                 * Completion
+                 * Gets the completion script.
+                 */
+                completion: function () {
+                    return _this.generateCompletionScript(_this._env.EXEC);
+                },
+                /**
+                 * Completions
+                 * Gets completions for the supplied args.
+                 *
+                 * @param args arguments to parse for completions.
+                 * @param fn a callback function containing results.
+                 */
+                completions: function (args, fn) {
+                    return _this._completionHandler.call(_this, args, fn);
+                },
+                /**
+                 * Env
+                 * Gets environment variables.
+                 */
+                env: function () {
+                    return _this._env;
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Pargv.prototype, "show", {
+        /**
+         * Shows help completion script env.
+         */
+        get: function () {
+            var _this = this;
+            return {
+                /**
+                 * Help
+                 * Shows help in terminal.
+                 *
+                 * @param command optional command to show help for.
+                 */
+                help: function (command) {
+                    console.log(_this.buildHelp(command));
+                    console.log();
+                },
+                /**
+                 * Completion
+                 * Shows the completion script in terminal.
+                 */
+                completion: function () {
+                    _this.log(_this.generateCompletionScript(_this._env.EXEC));
+                },
+                /**
+                 * Env
+                 * Shows environment variables in terminal.
+                 */
+                env: function () {
+                    _this.log(_this._env);
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Pargv.prototype, "find", {
+        /**
+         * Finds objects, properties...
+         */
+        get: function () {
+            var _this = this;
+            return {
+                /**
+                 * Command
+                 * Finds a command by name.
+                 *
+                 * @param key the name of the command to find.
+                 */
+                command: function (key) {
+                    var cmds = _this._commands;
+                    var cmd = cmds[key];
+                    if (cmd)
+                        return cmd;
+                    for (var p in cmds) {
+                        if (cmd)
+                            break;
+                        var tmp = cmds[p];
+                        if (tmp._aliases[key])
+                            cmd = tmp;
+                    }
+                    return cmd;
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Pargv.prototype, "remove", {
+        /**
+         * Removes elements and objects.
+         */
+        get: function () {
+            var _this = this;
+            return {
+                /**
+                 * Remove
+                 * Removes a command from the collection.
+                 *
+                 * @param key the command key/name to be removed.
+                 */
+                command: function (key) {
+                    var cmd = _this.find.command(key);
+                    if (!cmd)
+                        return _this;
+                    delete _this._commands[cmd._name];
+                    return _this;
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
     // META //
+    /**
+     * Meta
+     * Accepts object containing metadata information for program.
+     * Simply a way to enter name, description, version etc by object
+     * rather than chaining each value.
+     *
+     * @param data the metadata object.
+     */
+    Pargv.prototype.meta = function (data) {
+        for (var k in data) {
+            if (this[k]) {
+                if (utils.isArray(data[k]))
+                    this[k].apply(this, data[k]);
+                else
+                    this[k](data[k]);
+            }
+        }
+    };
     /**
      * App
      * Just adds a string to use as title of app, used in help.
@@ -447,15 +613,20 @@ var Pargv = (function () {
         if (utils.isArray(argv[0]))
             argv = argv[0];
         var colors = this.options.colors;
-        var autoType = this.options.auto ? 'auto' : 'string'; // is auto casting enabled.
+        var autoType = this.options.cast ? 'auto' : 'string'; // is auto casting enabled.
         var isExec = utils.last(argv) === '__exec__' ? argv.pop() : null;
-        argv = argv && argv.length ? argv : process.argv; // process.argv or user args.
-        var procArgv = process.argv.slice(0); // get process.argv.
-        var parsedExec = path_1.parse(procArgv[1]); // parse the node execution path.
+        argv = argv && argv.length ? argv : constants_1.ARGV; // process.argv or user args.
+        var procArgv = constants_1.ARGV.slice(0); // get process.argv.
         var normalized = this.toNormalized(argv.slice(0)); // normalize the args.
         var source = normalized.slice(0); // store source args.
         var name = utils.first(normalized); // get first arg.
-        var cmd = this.commands.find(name); // lookup the command.
+        if (constants_1.FLAG_EXP.test(name))
+            name = undefined;
+        var cmd = this.find.command(name); // lookup the command.
+        if (!cmd && !normalized.length && this.options.autoHelp) {
+            this.show.help();
+            return;
+        }
         if (cmd)
             normalized.shift(); // found cmd shift first.
         else
@@ -464,16 +635,23 @@ var Pargv = (function () {
         var val;
         var stats = cmd.stats(normalized);
         normalized = stats.normalized; // set to normalized & ordered args.
+        if (utils.containsAny(normalized, ['--help', '-h']) && cmd._showHelp) {
+            this.show.help(cmd);
+            return;
+        } // show help for command.
+        if (name === 'help') {
+            var helpCmd = this.find.command(utils.first(normalized));
+            if (helpCmd && helpCmd._showHelp) {
+                this.show.help(helpCmd._name);
+                return;
+            }
+        }
+        var env = this._env;
         var result = {
-            $exec: parsedExec.name,
+            $exec: env.EXEC,
             $command: name,
             $commands: [],
-            $metadata: {
-                source: source,
-                execPath: procArgv[1],
-                nodePath: procArgv[0],
-                globalPrefix: prefix,
-            }
+            $source: source
         };
         if (!this.options.allowAnonymous && stats.anonymous.length) {
             this.error(__('parse failed: anonymous argument(s) %s prohibited in strict mode.', colurs.applyAnsi(stats.anonymous.join(', '), colors.accent)));
@@ -508,7 +686,8 @@ var Pargv = (function () {
             type = coerce ? null : type;
             type = type || (isBool ? 'boolean' : autoType);
             return function (val, def) {
-                val = cmd.castToType(key, type, val, def);
+                if (!coerce || (coerce && _this.options.castBeforeCoerce))
+                    val = cmd.castToType(key, type, val, def);
                 if (coerce)
                     val = coerce(val, cmd);
                 return val;
@@ -531,6 +710,8 @@ var Pargv = (function () {
             } // Prevent --no option when not bool flag.
             var wrapper = coerceWrapper(key, coercion, isBool); // get coerce wrapper.
             val = isFlag && !isBool ? next : isFlag ? isNot ? true : false : el;
+            if (utils.isBoolean(def) && def === true && val === false)
+                val = true;
             val = wrapper(val, def);
             var formattedKey = isFlag ?
                 utils.camelcase(key.replace(constants_1.FLAG_EXP, '')) :
@@ -573,45 +754,27 @@ var Pargv = (function () {
             cmd._action.apply(cmd, parsed.$commands.concat([parsed, cmd]));
         return parsed;
     };
-    // HELP & ERRORS //
+    // ERRORS & RESET //
     /**
-     * Help
-     * Helper method for defining custom help text.
+     * On Help
+     * Method for adding custom help handler.
      *
-     * @param val callback for custom help or boolean to toggle enable/disable.
+     * @param fn the custom help handler.
      */
-    Pargv.prototype.help = function (fn) {
+    Pargv.prototype.onHelp = function (fn) {
         var _this = this;
-        if (utils.isBoolean(fn)) {
-            this._helpDisabled = fn;
-        }
-        else if (utils.isFunction(fn)) {
-            this._helpDisabled = undefined;
-            this._helpHandler = function (command) {
-                return fn(command, _this._commands);
-            };
-        }
+        this._helpHandler = function (command) {
+            return fn(command, _this._commands);
+        };
         return this;
     };
     /**
-      * Show Help
-      * Displays all help or help for provided command name.
-      *
-      * @param command optional name for displaying help for a particular command.
-      */
-    Pargv.prototype.showHelp = function (command) {
-        var name = utils.isPlainObject(command) ? command._name : command;
-        var help = this._helpHandler(name, this._commands);
-        console.log(help);
-        console.log();
-    };
-    /**
-     * Fail
+     * On Error
      * Add custom on error handler.
      *
      * @param fn the error handler function.
      */
-    Pargv.prototype.fail = function (fn) {
+    Pargv.prototype.onError = function (fn) {
         if (fn)
             this._errorHandler = fn;
         return this;
@@ -619,9 +782,24 @@ var Pargv = (function () {
     /**
      * Reset
      * Deletes all commands and resets the default command.
+     * Reset does to reset or clear custom help or error handlers
+     * nor your name, description license or version. If you wish
+     * to reset everyting pass true as second arg.
      */
-    Pargv.prototype.reset = function (options) {
+    Pargv.prototype.reset = function (options, all) {
         this._commands = {};
+        if (all) {
+            this._helpEnabled = undefined;
+            this._name = undefined;
+            this._nameFont = undefined;
+            this._nameStyles = undefined;
+            this._version = undefined;
+            this._license = undefined;
+            this._describe = undefined;
+            this._epilog = undefined;
+            this._errorHandler = this.errorHandler;
+            this._helpHandler = this.helpHandler;
+        }
         return this.init(options);
     };
     // UTIL METHODS //
@@ -637,7 +815,14 @@ var Pargv = (function () {
             args[_i] = arguments[_i];
         }
         var formatted = this.formatLogMessage.apply(this, args);
-        this._errorHandler(formatted, args, this);
+        var err = new PargvError(formatted);
+        if (err.stack) {
+            var stack = err.stack.split('\n');
+            stack = stack.slice(2, stack.length).join('\n'); // remove message & error call.
+            err.stack = stack;
+        }
+        this._errorHandler.call(this, formatted, err, this);
+        return this;
     };
     /**
      * Log
@@ -650,7 +835,10 @@ var Pargv = (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
+        if (MOCHA_TESTING)
+            return this;
         console.log(this.formatLogMessage.apply(this, args));
+        return this;
     };
     /**
      * Stats
@@ -671,7 +859,7 @@ var Pargv = (function () {
             this.error(__('invalid argument(s): cannot get stats with arguments of undefined.'));
         }
         args = this.toNormalized(args); // normalize args to known syntax.
-        var cmd = this.commands.find(command);
+        var cmd = this.find.command(command);
         if (!cmd) {
             this.error(__('unknown command: cannot get stats using command of undefined.'));
         }
@@ -692,11 +880,10 @@ var Pargv = (function () {
         if (utils.isArray(args[0]))
             args = args[0];
         var arr = [], idx;
-        var execExp = new RegExp('^' + prefix, 'i');
-        if (execExp.test(args[0]))
+        if (constants_1.EXE_EXP.test(args[0]) || args[0] === constants_1.NODE_PATH)
             args = args.slice(2);
         args.forEach(function (el) {
-            if (/^--/.test(el) && ~(idx = el.indexOf('='))) {
+            if (constants_1.FLAG_EXP.test(el) && ~(idx = el.indexOf('='))) {
                 arr.push(el.slice(0, idx), el.slice(idx + 1));
             }
             else if (constants_1.FLAG_SHORT_EXP.test(el)) {
@@ -784,7 +971,7 @@ var Pargv = (function () {
     Pargv.prototype.layout = function (width, wrap) {
         var self = this;
         // Base width of all divs.
-        width = width || 100;
+        width = width || 80;
         // Init cli ui.
         var ui = cliui({ width: width, wrap: wrap });
         function add(type) {
@@ -824,20 +1011,30 @@ var Pargv = (function () {
         }
         /**
          * Repeat
-         * Simply repeats a character by layout width
-         * or specified length. Good for creating sections
+         * Simply repeats a character(s) by layout width multiplier
+         * or specified multiplier. Good for creating sections
          * or dividers. If single integer is used for padding
          * will use value for top padding then double for bottom.
          *
          * @param char the character to be repeated
-         * @param len optional lenth to repeat or width offset by 25 is used.
+         * @param multiplier optional lenth to repeat.
          * @param padding number or array of numbers if single digit used for top/bottom.
          */
-        function repeat(char, len, padding) {
-            len = len || (width - 1);
+        function repeat(char, multiplier, padding) {
+            var origLen = multiplier;
+            multiplier = multiplier || width;
             var _char = char;
-            while (len--)
+            var stripChar = colurs.strip(_char); // strip any color formatting.
+            var canAppend = function () {
+                var curLen = colurs.strip(char).length;
+                var offset = stripChar.length;
+                return curLen < (width - offset);
+            };
+            if (!utils.isValue(origLen))
+                multiplier = Math.round(Math.floor(width / stripChar.length));
+            while (multiplier-- && canAppend()) {
                 char += _char;
+            }
             this.section(char, padding);
             return methods;
         }
@@ -853,7 +1050,8 @@ var Pargv = (function () {
          * @param padding the optional padding used for the section.
          */
         function section(title, padding) {
-            padding = padding >= 0 ? padding : 1;
+            if (!utils.isValue(padding))
+                padding = 1;
             if (utils.isNumber(padding))
                 padding = [padding, 0, padding, 0];
             add('div', { text: title, padding: padding });
@@ -931,6 +1129,7 @@ var PargvCommand = (function () {
         this._describe = describe;
         this._pargv = pargv;
         this.parseCommand(token);
+        this.toggleHelp(pargv.options.defaultHelp);
     }
     // PRIVATE //
     /**
@@ -1078,6 +1277,29 @@ var PargvCommand = (function () {
         this._usages[option.key] = option.usage; // Add usage.
         this.coerce(option.key, option.type, option.default); // Add default coerce method.
     };
+    /**
+     * Toggle Help
+     * Enables or disables help while toggling the help option.
+     * @param enabled whether or not help is enabled.
+     */
+    PargvCommand.prototype.toggleHelp = function (enabled) {
+        if (this._name === 'help') {
+            this._showHelp = true;
+            return;
+        }
+        if (!utils.isValue(enabled))
+            enabled = true;
+        this._showHelp = enabled;
+        if (enabled) {
+            this.option('--help, -h', "Displays help for " + this._name + ".");
+        }
+        else {
+            this._options = this._options.map(function (el) {
+                if (!/^(--help|-h)$/.test(el))
+                    return el;
+            });
+        }
+    };
     Object.defineProperty(PargvCommand.prototype, "error", {
         // GETTERS //
         get: function () {
@@ -1197,7 +1419,6 @@ var PargvCommand = (function () {
         var _this = this;
         token = utils.toOptionToken(token);
         var tokens = utils.split(token.trim(), constants_1.SPLIT_CHARS);
-        console.log(tokens);
         tokens.forEach(function (el, i) {
             var next;
             if (tokens.length > 1) {
@@ -1362,13 +1583,28 @@ var PargvCommand = (function () {
         return this;
     };
     /**
+     * Help
+     * Enables or disables help for this command.
+     *
+     * @param enabled true or false to toggle help.
+     */
+    PargvCommand.prototype.help = function (enabled) {
+        this.toggleHelp(enabled);
+        return this;
+    };
+    /**
      * Example
      * Stores and example for the command displayed in help.
+     * You can also provide an object where the key is the
+     * example text and the value is the describe text.
      *
-     * @param val string value representing an example.
+     * @param val string or array of strings.
      */
     PargvCommand.prototype.example = function (example, describe) {
-        this._examples = this._examples.concat(example);
+        var arr = example;
+        if (utils.isString(example))
+            arr = [example, describe || null];
+        this._examples = this._examples.concat(arr);
         return this;
     };
     // UTILS //
@@ -1396,6 +1632,28 @@ var PargvCommand = (function () {
             listexp = type;
             type = 'list';
         }
+        function castObject(obj) {
+            if (utils.isPlainObject(obj)) {
+                for (var k in obj) {
+                    var val_1 = obj[k];
+                    if (utils.isPlainObject(val_1))
+                        obj[k] = utils.toDefault(castObject(val_1), val_1);
+                    else if (utils.isArray(val_1))
+                        obj[k] = utils.toDefault(castObject(val_1), val_1);
+                    else
+                        obj[k] = utils.toDefault(autoCast(val_1), val_1);
+                }
+                return obj;
+            }
+            else if (utils.isArray(obj)) {
+                return obj.map(function (el) {
+                    return autoCast(el);
+                });
+            }
+            else {
+                return obj;
+            }
+        }
         var is = {
             object: utils.isPlainObject,
             number: utils.isNumber,
@@ -1409,12 +1667,6 @@ var PargvCommand = (function () {
             list: function (v) { return utils.isValue(v); }
         };
         var to = {
-            // Never called in autoCast method.
-            list: function (v) {
-                var exp = utils.isRegExp(listexp) ? listexp : utils.splitToList(listexp);
-                var match = v.match(exp);
-                result = match && match[0];
-            },
             object: function (v) {
                 if (!constants_1.KEYVAL_EXP.test(v))
                     return null;
@@ -1433,7 +1685,7 @@ var PargvCommand = (function () {
                     pairs.unshift(key_1 + ":" + matches[1]); // set back to key:val without parent path.
                 }
                 pairs.forEach(function (p) {
-                    var kv = p.split(':');
+                    var kv = p.replace(/('|")/g, '').split(':');
                     if (kv.length > 1) {
                         var castVal = kv[1];
                         if (constants_1.DOT_EXP.test(castVal)) {
@@ -1442,11 +1694,11 @@ var PargvCommand = (function () {
                         else {
                             if (/^\[\s*?("|').+("|')\s*?\]$/.test(castVal))
                                 castVal = castVal.replace(/(^\[|\]$)/g, '');
-                            if (opts.auto) {
-                                castVal = autoCast(castVal) || castVal;
+                            if (opts.cast) {
+                                castVal = utils.toDefault(autoCast(castVal), castVal);
                                 if (utils.isArray(castVal))
                                     castVal = castVal.map(function (el) {
-                                        return autoCast(el) || el;
+                                        return utils.toDefault(autoCast(el), el);
                                     });
                             }
                         }
@@ -1460,7 +1712,16 @@ var PargvCommand = (function () {
                 if (!constants_1.JSON_EXP.test(v))
                     return null;
                 v = v.replace(/^"/, '').replace(/"$/, '');
-                return utils.tryWrap(JSON.parse, v)();
+                var obj = utils.tryWrap(JSON.parse, v)();
+                if (utils.isPlainObject(obj) && opts.cast) {
+                    obj = castObject(obj);
+                }
+                return obj;
+            },
+            regexp: function (v) {
+                if (!constants_1.REGEX_EXP.test(v))
+                    return null;
+                return utils.castType(val, 'regexp');
             },
             array: function (v) {
                 if (!constants_1.LIST_EXP.test(v))
@@ -1475,11 +1736,6 @@ var PargvCommand = (function () {
             date: function (v) {
                 return utils.castType(v, 'date');
             },
-            regexp: function (v) {
-                if (!constants_1.REGEX_EXP.test(v))
-                    return null;
-                return utils.castType(val, 'regexp');
-            },
             boolean: function (v) {
                 if (!/^(true|false)$/.test(v))
                     return null;
@@ -1487,7 +1743,13 @@ var PargvCommand = (function () {
             },
             string: function (v) {
                 return v;
-            }
+            },
+            // Never called in autoCast method.
+            list: function (v) {
+                var exp = utils.isRegExp(listexp) ? listexp : utils.splitToList(listexp);
+                var match = v.match(exp);
+                result = match && match[0];
+            },
         };
         to.integer = to.number;
         to.float = to.number;
@@ -1499,8 +1761,8 @@ var PargvCommand = (function () {
             var castMethods = [
                 to.object.bind(null, v),
                 to.json.bind(null, v),
-                to.array.bind(null, v),
                 to.regexp.bind(null, v),
+                to.array.bind(null, v),
                 to.date.bind(null, v, 'date'),
                 to.number.bind(null, v),
                 to.boolean.bind(null, v)
@@ -1588,8 +1850,9 @@ var PargvCommand = (function () {
      * finding required, anonymous and missing args.
      *
      * @param args the args to get stats for.
+     * @param skip when true deamnds and whens are not built.
      */
-    PargvCommand.prototype.stats = function (args) {
+    PargvCommand.prototype.stats = function (args, skip) {
         var _this = this;
         var lastIdx = this._commands.length - 1;
         var clone = args.slice(0);
@@ -1600,7 +1863,25 @@ var PargvCommand = (function () {
         var mapOpts = []; // contains option keys.
         var mapAnon = []; // contains anon keys.
         var ctr = 0;
-        var map2 = this._commands.slice(0).concat(this._options.slice(0));
+        // Ensure defaults for missing keys.
+        for (var k in this._defaults) {
+            var isFlag = constants_1.FLAG_EXP.test(k);
+            var def = this._defaults[k];
+            var isBool = this.isBool(k);
+            if (isFlag) {
+                if (!utils.contains(clone, k)) {
+                    clone.push(k);
+                    if (!isBool)
+                        clone.push(def);
+                }
+            }
+            else {
+                var idx = this._commands.indexOf(k);
+                var cur = clone[idx];
+                if (!utils.isValue(cur) || constants_1.FLAG_EXP.test(clone[idx]))
+                    clone.splice(idx, 0, def);
+            }
+        }
         clone.forEach(function (el, i) {
             var next = clone[i + 1];
             var isFlag = utils.isFlag(el);
@@ -1633,8 +1914,8 @@ var PargvCommand = (function () {
                 ctr++;
             }
         });
-        var normalized = commands.concat(options).concat(anonymous); // normalized args.
         var map = mapCmds.concat(mapOpts).concat(mapAnon); // map by key to normalized.
+        var normalized = commands.concat(options).concat(anonymous); // normalized args.
         var missing = [];
         this._demands.forEach(function (el) {
             if (!utils.contains(map, el)) {
@@ -1663,11 +1944,12 @@ var PargvCommand = (function () {
             }
         });
         var whens = [];
-        for (var p in this._whens) {
-            var demand = this._whens[p];
-            if (!utils.contains(map, demand))
-                whens.push([p, demand]);
-        }
+        if (!skip)
+            for (var k in this._whens) {
+                var demand = this._whens[k];
+                if (utils.contains(map, k))
+                    whens.push([k, demand]);
+            }
         return {
             commands: commands,
             options: options,
@@ -1721,23 +2003,13 @@ var PargvCommand = (function () {
     };
     // PARGV WRAPPERS //
     /**
-     * Help
-     * Wrapper method to parent help method.
-     *
-     * @param fn boolean or custom HelpCallback method.
-     */
-    PargvCommand.prototype.help = function (fn) {
-        this._pargv.help(fn);
-        return this;
-    };
-    /**
      * Fail
      * Add custom on error handler.
      *
      * @param fn the error handler function.
      */
     PargvCommand.prototype.fail = function (fn) {
-        this._pargv.fail(fn);
+        this._pargv.onError(fn);
         return this;
     };
     /**

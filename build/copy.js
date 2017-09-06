@@ -1,10 +1,16 @@
-const path = require('path');
-const copy = require('fs-extra').copySync;
-const src = path.join(__dirname, '../src/locales');
-const dest = path.join(__dirname, '../dist/locales');
+const fs = require('fs');
 
-copy(src, dest);
+function copy(src, dest) {
+  if (!fs.existsSync(src))
+    return;
+  fs.writeFileSync(dest, fs.readFileSync(src, 'utf-8'));
+}
 
+const copies = [
+  '../src/completions.sh.tpl,../dist/completions.sh.tpl'
+];
 
-
-
+copies.forEach((p) => {
+  const split = p.split(',');
+  copy(split[0], split[1]);
+});

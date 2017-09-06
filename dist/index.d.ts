@@ -1,10 +1,11 @@
-import { IMap, IPargvOptions, ActionCallback, CoerceCallback, AnsiStyles, HelpCallback, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler } from './interfaces';
+import { IMap, IPargvOptions, ActionHandler, CoerceHandler, AnsiStyles, HelpHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler, IPargvMetadata, IPargvEnv } from './interfaces';
 export declare class Pargv {
-    private _helpDisabled;
+    private _helpEnabled;
     private _helpHandler;
     private _errorHandler;
+    private _completionHandler;
     private _command;
-    private _exiting;
+    _env: IPargvEnv;
     _name: string;
     _nameFont: string;
     _nameStyles: AnsiStyles[];
@@ -37,13 +38,36 @@ export declare class Pargv {
       */
     private compileHelp(command?);
     /**
-     * Commands
-     * Helper methods for commands.
+     * Help Handler
+     * The default help handler.
+     *
+     * @param command optional command to get help for.
      */
-    readonly commands: {
-        find: (key: string) => PargvCommand;
-        remove: (key: string) => this;
-    };
+    private helpHandler(command?);
+    private completionHandler(args, fn);
+    /**
+     * Error Handler
+     * The default error handler.
+     *
+     * @param message the error message to display.
+     * @param err the PargvError instance.
+     */
+    private errorHandler(message, err);
+    /**
+     * Build Help
+     * Common method to get help before show or return.
+     *
+     * @param command optional command to get help for.
+     */
+    private buildHelp(command?);
+    /**
+     * Generate Completion Script
+     * Generates the completion script for use in terminal.
+     *
+     * @param name the name of the program.
+     * @param command the command name for getting completions.
+     */
+    private generateCompletionScript(name, command?);
     /**
      * UI
      * Alias to layout.
@@ -61,6 +85,44 @@ export declare class Pargv {
      * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
      */
     readonly $: PargvCommand;
+    /**
+     * Gets help, completion script, completions...
+     */
+    readonly get: {
+        help: (command?: string | PargvCommand) => any;
+        completion: () => string;
+        completions: (args: any[], fn: Function) => any;
+        env: () => IPargvEnv;
+    };
+    /**
+     * Shows help completion script env.
+     */
+    readonly show: {
+        help: (command?: string | PargvCommand) => void;
+        completion: () => void;
+        env: () => void;
+    };
+    /**
+     * Finds objects, properties...
+     */
+    readonly find: {
+        command: (key: string) => PargvCommand;
+    };
+    /**
+     * Removes elements and objects.
+     */
+    readonly remove: {
+        command: (key: string) => this;
+    };
+    /**
+     * Meta
+     * Accepts object containing metadata information for program.
+     * Simply a way to enter name, description, version etc by object
+     * rather than chaining each value.
+     *
+     * @param data the metadata object.
+     */
+    meta(data: IPargvMetadata): void;
     /**
      * App
      * Just adds a string to use as title of app, used in help.
@@ -125,45 +187,41 @@ export declare class Pargv {
      */
     exec(...argv: any[]): IPargvParsedResult;
     /**
-     * Help
-     * Helper method for defining custom help text.
+     * On Help
+     * Method for adding custom help handler.
      *
-     * @param val callback for custom help or boolean to toggle enable/disable.
+     * @param fn the custom help handler.
      */
-    help(fn: boolean | HelpCallback): this;
+    onHelp(fn: HelpHandler): this;
     /**
-      * Show Help
-      * Displays all help or help for provided command name.
-      *
-      * @param command optional name for displaying help for a particular command.
-      */
-    showHelp(command?: string | PargvCommand): void;
-    /**
-     * Fail
+     * On Error
      * Add custom on error handler.
      *
      * @param fn the error handler function.
      */
-    fail(fn: ErrorHandler): this;
+    onError(fn: ErrorHandler): this;
     /**
      * Reset
      * Deletes all commands and resets the default command.
+     * Reset does to reset or clear custom help or error handlers
+     * nor your name, description license or version. If you wish
+     * to reset everyting pass true as second arg.
      */
-    reset(options?: IPargvOptions): this;
+    reset(options?: IPargvOptions, all?: boolean): this;
     /**
      * Error
      * Handles error messages.
      *
      * @param args args to be formatted and logged.
      */
-    error(...args: any[]): void;
+    error(...args: any[]): this;
     /**
      * Log
      * Displays log messages after formatting, supports metadata.
      *
      * @param args the arguments to log.
      */
-    log(...args: any[]): void;
+    log(...args: any[]): this;
     /**
      * Stats
      * Iterates array of arguments comparing to defined configuration.
@@ -224,15 +282,16 @@ export declare class PargvCommand {
     _usages: IMap<string[]>;
     _defaults: IMap<any>;
     _describes: IMap<string>;
-    _coercions: IMap<CoerceCallback>;
+    _coercions: IMap<CoerceHandler>;
     _demands: string[];
     _whens: IMap<string>;
-    _examples: string[];
-    _action: ActionCallback;
+    _examples: [string, string][];
+    _action: ActionHandler;
     _maxCommands: number;
     _maxOptions: number;
     _minCommands: number;
     _minOptions: number;
+    _showHelp: boolean;
     _pargv: Pargv;
     constructor(token: string, describe?: string, pargv?: Pargv);
     /**
@@ -259,6 +318,12 @@ export declare class PargvCommand {
      * @param option the parsed PargvOption object.
      */
     private expandOption(option);
+    /**
+     * Toggle Help
+     * Enables or disables help while toggling the help option.
+     * @param enabled whether or not help is enabled.
+     */
+    private toggleHelp(enabled?);
     readonly error: any;
     readonly colors: {
         primary: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
@@ -297,7 +362,7 @@ export declare class PargvCommand {
       * @param def an optional default value.
       * @param type a string type, RegExp to match or Coerce method.
       */
-    option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceCallback): PargvCommand;
+    option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand;
     /**
      * Alias
      * Maps alias keys to primary flag/command key.
@@ -325,7 +390,7 @@ export declare class PargvCommand {
      * @param def an optional value when coercion fails.
      */
     coerce(key: string | IMap<IPargvCoerceConfig>): PargvCommand;
-    coerce(key: string, type?: string | RegExp | CoerceCallback, def?: any): PargvCommand;
+    coerce(key: string, type?: string | RegExp | CoerceHandler, def?: any): PargvCommand;
     /**
      * Demand
      * The commands or flag/option keys to demand.
@@ -359,14 +424,23 @@ export declare class PargvCommand {
      *
      * @param fn the callback function when parsed command matches.
      */
-    action(fn: ActionCallback): this;
+    action(fn: ActionHandler): this;
+    /**
+     * Help
+     * Enables or disables help for this command.
+     *
+     * @param enabled true or false to toggle help.
+     */
+    help(enabled?: boolean): PargvCommand;
     /**
      * Example
      * Stores and example for the command displayed in help.
+     * You can also provide an object where the key is the
+     * example text and the value is the describe text.
      *
-     * @param val string value representing an example.
+     * @param val string or array of strings.
      */
-    example(example: string, describe?: string): this;
+    example(example: string | [string, string][], describe?: string): this;
     /**
      * Cast To Type
      * Casts a value to the specified time or fallsback to default.
@@ -403,8 +477,9 @@ export declare class PargvCommand {
      * finding required, anonymous and missing args.
      *
      * @param args the args to get stats for.
+     * @param skip when true deamnds and whens are not built.
      */
-    stats(args: any[]): {
+    stats(args: any[], skip?: boolean): {
         commands: any[];
         options: any[];
         anonymous: any[];
@@ -439,13 +514,6 @@ export declare class PargvCommand {
      * @param key the option key to check.
      */
     isBool(key: string): boolean;
-    /**
-     * Help
-     * Wrapper method to parent help method.
-     *
-     * @param fn boolean or custom HelpCallback method.
-     */
-    help(fn: boolean | HelpCallback): PargvCommand;
     /**
      * Fail
      * Add custom on error handler.

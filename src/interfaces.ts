@@ -52,6 +52,7 @@ export interface IPargvEnv {
   HOME_PATH: string;
   GLOBAL_PATH: string;
   NODE_ENV: string;
+  PLATFORM: string;
 }
 
 export interface IPargvMetadata {

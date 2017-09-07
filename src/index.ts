@@ -1046,6 +1046,9 @@ export class Pargv {
     describe = describe || 'Tab completion install script.';
     const cmd = this.command(name, <string>describe);
     cmd.action((path) => {
+      path = path || join(this._env.HOME_PATH, '.bash_profile');
+      if (/^win/.test(this._env.PLATFORM ))
+        this.error('Tab completion is not supported on Windows.');
       
     });
     if (fn)

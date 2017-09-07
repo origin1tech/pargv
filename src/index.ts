@@ -1,6 +1,7 @@
 // IMPORTS //
 
-import { parse, resolve, basename } from 'path';
+import { parse, resolve, basename, join } from 'path';
+import { appendFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import * as util from 'util';
 import * as cliui from 'cliui';
 import * as figlet from 'figlet';
@@ -68,7 +69,7 @@ export class Pargv {
 
   constructor(options?: IPargvOptions) {
     this.init(options);
-    this._env = utils.environment();
+
   }
 
   // PRIVATE //
@@ -82,7 +83,6 @@ export class Pargv {
   private init(options?: IPargvOptions) {
 
     this.options = utils.extend<IPargvOptions>({}, DEFAULTS, options);
-
     colurs = new Colurs({ enabled: this.options.colorize });
 
     const locOpts: IY18nOptions = {
@@ -94,6 +94,8 @@ export class Pargv {
     __ = localization.__;
     __n = localization.__n;
 
+    this._env = utils.environment();  // get env paths.
+
     this.command('__default__');                    // Default Command.
 
     this._helpHandler = this.helpHandler; // default help handler.
@@ -104,6 +106,8 @@ export class Pargv {
 
     this.command('help.h [command]')                     // Default help command.
       .action(this.show.help.bind(this));
+
+    this.command('completion')
 
     return this;
 
@@ -1022,6 +1026,31 @@ export class Pargv {
       }
     });
     return arr;
+  }
+
+  /**
+   * Completion
+   * Adds the completion handler.
+   *
+   * @param name the name of the commpletion install command.
+   * @param describe the description of the command or complete handler.
+   * @param fn the optional completion handler.
+   */
+  completion(name?: string, describe?: string | CompletionHandler, fn?: CompletionHandler) {
+    if (utils.isFunction(describe)) {
+      fn = <CompletionHandler>describe;
+      describe = undefined;
+    }
+    name = name || 'completion';
+    name = `${name} [path]`;
+    describe = describe || 'Tab completion install script.';
+    const cmd = this.command(name, <string>describe);
+    cmd.action((path) => {
+      
+    });
+    if (fn)
+      this._completionHandler = fn.bind(this);
+    return this;
   }
 
   // EXTENDED METHODS //

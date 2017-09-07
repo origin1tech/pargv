@@ -897,6 +897,8 @@ var Pargv = (function () {
         });
         return arr;
     };
+    Pargv.prototype.setupCompletion = function (path) {
+    };
     // EXTENDED METHODS //
     /**
      * Logo

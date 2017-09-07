@@ -31,7 +31,8 @@ export function environment() {
     NODE_PATH: NODE_PATH || ARGV[0],
     GLOBAL_PATH: prefix,
     NODE_ENV: process.env.NODE_ENV,
-    HOME_PATH: process.env.HOME
+    HOME_PATH: process.env.HOME,
+    PLATFORM: process.platform
   };
 }
 

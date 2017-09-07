@@ -1,7 +1,2 @@
-/**
- * Generate
- * Generates completion script.
- *
- * @param name the program name to generate for.
- */
-export declare function generate(name: string, command?: string): string;
+declare const completion: (pargv: any) => void;
+export = completion;

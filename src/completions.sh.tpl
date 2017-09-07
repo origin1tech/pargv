@@ -16,7 +16,7 @@ _pargv_completions()
     args=("${COMP_WORDS[@]}")
 
     # generate completions from app.
-    list=$({{app_path}} {{app_command}} "${args[@]}")
+    list=$({{app_path}} {{app_reply_command}} "${args[@]}")
 
     COMPREPLY=( $(compgen -W "${list}" -- ${cur}) )
 

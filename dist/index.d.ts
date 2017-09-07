@@ -247,6 +247,7 @@ export declare class Pargv {
      * @param args the arguments to normalize.
      */
     toNormalized(...args: any[]): any[];
+    setupCompletion(path?: string): void;
     /**
      * Logo
      * Builds or Displays an ASCII logo using Figlet.

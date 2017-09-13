@@ -23,6 +23,8 @@
   },
   "keywords": [
     "cli",
+    "parser",
+    "argv",
     "arguments",
     "args",
     "minimist",

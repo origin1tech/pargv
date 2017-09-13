@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>IPargvParsedResult | Pargv</title>
+	<title>IPargvEnv | Pargv</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -59,10 +59,10 @@
 					<a href="../modules/_interfaces_.html">&quot;interfaces&quot;</a>
 				</li>
 				<li>
-					<a href="_interfaces_.ipargvparsedresult.html">IPargvParsedResult</a>
+					<a href="_interfaces_.ipargvenv.html">IPargvEnv</a>
 				</li>
 			</ul>
-			<h1>Interface IPargvParsedResult</h1>
+			<h1>Interface IPargvEnv</h1>
 		</div>
 	</div>
 </header>
@@ -73,13 +73,9 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">IPargvParsedResult</span>
+						<span class="target">IPargvEnv</span>
 					</li>
 				</ul>
-			</section>
-			<section class="tsd-panel tsd-kind-interface tsd-parent-kind-external-module">
-				<h3 class="tsd-before-signature">Indexable</h3>
-				<div class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">[</span>key: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">any</span></div>
 			</section>
 			<section class="tsd-panel-group tsd-index-group">
 				<h2>Index</h2>
@@ -88,11 +84,14 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_command" class="tsd-kind-icon">$command</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_commands" class="tsd-kind-icon">$commands</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_exec" class="tsd-kind-icon">$exec</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_source" class="tsd-kind-icon">$source</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_stats" class="tsd-kind-icon">$stats</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvenv.html#exec" class="tsd-kind-icon">EXEC</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvenv.html#exec_path" class="tsd-kind-icon">EXEC_<wbr>PATH</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvenv.html#global_path" class="tsd-kind-icon">GLOBAL_<wbr>PATH</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvenv.html#home_path" class="tsd-kind-icon">HOME_<wbr>PATH</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvenv.html#node_env" class="tsd-kind-icon">NODE_<wbr>ENV</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvenv.html#node_path" class="tsd-kind-icon">NODE_<wbr>PATH</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvenv.html#pkg" class="tsd-kind-icon">PKG</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvenv.html#platform" class="tsd-kind-icon">PLATFORM</a></li>
 							</ul>
 						</section>
 					</div>
@@ -101,52 +100,82 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_command" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $command</h3>
-					<div class="tsd-signature tsd-kind-icon">$command<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="exec" class="tsd-anchor"></a>
+					<h3>EXEC</h3>
+					<div class="tsd-signature tsd-kind-icon">EXEC<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L104">interfaces.ts:104</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L46">interfaces.ts:46</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_commands" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $commands</h3>
-					<div class="tsd-signature tsd-kind-icon">$commands<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<a name="exec_path" class="tsd-anchor"></a>
+					<h3>EXEC_<wbr>PATH</h3>
+					<div class="tsd-signature tsd-kind-icon">EXEC_<wbr>PATH<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L105">interfaces.ts:105</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L47">interfaces.ts:47</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_exec" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $exec</h3>
-					<div class="tsd-signature tsd-kind-icon">$exec<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="global_path" class="tsd-anchor"></a>
+					<h3>GLOBAL_<wbr>PATH</h3>
+					<div class="tsd-signature tsd-kind-icon">GLOBAL_<wbr>PATH<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L103">interfaces.ts:103</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L50">interfaces.ts:50</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_source" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $source</h3>
-					<div class="tsd-signature tsd-kind-icon">$source<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<a name="home_path" class="tsd-anchor"></a>
+					<h3>HOME_<wbr>PATH</h3>
+					<div class="tsd-signature tsd-kind-icon">HOME_<wbr>PATH<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L106">interfaces.ts:106</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L49">interfaces.ts:49</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_stats" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $stats</h3>
-					<div class="tsd-signature tsd-kind-icon">$stats<span class="tsd-signature-symbol">:</span> <a href="_interfaces_.ipargvstats.html" class="tsd-signature-type">IPargvStats</a></div>
+					<a name="node_env" class="tsd-anchor"></a>
+					<h3>NODE_<wbr>ENV</h3>
+					<div class="tsd-signature tsd-kind-icon">NODE_<wbr>ENV<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L107">interfaces.ts:107</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L51">interfaces.ts:51</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="node_path" class="tsd-anchor"></a>
+					<h3>NODE_<wbr>PATH</h3>
+					<div class="tsd-signature tsd-kind-icon">NODE_<wbr>PATH<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L48">interfaces.ts:48</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="pkg" class="tsd-anchor"></a>
+					<h3>PKG</h3>
+					<div class="tsd-signature tsd-kind-icon">PKG<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L53">interfaces.ts:53</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="platform" class="tsd-anchor"></a>
+					<h3>PLATFORM</h3>
+					<div class="tsd-signature tsd-kind-icon">PLATFORM<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L52">interfaces.ts:52</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -204,9 +233,39 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvcompletionspaths.html" class="tsd-kind-icon">IPargv<wbr>Completions<wbr>Paths</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvenv.html" class="tsd-kind-icon">IPargv<wbr>Env</a>
+						<ul>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvenv.html#exec" class="tsd-kind-icon">EXEC</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvenv.html#exec_path" class="tsd-kind-icon">EXEC_<wbr>PATH</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvenv.html#global_path" class="tsd-kind-icon">GLOBAL_<wbr>PATH</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvenv.html#home_path" class="tsd-kind-icon">HOME_<wbr>PATH</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvenv.html#node_env" class="tsd-kind-icon">NODE_<wbr>ENV</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvenv.html#node_path" class="tsd-kind-icon">NODE_<wbr>PATH</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvenv.html#pkg" class="tsd-kind-icon">PKG</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvenv.html#platform" class="tsd-kind-icon">PLATFORM</a>
+							</li>
+						</ul>
 					</li>
+				</ul>
+				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvlayout.html" class="tsd-kind-icon">IPargv<wbr>Layout</a>
 					</li>
@@ -222,30 +281,9 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvoptions.html" class="tsd-kind-icon">IPargv<wbr>Options</a>
 					</li>
-				</ul>
-				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvparsedresult.html" class="tsd-kind-icon">IPargv<wbr>Parsed<wbr>Result</a>
-						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_command" class="tsd-kind-icon">$command</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_commands" class="tsd-kind-icon">$commands</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_exec" class="tsd-kind-icon">$exec</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_source" class="tsd-kind-icon">$source</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_stats" class="tsd-kind-icon">$stats</a>
-							</li>
-						</ul>
 					</li>
-				</ul>
-				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvstats.html" class="tsd-kind-icon">IPargv<wbr>Stats</a>
 					</li>

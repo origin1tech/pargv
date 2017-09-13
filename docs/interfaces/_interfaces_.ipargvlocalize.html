@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>IPargvParsedResult | Pargv</title>
+	<title>IPargvLocalize | Pargv</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -59,10 +59,10 @@
 					<a href="../modules/_interfaces_.html">&quot;interfaces&quot;</a>
 				</li>
 				<li>
-					<a href="_interfaces_.ipargvparsedresult.html">IPargvParsedResult</a>
+					<a href="_interfaces_.ipargvlocalize.html">IPargvLocalize</a>
 				</li>
 			</ul>
-			<h1>Interface IPargvParsedResult</h1>
+			<h1>Interface IPargvLocalize</h1>
 		</div>
 	</div>
 </header>
@@ -73,82 +73,143 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">IPargvParsedResult</span>
+						<span class="target">IPargvLocalize</span>
 					</li>
 				</ul>
-			</section>
-			<section class="tsd-panel tsd-kind-interface tsd-parent-kind-external-module">
-				<h3 class="tsd-before-signature">Indexable</h3>
-				<div class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">[</span>key: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">any</span></div>
 			</section>
 			<section class="tsd-panel-group tsd-index-group">
 				<h2>Index</h2>
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Properties</h3>
+							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_command" class="tsd-kind-icon">$command</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_commands" class="tsd-kind-icon">$commands</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_exec" class="tsd-kind-icon">$exec</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_source" class="tsd-kind-icon">$source</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_interfaces_.ipargvparsedresult.html#_stats" class="tsd-kind-icon">$stats</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_interfaces_.ipargvlocalize.html#args" class="tsd-kind-icon">args</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_interfaces_.ipargvlocalize.html#count" class="tsd-kind-icon">count</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_interfaces_.ipargvlocalize.html#done" class="tsd-kind-icon">done</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_interfaces_.ipargvlocalize.html#setarg" class="tsd-kind-icon">set<wbr>Arg</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_interfaces_.ipargvlocalize.html#styles" class="tsd-kind-icon">styles</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_command" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $command</h3>
-					<div class="tsd-signature tsd-kind-icon">$command<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L104">interfaces.ts:104</a></li>
-						</ul>
-					</aside>
+				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="args" class="tsd-anchor"></a>
+					<h3>args</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">args<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span>args<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_interfaces_.ipargvlocalize.html" class="tsd-signature-type">IPargvLocalize</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L158">interfaces.ts:158</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5><span class="tsd-flag ts-flagRest">Rest</span> <span class="tsd-signature-symbol">...</span>args: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_interfaces_.ipargvlocalize.html" class="tsd-signature-type">IPargvLocalize</a></h4>
+						</li>
+					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_commands" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $commands</h3>
-					<div class="tsd-signature tsd-kind-icon">$commands<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L105">interfaces.ts:105</a></li>
-						</ul>
-					</aside>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="count" class="tsd-anchor"></a>
+					<h3>count</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">count<span class="tsd-signature-symbol">(</span>count<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_interfaces_.ipargvlocalize.html" class="tsd-signature-type">IPargvLocalize</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L161">interfaces.ts:161</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>count: <span class="tsd-signature-type">number</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_interfaces_.ipargvlocalize.html" class="tsd-signature-type">IPargvLocalize</a></h4>
+						</li>
+					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_exec" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $exec</h3>
-					<div class="tsd-signature tsd-kind-icon">$exec<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L103">interfaces.ts:103</a></li>
-						</ul>
-					</aside>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="done" class="tsd-anchor"></a>
+					<h3>done</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">done<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L162">interfaces.ts:162</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+						</li>
+					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_source" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $source</h3>
-					<div class="tsd-signature tsd-kind-icon">$source<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L106">interfaces.ts:106</a></li>
-						</ul>
-					</aside>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="setarg" class="tsd-anchor"></a>
+					<h3>set<wbr>Arg</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">set<wbr>Arg<span class="tsd-signature-symbol">(</span>singular<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, plural<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span>, index<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_interfaces_.ipargvlocalize.html" class="tsd-signature-type">IPargvLocalize</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L159">interfaces.ts:159</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>singular: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> plural: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> index: <span class="tsd-signature-type">number</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_interfaces_.ipargvlocalize.html" class="tsd-signature-type">IPargvLocalize</a></h4>
+						</li>
+					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="_stats" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> $stats</h3>
-					<div class="tsd-signature tsd-kind-icon">$stats<span class="tsd-signature-symbol">:</span> <a href="_interfaces_.ipargvstats.html" class="tsd-signature-type">IPargvStats</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L107">interfaces.ts:107</a></li>
-						</ul>
-					</aside>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="styles" class="tsd-anchor"></a>
+					<h3>styles</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">styles<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span>styles<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_interfaces_.ipargvlocalize.html" class="tsd-signature-type">IPargvLocalize</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/1a75bdb/src/interfaces.ts#L160">interfaces.ts:160</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5><span class="tsd-flag ts-flagRest">Rest</span> <span class="tsd-signature-symbol">...</span>styles: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_interfaces_.ipargvlocalize.html" class="tsd-signature-type">IPargvLocalize</a></h4>
+						</li>
+					</ul>
 				</section>
 			</section>
 		</div>
@@ -210,9 +271,30 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvlayout.html" class="tsd-kind-icon">IPargv<wbr>Layout</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvlocalize.html" class="tsd-kind-icon">IPargv<wbr>Localize</a>
+						<ul>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvlocalize.html#args" class="tsd-kind-icon">args</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvlocalize.html#count" class="tsd-kind-icon">count</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvlocalize.html#done" class="tsd-kind-icon">done</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvlocalize.html#setarg" class="tsd-kind-icon">set<wbr>Arg</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_interfaces_.ipargvlocalize.html#styles" class="tsd-kind-icon">styles</a>
+							</li>
+						</ul>
 					</li>
+				</ul>
+				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvlogo.html" class="tsd-kind-icon">IPargv<wbr>Logo</a>
 					</li>
@@ -222,30 +304,9 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvoptions.html" class="tsd-kind-icon">IPargv<wbr>Options</a>
 					</li>
-				</ul>
-				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvparsedresult.html" class="tsd-kind-icon">IPargv<wbr>Parsed<wbr>Result</a>
-						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_command" class="tsd-kind-icon">$command</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_commands" class="tsd-kind-icon">$commands</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_exec" class="tsd-kind-icon">$exec</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_source" class="tsd-kind-icon">$source</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_interfaces_.ipargvparsedresult.html#_stats" class="tsd-kind-icon">$stats</a>
-							</li>
-						</ul>
 					</li>
-				</ul>
-				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_interfaces_.ipargvstats.html" class="tsd-kind-icon">IPargv<wbr>Stats</a>
 					</li>

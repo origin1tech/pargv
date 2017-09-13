@@ -393,10 +393,10 @@ export class Pargv {
 
     const finish = (comps) => { // outputs completions.
       comps.forEach(el => console.log(el));
-      // process.exit(0);
+      process.exit(0);
     }
 
-    // utils.setBlocking(true); // set blocking on stream handle.
+    utils.setBlocking(true); // set blocking on stream handle.
 
     if (handler.length > 2) { // handler has callback.
       handler(current, argv, finish);

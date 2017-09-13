@@ -1,17 +1,32 @@
 import { format, inspect } from 'util';
-import { relative, dirname } from 'path';
-import { IPargvCommandOption, IPargvEnv } from './interfaces';
-import { isString, isArray, flatten, split, last, isFunction, isPlainObject, isError, isValue, keys, isUndefined, first, contains, noop, isWindows } from 'chek';
-import { CWD, NODE_PATH, ARGV, EXEC_PATH, EXE_EXP } from './constants';
+import { join, relative, dirname, parse } from 'path';
+import { existsSync } from 'fs';
+import { IPargvCommandOption, IPargvEnv, WriteStreamExtended } from './interfaces';
+import { isString, isArray, flatten, split, last, isFunction, isPlainObject, isError, isValue, keys, isUndefined, first, contains, noop, isWindows, tryRequire, tryRootRequire } from 'chek';
+import { NODE_PATH, ARGV, EXEC_PATH, EXE_EXP } from './constants';
 import * as prefix from 'global-prefix';
-import { FLAG_EXP, TOKEN_ANY_EXP, FLAG_SHORT_EXP, SPLIT_CHARS, FORMAT_TOKENS_EXP } from './constants';
+import { FLAG_EXP, TOKEN_ANY_EXP, FLAG_SHORT_EXP, SPLIT_CHARS, FORMAT_TOKENS_EXP, CWD } from './constants';
 
 export * from 'chek';
 
+let ctr = 5; // limit recursion.
+export function findPackage(filename?) {
+  if (!ctr) return;
+  filename = filename || require.main.filename;
+  const parsed = parse(filename);
+  const curPath = join(parsed.dir, 'package.json');
+  if (!existsSync(curPath)) {
+    ctr--;
+    return findPackage(parsed.dir);
+  }
+  else {
+    return tryRequire(curPath, {});
+  }
+}
 
 /**
  * Env Paths
- * Gets paths for the environment including executed path.
+ * : Gets paths for the environment including executed path.
  */
 export function environment() {
   let exec = ARGV
@@ -32,13 +47,14 @@ export function environment() {
     GLOBAL_PATH: prefix,
     NODE_ENV: process.env.NODE_ENV,
     HOME_PATH: process.env.HOME,
-    PLATFORM: process.platform
+    PLATFORM: process.platform,
+    PKG: findPackage() // NOT bullet proof.
   };
 }
 
 /**
  * Clear Screen
- * Clears the screen and resets cursor.
+ * : Clears the screen and resets cursor.
  * PLACEHOLDER future use.
  *
  * @param reset when not false cursor is reset.
@@ -60,7 +76,7 @@ export function clearScreen(reset: boolean = true) {
 
 /**
  * Is Flag
- * Checks if value is a flag (ex: -s or --save).
+ * : Checks if value is a flag (ex: -s or --save).
  *
  * @param val the value to inspect.
  */
@@ -70,7 +86,7 @@ export function isFlag(val: string) {
 
 /**
  * Is Dot Notation
- * Tests if value is dot notated string.
+ * : Tests if value is dot notated string.
  *
  * @param val the value to be inspected.
  */
@@ -81,7 +97,7 @@ export function isDotNotation(val: any) {
 
 /**
  * Strip Param
- * Strips -f, --flag <param> [param] resulting in
+ * : Strips -f, --flag <param> [param] resulting in
  * f, flag or param.
  *
  * @param val the value to be stripped.
@@ -93,7 +109,7 @@ export function stripToken(val: string, exp?: RegExp) {
 
 /**
  * Merge Args
- * Merges arguments into single array of values.
+ * : Merges arguments into single array of values.
  *
  * @param val the single value or array of values.
  * @param args rest param of args.
@@ -108,7 +124,7 @@ export function mergeArgs(val: any | any[], ...args: any[]) {
 
 /**
  * Split To List
- * Takes a list 'small, medium, large' and
+ * : Takes a list 'small, medium, large' and
  * converts it to expression like
  * /^(small|medium|large)$/i
  *
@@ -120,7 +136,7 @@ export function splitToList(val: string) {
 
 /**
  * To Option Tokens
- * Formats option string to support Pargv syntax.
+ * : Formats option string to support Pargv syntax.
  * @example
  * converts: '-n, --name <value>'
  * to: '-n.--name <value>'
@@ -143,7 +159,7 @@ export function toOptionToken(token: string) {
 
 /**
  * Remove Duplicates
- * Removes any duplicate elements in an array.
+ * : Removes any duplicate elements in an array.
  *
  * @param args the array of elements to be inspected.
  */
@@ -157,7 +173,7 @@ export function removeDuplicates(...args: any[]) {
 
 /**
  * Concat To
- * Helper method to ensure array in object property then concat values.
+ * : Helper method to ensure array in object property then concat values.
  *
  * @param obj the object collection containing keys.
  * @param key the key to concat values to.
@@ -171,7 +187,7 @@ export function concatTo(obj: any, key: string, val: any[]) {
 
 /**
  * Levenshtein
- * Computes the edit distance between two strings.
+ * : Computes the edit distance between two strings.
  *
  * Based on gist by Andrei Mackenzie
  * @see https://gist.github.com/andrei-m/982927
@@ -197,6 +213,23 @@ export function levenshtein(source, compare) {
     }
   }
   return res;
+}
+
+/**
+ * Set Blocking
+ * : Sets handle blocking for stdout, stderr.
+ *
+ * TypeScript version of:
+ * @see https://github.com/yargs/set-blocking/blob/master/index.js
+ *
+ * @param blocking toggles blocking.
+ */
+export function setBlocking(blocking?: boolean) {
+  const out = process.stdout, err = process.stderr;
+  [out, err].forEach((stream: WriteStreamExtended) => {
+    if (stream._handle && stream.isTTY && isFunction(stream._handle.setBlocking))
+      stream._handle.setBlocking(blocking);
+  });
 }
 
 /**

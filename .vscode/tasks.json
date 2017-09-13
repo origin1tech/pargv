@@ -1,19 +1,27 @@
 // See https://go.microsoft.com/fwlink/?LinkId=733558
 // for the documentation about the tasks.json format
 {
-"version": "2.0.0",
-"tasks": [
-  {
+  "version": "2.0.0",
+  "tasks": [
+    {
       "taskName": "build",
-      "command": "tsc",
       "type": "shell",
       "windows": {
-        "args": [  
+        "command": "tsc",
+        "args": [
           "-p",
-          "${workspaceRoot}\\src\\tsconfig.json" 
+          "${workspaceRoot}\\src\\tsconfig.json"
+        ]
+      },
+      "osx": {
+        "command": "tsc",
+        "args": [
+          "-p",
+          "./src/tsconfig.json"
         ]
       },
       "linux": {
+        "command": "tsc",
         "args": [
           "-p",
           "./src/tsconfig.json"
@@ -31,18 +39,28 @@
     },
     {
       "taskName": "watch",
-      "command": "tsc",
-      "type": "shell",
       "windows": {
-        "args": [  
+        "command": "tsc",
+        "args": [
           "-p",
-          "${workspaceRoot}\\src\\tsconfig.json" 
+          "${workspaceRoot}\\src\\tsconfig.json",
+          "-w"
+        ]
+      },
+      "osx": {
+        "command": "tsc",
+        "args": [
+          "-p",
+          "./src/tsconfig.json",
+          "-w"
         ]
       },
       "linux": {
+        "command": "tsc",
         "args": [
           "-p",
-          "./src/tsconfig.json"
+          "./src/tsconfig.json",
+          "-w"
         ]
       },
       "group": "build",

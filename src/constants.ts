@@ -1,3 +1,5 @@
+import { join } from 'path';
+
 export const KEYVAL_EXP = /^(([.'"a-z0-9_-]+):\s?(['"a-z0-9_-]+)[+|]?){1,}$/i;
 export const CSV_EXP = /^(.+,.+){1,}$/;
 export const LIST_EXP = /^(.+(,|\||\s).+){1,}$/;
@@ -23,3 +25,7 @@ export const CWD = process.cwd();
 export const ARGV = process.argv;
 export const NODE_PATH = process.env._;
 export const EXEC_PATH = process.execPath;
+export const PARGV_ROOT = join(__dirname, '../');
+export const MOCHA_TESTING = /_mocha$/.test(process.argv[1]);
+
+export { EOL } from 'os';

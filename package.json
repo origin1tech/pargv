@@ -1,12 +1,9 @@
 {
   "name": "pargv",
-  "version": "1.5.2",
+  "version": "2.0.0",
   "description": "Minimal utility for parsing node command line arguments.",
-  "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
-  "bin": {
-    "pargv": "./temp.js"
-  },
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/origin1tech/pargv.git"
@@ -45,7 +42,7 @@
     "colurs": "^1.0.10",
     "figlet": "^1.2.0",
     "global-prefix": "^0.1.5",
-    "y18n": "^3.2.1"
+    "lokales": "^1.0.0"
   },
   "devDependencies": {
     "@google-cloud/translate": "^1.0.0",
@@ -54,7 +51,6 @@
     "@types/node": "^8.0.20",
     "chai": "^3.5.0",
     "del": "^3.0.0",
-    "fs-extra": "^4.0.1",
     "mocha": "^3.5.0",
     "ts-node": "^3.3.0",
     "typedoc": "^0.8.0",

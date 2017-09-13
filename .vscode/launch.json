@@ -23,8 +23,10 @@
       "args": [
         "-P",
         "${workspaceRoot}/src/tsconfig.json",
-        "${workspaceRoot}/src/temp.ts"
+        "${workspaceRoot}/src/dev/temp.ts",
+        "completions"
       ],
+      "runtimeArgs": [],
       "cwd": "${workspaceRoot}",
       "protocol": "inspector"
     },

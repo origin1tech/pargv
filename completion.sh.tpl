@@ -1,12 +1,15 @@
 ###-begin-{{app_name}}-completions-###
+# Pargv Completion Script
 #
-# pargv completion script
+# Installation from terminal run:
+#   {{app_path}} completions --install
 #
-# Install Path:
-#   {{app_path}} completion >> ~/.bashrc
+# OR (with custom path)
+#   {{app_path}} completions --install [your_path]
 #
-# OSX Install Path:
-#   {{app_path}} completion >> ~/.bash_profile
+# OR (with redirect)
+#   {{app_path}} completions >> ~/.bash_profile (OS X)
+#   {{app_path}} completions >> ~/.bashrc
 #
 _pargv_completions()
 {

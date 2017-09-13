@@ -1,19 +1,15 @@
 // IMPORTS //
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var path_1 = require("path");
 var util = require("util");
 var cliui = require("cliui");
 var figlet = require("figlet");
 var colurs_1 = require("colurs");
 var utils = require("./utils");
-var y18n = require("y18n");
-var fs_1 = require("fs");
+var completions_1 = require("./completions");
+var localize_1 = require("./localize");
 var constants_1 = require("./constants");
 // VARIABLES & CONSTANTS //
-var colurs;
-var __, __n;
-var PargvError = utils.PargvError;
 var DEFAULTS = {
     cast: true,
     colorize: true,
@@ -23,13 +19,15 @@ var DEFAULTS = {
     localeDir: './locales',
     autoHelp: true,
     defaultHelp: true,
-    layoutWidth: 82,
+    layoutWidth: 80,
     castBeforeCoerce: false,
     extendCommands: false,
+    extendAliases: false,
+    extendStats: false,
+    spreadCommands: true,
     allowAnonymous: true,
     ignoreTypeErrors: false,
     displayStackTrace: false,
-    exitOnError: true,
     colors: {
         primary: 'blue',
         accent: 'cyan',
@@ -37,14 +35,13 @@ var DEFAULTS = {
         muted: 'gray'
     },
 };
-// Just checks if we are running tests.
-var MOCHA_TESTING = /_mocha$/.test(process.argv[1]);
 // CLASSES //
 var Pargv = (function () {
     function Pargv(options) {
+        this._completionsCommand = 'completions';
+        this._completionsReply = '--reply';
         this._commands = {};
         this.init(options);
-        this._env = utils.environment();
     }
     // PRIVATE //
     /**
@@ -55,20 +52,16 @@ var Pargv = (function () {
      */
     Pargv.prototype.init = function (options) {
         this.options = utils.extend({}, DEFAULTS, options);
-        colurs = new colurs_1.Colurs({ enabled: this.options.colorize });
-        var locOpts = {
-            locale: this.options.locale,
-            directory: path_1.resolve(process.cwd(), this.options.localeDir)
-        };
-        var localization = y18n(locOpts);
-        __ = localization.__;
-        __n = localization.__n;
+        this._colurs = new colurs_1.Colurs({ enabled: this.options.colorize });
+        this._localize = localize_1.localize(this);
+        this._env = utils.environment(); // get env paths.
+        this._completions = completions_1.completions(this); // helper for generating completions.sh.
         this.command('__default__'); // Default Command.
-        this._helpHandler = this.helpHandler; // default help handler.
-        this._errorHandler = this.errorHandler; // default error handler.
-        this._completionHandler = this.completionHandler; // default completion handler.
         this.command('help.h [command]') // Default help command.
             .action(this.show.help.bind(this));
+        this._helpHandler = this.helpHandler; // default help handler.
+        this._errorHandler = this.errorHandler; // default error handler.
+        this._completionsHandler = this._completions.handler; // default completion handler.
         return this;
     };
     /**
@@ -104,6 +97,7 @@ var Pargv = (function () {
             args.push(meta);
         return args.join(' ');
     };
+    // HANDLERS & HELP //
     /**
       * Compile Help
       * Compiles help for all commands or single defined commnand.
@@ -115,9 +109,6 @@ var Pargv = (function () {
         var layoutWidth = this.options.layoutWidth;
         var layout = this.layout(layoutWidth);
         var obj = {};
-        // Get single cmd in object or
-        // get all commands.
-        var cmds = command ? {}[command] = this._commands[command] : this._commands;
         // Define color vars.
         var primary = this.options.colors.primary;
         var alert = this.options.colors.alert;
@@ -130,45 +121,45 @@ var Pargv = (function () {
         // Builds commands and flags help.
         var buildOptions = function (cmd) {
             var cmdsStr, optsStr, noneStr, exStr, reqStr;
-            cmdsStr = __('Commands');
-            optsStr = __('Options');
-            exStr = __('Examples');
-            noneStr = __('none');
-            reqStr = __('required');
+            cmdsStr = _this._localize('Commands').done();
+            optsStr = _this._localize('Options').done();
+            exStr = _this._localize('Examples').done();
+            noneStr = _this._localize('none').done();
+            reqStr = _this._localize('required').done();
             if (!cmd._commands.length && !cmd._options.length)
                 return;
-            layout.section(colurs.applyAnsi(cmdsStr + ":", accent), [1, 0, 1, 1]);
+            layout.section(_this._colurs.applyAnsi(cmdsStr + ":", accent), [1, 0, 0, 1]);
             cmd._commands.forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
-                var arr = [{ text: el, padding: [0, 0, 0, 2] }, { text: colurs.applyAnsi(cmd._describes[el] || '', muted) }];
-                var lastCol = isRequired ? { text: colurs.applyAnsi("" + reqStr, alert), align: 'right' } : '';
+                var arr = [{ text: el, padding: [0, 0, 0, 2] }, { text: _this._colurs.applyAnsi(cmd._describes[el] || '', muted) }];
+                var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right' } : '';
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
             if (!cmd._commands.length)
-                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
-            layout.section(colurs.applyAnsi(optsStr + ":", accent), [1, 0, 1, 1]);
+                layout.div({ text: _this._colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
+            layout.section(_this._colurs.applyAnsi(optsStr + ":", accent), [1, 0, 0, 1]);
             cmd._options.sort().forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
-                var aliases = cmd.findAliases(el).sort();
+                var aliases = cmd.aliases(el).sort();
                 var names = [el].concat(aliases).join(', ');
-                var arr = [{ text: names, padding: [0, 0, 0, 2] }, { text: colurs.applyAnsi(cmd._describes[el] || '', muted) }];
-                var lastCol = isRequired ? { text: colurs.applyAnsi("" + reqStr, alert), align: 'right' } : '';
+                var arr = [{ text: names, padding: [0, 0, 0, 2] }, { text: _this._colurs.applyAnsi(cmd._describes[el] || '', muted) }];
+                var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right' } : '';
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
             if (!cmd._options.length)
-                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
+                layout.div({ text: _this._colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
             if (cmd._examples.length) {
-                layout.section(colurs.applyAnsi(exStr + ":", accent), [1, 0, 0, 1]);
+                layout.section(_this._colurs.applyAnsi(exStr + ":", accent), [1, 0, 0, 1]);
                 cmd._examples.forEach(function (tuple) {
                     var ex = tuple[0];
                     var desc = tuple[1] || null;
                     if (desc)
-                        desc = colurs.applyAnsi(desc, muted);
+                        desc = _this._colurs.applyAnsi(desc, muted);
                     if (!/^.*\$\s/.test(ex))
                         ex = '$ ' + ex;
-                    ex = colurs.applyAnsi(ex, muted);
+                    ex = _this._colurs.applyAnsi(ex, muted);
                     layout.div({ text: ex, padding: [0, 0, 0, 2] }, desc || '');
                 });
             }
@@ -176,33 +167,33 @@ var Pargv = (function () {
         // Builds the app name, version descript header.
         var buildHeader = function () {
             var descStr, verStr, licStr;
-            descStr = __('Description');
-            verStr = __('Version');
-            licStr = __('License');
+            descStr = _this._localize('Description').done();
+            verStr = _this._localize('Version').done();
+            licStr = _this._localize('License').done();
             // Add the name to the layout.
             if (_this._name) {
                 if (!_this._nameFont)
-                    layout.repeat(colurs.applyAnsi(div, muted));
+                    layout.repeat(_this._colurs.applyAnsi(div, muted));
                 var tmpName = _this._name;
                 var nameStyles = _this._nameStyles && _this._nameStyles.length ? _this._nameStyles : primary;
                 if (_this._nameFont)
                     tmpName = _this.logo(tmpName, _this._nameFont, nameStyles).get();
                 else
-                    tmpName = colurs.applyAnsi(tmpName, nameStyles);
+                    tmpName = _this._colurs.applyAnsi(tmpName, nameStyles);
                 layout.div(tmpName);
                 if (_this._nameFont)
                     layout.div();
                 // Add description to layout.
                 if (_this._describe)
-                    layout.div(colurs.applyAnsi(descStr + ":", accent) + " " + utils.padLeft(colurs.applyAnsi(_this._describe, muted), 3));
+                    layout.div(_this._colurs.applyAnsi(descStr + ":", accent) + " " + utils.padLeft(_this._colurs.applyAnsi(_this._describe, muted), 3));
                 // Add version to layout.
                 if (_this._version)
-                    layout.div(colurs.applyAnsi(verStr + ":", accent) + " " + utils.padLeft(colurs.applyAnsi(_this._version, muted), 7));
+                    layout.div(_this._colurs.applyAnsi(verStr + ":", accent) + " " + utils.padLeft(_this._colurs.applyAnsi(_this._version, muted), 7));
                 if (_this._license)
-                    layout.div(colurs.applyAnsi(licStr + ":", accent) + " " + utils.padLeft(colurs.applyAnsi(_this._license, muted), 7));
+                    layout.div(_this._colurs.applyAnsi(licStr + ":", accent) + " " + utils.padLeft(_this._colurs.applyAnsi(_this._license, muted), 7));
                 // Add break in layout.
                 if (div)
-                    layout.repeat(colurs.applyAnsi(div, muted));
+                    layout.repeat(_this._colurs.applyAnsi(div, muted));
                 else
                     layout.div();
             }
@@ -211,8 +202,8 @@ var Pargv = (function () {
         // over each command and its options.
         var buildBody = function () {
             var cmdKeys, usageStr, aliasStr;
-            usageStr = __('Usage');
-            aliasStr = __('Alias');
+            usageStr = _this._localize('Usage').done();
+            aliasStr = _this._localize('Alias').done();
             if (command) {
                 cmdKeys = [command];
                 console.log(); // only displaying one command add spacing.
@@ -222,14 +213,15 @@ var Pargv = (function () {
                     .filter(function (v) { return v !== 'help'; }).concat(['help']);
             }
             cmdKeys.forEach(function (el, i) {
-                var cmd = _this.find.command(el);
+                if (el._name)
+                    el = el._name;
+                var cmd = _this.get.command(el);
                 if (i > 0)
-                    layout.repeat(colurs.applyAnsi(itmDiv, muted), itmDivMulti);
-                var aliases = cmd.findAliases(cmd._name).join(', '); // get aliases.
-                layout.div(colurs.applyAnsi(usageStr + ": ", primary) + cmd._usage, colurs.applyAnsi(aliasStr + ": ", primary) + aliases);
+                    layout.repeat(_this._colurs.applyAnsi(itmDiv, muted), itmDivMulti);
+                var aliases = cmd.aliases(cmd._name).join(', '); // get aliases.
+                layout.div(_this._colurs.applyAnsi(usageStr + ": ", primary) + cmd._usage, _this._colurs.applyAnsi(aliasStr + ": ", primary) + aliases);
                 if (cmd._describe) {
-                    layout.div();
-                    layout.div(colurs.applyAnsi(cmd._describe, muted));
+                    layout.div({ text: _this._colurs.applyAnsi(cmd._describe, muted), padding: [1, 0, 0, 0] });
                 }
                 buildOptions(cmd);
             });
@@ -238,10 +230,10 @@ var Pargv = (function () {
             // Add epilog if any.
             if (_this._epilog) {
                 if (div)
-                    layout.repeat(colurs.applyAnsi(div, muted));
+                    layout.repeat(_this._colurs.applyAnsi(div, muted));
                 else
                     layout.div();
-                layout.div(colurs.applyAnsi(_this._epilog, muted));
+                layout.div(_this._colurs.applyAnsi(_this._epilog, muted));
             }
         };
         // Build help for single command.
@@ -267,19 +259,6 @@ var Pargv = (function () {
             return;
         return this.compileHelp(command).get();
     };
-    Pargv.prototype.completionHandler = function (args, fn) {
-        var completions = [];
-        var current = args.length ? utils.last(args) : '';
-        var cmd = args.length ? utils.first(args) : '';
-        if (cmd)
-            cmd = this.find.command(cmd); // try to find cmd.
-        if (!cmd) {
-            for (var k in this._commands) {
-            }
-        }
-        else {
-        }
-    };
     /**
      * Error Handler
      * The default error handler.
@@ -288,12 +267,12 @@ var Pargv = (function () {
      * @param err the PargvError instance.
      */
     Pargv.prototype.errorHandler = function (message, err) {
-        if (MOCHA_TESTING)
+        if (constants_1.MOCHA_TESTING)
             throw err;
         var name = err.name;
         var msg = err.message;
         var stack = err.stack;
-        msg = colurs.bold.red(name) + ': ' + msg;
+        msg = this._colurs.bold.red(name) + ': ' + msg;
         console.log();
         console.log(msg);
         if (this.options.displayStackTrace && stack) {
@@ -301,8 +280,30 @@ var Pargv = (function () {
             console.log(stack);
         }
         console.log();
-        if (this.options.exitOnError)
-            process.exit(1);
+        process.exit(1);
+    };
+    /**
+     * Completions Reply
+     * Method called form bash profile for compreply.
+     *
+     * @param argv the current argv from tab completions.
+     * @param done the callback on done compiling completions.
+     */
+    Pargv.prototype.completionsReply = function (parsed) {
+        var argv = parsed.$source;
+        var current = argv && argv.length ? utils.last(argv) : ''; // get current arg.
+        var handler = this._completionsHandler;
+        var finish = function (comps) {
+            comps.forEach(function (el) { return console.log(el); });
+            // process.exit(0);
+        };
+        // utils.setBlocking(true); // set blocking on stream handle.
+        if (handler.length > 2) {
+            handler(current, argv, finish);
+        }
+        else {
+            finish(handler(current, argv)); // handler is synchronous.
+        }
     };
     /**
      * Build Help
@@ -314,47 +315,8 @@ var Pargv = (function () {
         var name = utils.isPlainObject(command) ? command._name : command;
         return this._helpHandler.call(this, name, this._commands);
     };
-    /**
-     * Generate Completion Script
-     * Generates the completion script for use in terminal.
-     *
-     * @param name the name of the program.
-     * @param command the command name for getting completions.
-     */
-    Pargv.prototype.generateCompletionScript = function (name, command) {
-        command = command || '--get-completions';
-        var script = fs_1.readFileSync(path_1.resolve(__dirname, 'completion.sh.tpl'), 'utf-8');
-        var base = path_1.basename(name); // get the basename from path.
-        if (name.match(/\.js$/))
-            name = "./" + name; // add if not yet installed as bin.
-        script = script.replace(/{{app_name}}/g, base); // replace app name.
-        script = script.replace(/{{app_command}})/g, command); // replace the command.
-        return script.replace(/{{app_path}}/g, name); // replace the path.
-    };
-    Object.defineProperty(Pargv.prototype, "ui", {
-        // GETTERS //
-        /**
-         * UI
-         * Alias to layout.
-         */
-        get: function () {
-            return this.layout;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Pargv.prototype, "epilogue", {
-        /**
-         * Epilogue
-         * Alias to epilog.
-         */
-        get: function () {
-            return this.epilog;
-        },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(Pargv.prototype, "$", {
+        // GETTERS //
         /**
          * Default Command
          * Exposes default command for parsing anonymous arguments.
@@ -369,14 +331,14 @@ var Pargv = (function () {
     });
     Object.defineProperty(Pargv.prototype, "get", {
         /**
-         * Gets help, completion script, completions...
+         * Gets help, completion script, completions, options...
          */
         get: function () {
             var _this = this;
             return {
                 /**
                  * Help
-                 * Gets help text.
+                 * : Gets help text.
                  *
                  * @param command optional command to show help for.
                  */
@@ -384,28 +346,91 @@ var Pargv = (function () {
                     return _this.buildHelp(command);
                 },
                 /**
-                 * Completion
-                 * Gets the completion script.
-                 */
-                completion: function () {
-                    return _this.generateCompletionScript(_this._env.EXEC);
+                  * Get Completion
+                  * : Gets the completion script.
+                  *
+                  * @param path the path/name of executable.
+                  * @param template the template string.
+                  */
+                completion: function (path, template) {
+                    return _this._completions.generate(path, template).script;
                 },
                 /**
                  * Completions
-                 * Gets completions for the supplied args.
+                 * : Gets completions for the supplied args.
                  *
                  * @param args arguments to parse for completions.
                  * @param fn a callback function containing results.
                  */
                 completions: function (args, fn) {
-                    return _this._completionHandler.call(_this, args, fn);
+                    // return this._completionHandler.call(this, args, fn);
+                },
+                /**
+                 * Command
+                 * : Finds a command by name.
+                 *
+                 * @param key the name of the command to find.
+                 */
+                command: function (key) {
+                    var cmds = _this._commands;
+                    var cmd = cmds[key];
+                    if (cmd)
+                        return cmd;
+                    for (var p in cmds) {
+                        if (cmd)
+                            break;
+                        var tmp = cmds[p];
+                        if (tmp._aliases[key])
+                            cmd = tmp;
+                    }
+                    return cmd;
                 },
                 /**
                  * Env
-                 * Gets environment variables.
+                 * : Gets environment variables.
                  */
                 env: function () {
                     return _this._env;
+                },
+                /**
+                 * Option
+                 * : Gets an option value by the specified key.
+                 *
+                 * @param key the option key to get.
+                 */
+                option: function (key) {
+                    return _this.options[key] || null;
+                }
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Pargv.prototype, "set", {
+        /**
+         * Methods for setting values.
+         */
+        get: function () {
+            var _this = this;
+            return {
+                /**
+                 * Option
+                 * : Sets an option or group of options.
+                 *
+                 * @param key the key or PargvOptions object to be set.
+                 * @param val the value for the provided key.
+                 */
+                option: function (key, val) {
+                    var obj = key;
+                    if (!utils.isPlainObject(key)) {
+                        obj = {};
+                        obj[key] = val;
+                    }
+                    var valKeys = utils.keys(_this.options);
+                    for (var k in obj) {
+                        if (~valKeys.indexOf(k))
+                            _this.options[k] = obj[k];
+                    }
                 }
             };
         },
@@ -426,15 +451,22 @@ var Pargv = (function () {
                  * @param command optional command to show help for.
                  */
                 help: function (command) {
+                    console.log();
                     console.log(_this.buildHelp(command));
                     console.log();
+                    process.exit(0);
                 },
                 /**
                  * Completion
                  * Shows the completion script in terminal.
+                 *
+                 * @param path the path/name of executable.
+                 * @param template the template string.
                  */
-                completion: function () {
-                    _this.log(_this.generateCompletionScript(_this._env.EXEC));
+                completion: function (path, template) {
+                    console.log();
+                    console.log(_this._completions.generate(path, template).script);
+                    console.log();
                 },
                 /**
                  * Env
@@ -442,38 +474,6 @@ var Pargv = (function () {
                  */
                 env: function () {
                     _this.log(_this._env);
-                }
-            };
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Pargv.prototype, "find", {
-        /**
-         * Finds objects, properties...
-         */
-        get: function () {
-            var _this = this;
-            return {
-                /**
-                 * Command
-                 * Finds a command by name.
-                 *
-                 * @param key the name of the command to find.
-                 */
-                command: function (key) {
-                    var cmds = _this._commands;
-                    var cmd = cmds[key];
-                    if (cmd)
-                        return cmd;
-                    for (var p in cmds) {
-                        if (cmd)
-                            break;
-                        var tmp = cmds[p];
-                        if (tmp._aliases[key])
-                            cmd = tmp;
-                    }
-                    return cmd;
                 }
             };
         },
@@ -494,13 +494,46 @@ var Pargv = (function () {
                  * @param key the command key/name to be removed.
                  */
                 command: function (key) {
-                    var cmd = _this.find.command(key);
+                    var cmd = _this.get.command(key);
                     if (!cmd)
                         return _this;
                     delete _this._commands[cmd._name];
                     return _this;
                 }
             };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Pargv.prototype, "listen", {
+        /**
+         * Listen
+         * : Alias for exec.
+         */
+        get: function () {
+            return this.exec;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Pargv.prototype, "argv", {
+        /**
+         * Argv
+         * Alias to exec.
+         */
+        get: function () {
+            return this.exec;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Pargv.prototype, "epilogue", {
+        /**
+         * Epilogue
+         * Alias to epilog.
+         */
+        get: function () {
+            return this.epilog;
         },
         enumerable: true,
         configurable: true
@@ -527,6 +560,7 @@ var Pargv = (function () {
     /**
      * App
      * Just adds a string to use as title of app, used in help.
+     * If invoked without value package.json name is used.
      *
      * @see http://flamingtext.com/tools/figlet/fontlist.html
      * Simple Font examples
@@ -537,19 +571,20 @@ var Pargv = (function () {
      * @param styles an ansi color/style or array of styles.
      */
     Pargv.prototype.name = function (val, styles, font) {
-        this._name = val;
-        this._nameStyles = utils.toArray(styles, []);
-        this._nameFont = font;
+        this._name = val || utils.capitalize(this._env.PKG.name || '');
+        this._nameStyles = utils.toArray(styles, ['cyan']);
+        this._nameFont = font || 'ogre';
         return this;
     };
     /**
      * Version
      * Just adds a string to use as the version for your program, used in help.
+     * If no value is provided package.json version is used.
      *
      * @param val the value to use as version name.
      */
     Pargv.prototype.version = function (val) {
-        this._version = val;
+        this._version = val || this._env.PKG.version;
         return this;
     };
     /**
@@ -612,6 +647,8 @@ var Pargv = (function () {
         }
         if (utils.isArray(argv[0]))
             argv = argv[0];
+        var result;
+        var env = this._env;
         var colors = this.options.colors;
         var autoType = this.options.cast ? 'auto' : 'string'; // is auto casting enabled.
         var isExec = utils.last(argv) === '__exec__' ? argv.pop() : null;
@@ -622,7 +659,7 @@ var Pargv = (function () {
         var name = utils.first(normalized); // get first arg.
         if (constants_1.FLAG_EXP.test(name))
             name = undefined;
-        var cmd = this.find.command(name); // lookup the command.
+        var cmd = this.get.command(name); // lookup the command.
         if (!cmd && !normalized.length && this.options.autoHelp) {
             this.show.help();
             return;
@@ -631,6 +668,18 @@ var Pargv = (function () {
             normalized.shift(); // found cmd shift first.
         else
             cmd = this._command; // use the default command.
+        if (name === this._completionsCommand && ~source.indexOf(this._completionsReply)) {
+            result = {
+                $exec: env.EXEC,
+                $command: name,
+                $commands: []
+            };
+            result.$source = source.filter(function (el) {
+                return el !== _this._completionsCommand && el !== _this._completionsReply;
+            });
+            result[this._completionsReply.replace(constants_1.FLAG_EXP, '')] = true;
+            return result;
+        }
         var ctr = 0;
         var val;
         var stats = cmd.stats(normalized);
@@ -640,45 +689,68 @@ var Pargv = (function () {
             return;
         } // show help for command.
         if (name === 'help') {
-            var helpCmd = this.find.command(utils.first(normalized));
+            var helpCmd = this.get.command(utils.first(normalized));
             if (helpCmd && helpCmd._showHelp) {
                 this.show.help(helpCmd._name);
                 return;
             }
         }
-        var env = this._env;
-        var result = {
+        result = {
             $exec: env.EXEC,
             $command: name,
             $commands: [],
             $source: source
         };
+        if (this.options.extendStats)
+            result.$stats = stats;
         if (!this.options.allowAnonymous && stats.anonymous.length) {
-            this.error(__('parse failed: anonymous argument(s) %s prohibited in strict mode.', colurs.applyAnsi(stats.anonymous.join(', '), colors.accent)));
-        } // no anon in strict mode.
+            this.error(// no anon in strict mode.
+            this._localize('anonymous arguments %s prohibited in strict mode.')
+                .args(stats.anonymous)
+                .styles(colors.accent).done());
+        }
         if (stats.missing.length) {
-            this.error(__('parse failed: missing required argument(s) %s or have no default value.', colurs.applyAnsi(stats.missing.join(', '), colors.accent)));
-        } // throw error when missing args.
+            this.error(// no anon in strict mode.
+            this._localize('missing required arguments %s or have no default value.')
+                .args(stats.missing)
+                .styles(colors.accent).done());
+        }
         if (stats.whens.length) {
             var when = stats.whens.shift();
-            this.error(__('parse failed: %s requires %s but is missing.', colurs.applyAnsi(when[0], colors.accent), colurs.applyAnsi(when[1], colors.accent)));
+            this.error(// no anon in strict mode.
+            this._localize('%s requires %s but is missing.')
+                .args(when[0], when[1])
+                .styles(colors.accent, colors.accent).done());
         }
-        var cmdStr = __('Commands');
-        var optStr = __('Options');
+        var cmdStr = this._localize('commands').done();
+        var optStr = this._localize('options').done();
+        var cmdsLen = stats.commands.length;
         var optsLen = stats.options.map(function (o) { return constants_1.FLAG_EXP.test(o); }).length;
-        // Handle min commands/options requirement.
         if (cmd._minCommands > 0 && stats.commands.length < cmd._minCommands) {
-            this.error(__('parse failed: at least %s are required but got %s.', colurs.applyAnsi(cmd._minCommands + ' ' + cmdStr, colors.accent), colurs.applyAnsi(stats.commands.length + '', colors.accent)));
+            this.error(// min commands required.
+            this._localize('at least %s %s are required but got %s.')
+                .args(cmd._minCommands, cmdStr, cmdsLen + '')
+                .styles(colors.accent, colors.primary, colors.accent).done());
         }
         if (cmd._minOptions > 0 && optsLen < cmd._minOptions) {
-            this.error(__('parse failed: at least %s are required but got %s.', colurs.applyAnsi(cmd._minOptions + ' ' + optStr, colors.accent), colurs.applyAnsi(optsLen + '', colors.accent)));
+            this.error(// min options required.
+            this._localize('at least %s %s are required but got %s.')
+                .args(cmd._minOptions, optStr, optsLen + '')
+                .styles(colors.accent, colors.primary, colors.accent).done());
         }
-        // Handle max commands/options requirement.
         if (cmd._maxCommands > 0 && stats.commands.length > cmd._maxCommands) {
-            this.error(__('parse failed: got %s but no more than %s are allowed.', colurs.applyAnsi(stats.commands.length + '', colors.accent), colurs.applyAnsi(cmd._maxCommands + ' ' + cmdStr, colors.accent)));
+            this.error(// max commands allowed.
+            this._localize('got %s %s but no more than %s are allowed.')
+                .args(cmdsLen, cmdStr, cmd._maxCommands)
+                .styles(colors.accent, colors.primary, colors.accent)
+                .done());
         }
         if (cmd._maxOptions > 0 && stats.commands.length > cmd._maxOptions) {
-            this.error(__('parse failed: got %s but no more than %s are allowed.', colurs.applyAnsi(optsLen + '', colors.accent), colurs.applyAnsi(cmd._maxOptions + ' ' + optStr, colors.accent)));
+            this.error(// max commands allowed.
+            this._localize('got %s %s but no more than %s are allowed.')
+                .args(optsLen, optStr, cmd._maxOptions)
+                .styles(colors.accent, colors.primary, colors.accent)
+                .done());
         }
         // Normalize value and call user coerce method if exists.
         var coerceWrapper = function (key, type, isBool) {
@@ -706,10 +778,12 @@ var Pargv = (function () {
             var isBool = (isFlag && (!next || cmd.isBool(key) || isFlagNext)); // is boolean key.
             var coercion = cmd._coercions[key]; // lookup user coerce function.
             if (isNot && !isBool) {
-                _this.error(__('set failed: cannot set option %s to boolean a value is expected.', colurs.applyAnsi(key, colors.accent)));
+                _this.error(_this._localize('cannot set option %s to boolean, a value is expected.')
+                    .args(key).styles(colors.accent).done());
             } // Prevent --no option when not bool flag.
             var wrapper = coerceWrapper(key, coercion, isBool); // get coerce wrapper.
-            val = isFlag && !isBool ? next : isFlag ? isNot ? true : false : el;
+            val = isFlag ? !isBool ? next : true : el;
+            val = isFlag && isBool && isNot ? false : val;
             if (utils.isBoolean(def) && def === true && val === false)
                 val = true;
             val = wrapper(val, def);
@@ -728,8 +802,8 @@ var Pargv = (function () {
                     result[formattedKey] = val;
             }
         });
-        if (isExec) {
-            var offset = cmd._commands.length - result.$commands.length;
+        if (isExec && this.options.spreadCommands) {
+            var offset = (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
             while (offset > 0 && offset--)
                 result.$commands.push(null);
         }
@@ -749,10 +823,22 @@ var Pargv = (function () {
         if (utils.isArray(argv[0]))
             argv = argv[0];
         var parsed = this.parse.apply(this, argv.concat(['__exec__']));
+        if (!parsed)
+            return;
         var cmd = this._commands[parsed.$command];
-        if (utils.isFunction(cmd._action))
-            cmd._action.apply(cmd, parsed.$commands.concat([parsed, cmd]));
+        if (cmd && utils.isFunction(cmd._action)) {
+            if (this._completionsCommand === cmd._name) {
+                cmd._action.call(this, parsed.$commands.shift() || null, parsed, cmd);
+            }
+            else {
+                if (this.options.spreadCommands)
+                    (_a = cmd._action).call.apply(_a, [this].concat(parsed.$commands, [parsed, cmd]));
+                else
+                    cmd._action.call(this, parsed, cmd);
+            }
+        }
         return parsed;
+        var _a;
     };
     // ERRORS & RESET //
     /**
@@ -797,8 +883,11 @@ var Pargv = (function () {
             this._license = undefined;
             this._describe = undefined;
             this._epilog = undefined;
+            this._colurs = undefined;
+            this._localize = undefined;
             this._errorHandler = this.errorHandler;
             this._helpHandler = this.helpHandler;
+            this._completionsHandler = this._completions.handler;
         }
         return this.init(options);
     };
@@ -815,10 +904,10 @@ var Pargv = (function () {
             args[_i] = arguments[_i];
         }
         var formatted = this.formatLogMessage.apply(this, args);
-        var err = new PargvError(formatted);
+        var err = new utils.PargvError(formatted);
         if (err.stack) {
-            var stack = err.stack.split('\n');
-            stack = stack.slice(2, stack.length).join('\n'); // remove message & error call.
+            var stack = err.stack.split(constants_1.EOL);
+            stack = stack.slice(2, stack.length).join(constants_1.EOL); // remove message & error call.
             err.stack = stack;
         }
         this._errorHandler.call(this, formatted, err, this);
@@ -835,9 +924,11 @@ var Pargv = (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        if (MOCHA_TESTING)
+        if (constants_1.MOCHA_TESTING)
             return this;
-        console.log(this.formatLogMessage.apply(this, args));
+        var colors = ['bold'].concat(utils.toArray(this.options.colors.primary));
+        var prefix = this._colurs.applyAnsi('Pargv:', colors);
+        console.log(prefix, this.formatLogMessage.apply(this, args));
         return this;
     };
     /**
@@ -856,12 +947,14 @@ var Pargv = (function () {
         if (utils.isArray(args[0]))
             args = args[0];
         if (!args.length) {
-            this.error(__('invalid argument(s): cannot get stats with arguments of undefined.'));
+            this.error(this._localize('method %s failed using invalid or undefined arguments.')
+                .args('stats').styles(this.options.colors.accent).done());
         }
         args = this.toNormalized(args); // normalize args to known syntax.
-        var cmd = this.find.command(command);
+        var cmd = this.get.command(command);
         if (!cmd) {
-            this.error(__('unknown command: cannot get stats using command of undefined.'));
+            this.error(this._localize('method %s failed using invalid or undefined arguments.')
+                .args('stats').styles(this.options.colors.accent).done());
         }
         return cmd.stats(args);
     };
@@ -880,7 +973,7 @@ var Pargv = (function () {
         if (utils.isArray(args[0]))
             args = args[0];
         var arr = [], idx;
-        if (constants_1.EXE_EXP.test(args[0]) || args[0] === constants_1.NODE_PATH)
+        if (constants_1.EXE_EXP.test(args[0]) || args[0] === this._env.NODE_PATH)
             args = args.slice(2);
         args.forEach(function (el) {
             if (constants_1.FLAG_EXP.test(el) && ~(idx = el.indexOf('='))) {
@@ -897,7 +990,46 @@ var Pargv = (function () {
         });
         return arr;
     };
-    Pargv.prototype.setupCompletion = function (path) {
+    Pargv.prototype.completion = function (command, describe, template, fn) {
+        var _this = this;
+        if (utils.isFunction(describe)) {
+            fn = describe;
+            template = undefined;
+            describe = undefined;
+        }
+        if (utils.isFunction(template)) {
+            fn = template;
+            template = undefined;
+        }
+        command = command || this._localize(this._completionsCommand).done();
+        this._completionsCommand = command; // save the name of the command.
+        var getFlag = this._completionsReply;
+        var replyCmd = command + " " + getFlag; // the reply command for completions.sh.
+        command = command + " [path]"; // our PargvCommand for completions.
+        describe = describe || this._localize('tab completions command.').done();
+        var cmd = this.command(command, describe);
+        cmd.option('--install, -i', this._localize('when true installs completions.').done());
+        cmd.option('--reply', this._localize('when true returns tab completions.').done());
+        cmd.option('--force, -f', this._localize('when true allows overwrite or reinstallation.').done());
+        cmd.action(function (path, parsed) {
+            if (parsed.reply) {
+                return _this.completionsReply(parsed); // reply with completions.
+            }
+            else if (parsed.install) {
+                var success = _this._completions.install(path || _this._env.EXEC, replyCmd, template, parsed.force);
+                if (success) {
+                    console.log();
+                    _this.log(_this._localize('successfully installed tab completions, quit and reopen terminal.').done());
+                    console.log();
+                }
+            }
+            else {
+                _this.show.completion(path || _this._env.EXEC);
+            }
+        });
+        if (fn)
+            this._completionsHandler = fn;
+        return this;
     };
     // EXTENDED METHODS //
     /**
@@ -929,7 +1061,7 @@ var Pargv = (function () {
         result = figlet.textSync(options.text, options);
         // Apply ansi styles if any.
         if (styles)
-            result = colurs.applyAnsi(result, styles);
+            result = this._colurs.applyAnsi(result, styles);
         /**
          * Render
          * Renders out the Figlet font logo.
@@ -1026,9 +1158,9 @@ var Pargv = (function () {
             var origLen = multiplier;
             multiplier = multiplier || width;
             var _char = char;
-            var stripChar = colurs.strip(_char); // strip any color formatting.
+            var stripChar = self._colurs.strip(_char); // strip any color formatting.
             var canAppend = function () {
-                var curLen = colurs.strip(char).length;
+                var curLen = self._colurs.strip(char).length;
                 var offset = stripChar.length;
                 return curLen < (width - offset);
             };
@@ -1128,6 +1260,7 @@ var PargvCommand = (function () {
         this._maxOptions = 0;
         this._minCommands = 0;
         this._minOptions = 0;
+        this._completions = {};
         this._describe = describe;
         this._pargv = pargv;
         this.parseCommand(token);
@@ -1146,7 +1279,10 @@ var PargvCommand = (function () {
         var tokens = token.split(':'); // <age:number> to ['<age', 'number>'];
         var key = tokens[0]; // first element is command/option key.
         if (!constants_1.TOKEN_PREFIX_EXP.test(key)) {
-            this.error(__('invalid token: the token %s is missing, invalid or has unwanted space.', colurs.bgRed.white(key)));
+            this.error(this._pargv._localize('the token %s is missing, invalid or has unwanted space.')
+                .args(key)
+                .styles(['bgRed', 'white'])
+                .done());
         } // ensure valid token.
         var isRequired = /^</.test(key); // starts with <.
         var type;
@@ -1236,9 +1372,10 @@ var PargvCommand = (function () {
             }
             _this.expandOption(parsed); // Break out the object.
         });
+        var cmdStr = this._pargv._localize('command').done();
         this._name = name; // Save the commmand name.
         this._describe = this._describe ||
-            name + " command.";
+            name + " " + cmdStr + ".";
         this._usage = usage.join(' '); // create usage string.
         this.alias.apply(// create usage string.
         this, [name].concat(aliases)); // Map aliases to command name.
@@ -1258,15 +1395,19 @@ var PargvCommand = (function () {
      */
     PargvCommand.prototype.expandOption = function (option) {
         var describe;
+        var reqCmd = this._pargv._localize('Required command.').done();
+        var optCmd = this._pargv._localize('Optional command.').done();
+        var reqFlag = this._pargv._localize('Required flag.').done();
+        var optFlag = this._pargv._localize('Optional flag.').done();
         if (option.flag) {
             this._options.push(option.key);
             if (option.bool)
                 this._bools.push(option.key);
-            describe = option.required ? 'Required flag.' : 'Optional flag';
+            describe = option.required ? reqFlag : optFlag;
         }
         else {
             this._commands.push(option.key);
-            describe = option.required ? 'Required command.' : 'Optional command.';
+            describe = option.required ? reqCmd : optCmd;
         }
         this.describe(option.key, option.describe || describe); // Add default descriptions
         this.alias(option.key, option.key); // Add key to self.
@@ -1293,7 +1434,8 @@ var PargvCommand = (function () {
             enabled = true;
         this._showHelp = enabled;
         if (enabled) {
-            this.option('--help, -h', "Displays help for " + this._name + ".");
+            var str = this._pargv._localize('displays help for %s.').args(this._name).done();
+            this.option('--help, -h', str);
         }
         else {
             this._options = this._options.map(function (el) {
@@ -1310,9 +1452,13 @@ var PargvCommand = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(PargvCommand.prototype, "colors", {
+    Object.defineProperty(PargvCommand.prototype, "command", {
+        /**
+         * Command
+         * : Access to Pargv command.
+         */
         get: function () {
-            return this._pargv.options.colors;
+            return this._pargv.command.bind(this._pargv);
         },
         enumerable: true,
         configurable: true
@@ -1320,7 +1466,7 @@ var PargvCommand = (function () {
     Object.defineProperty(PargvCommand.prototype, "min", {
         /**
          * Min
-         * Gets methods for adding min commands or options.
+         * : Gets methods for adding min commands or options.
          */
         get: function () {
             var _this = this;
@@ -1353,7 +1499,7 @@ var PargvCommand = (function () {
     Object.defineProperty(PargvCommand.prototype, "max", {
         /**
           * Max
-          * Gets methods for adding max commands or options.
+          * : Gets methods for adding max commands or options.
           */
         get: function () {
             var _this = this;
@@ -1383,14 +1529,11 @@ var PargvCommand = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(PargvCommand.prototype, "command", {
-        get: function () {
-            return this._pargv.command.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(PargvCommand.prototype, "parse", {
+        /**
+         * Parse
+         * : Access Pargv parse method.
+         */
         get: function () {
             return this._pargv.parse.bind(this._pargv);
         },
@@ -1398,6 +1541,21 @@ var PargvCommand = (function () {
         configurable: true
     });
     Object.defineProperty(PargvCommand.prototype, "exec", {
+        /**
+         * Exec
+         * : Access Pargv exec.
+         */
+        get: function () {
+            return this._pargv.exec.bind(this._pargv);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PargvCommand.prototype, "listen", {
+        /**
+         * Listen
+         * : Alias to Pargv exec.
+         */
         get: function () {
             return this._pargv.exec.bind(this._pargv);
         },
@@ -1442,7 +1600,7 @@ var PargvCommand = (function () {
             alias[_i - 1] = arguments[_i];
         }
         var obj = key;
-        var colors = this.colors;
+        var colors = this._pargv.options.colors;
         if (utils.isString(key)) {
             key = this.stripToAlias(key);
             obj = {};
@@ -1452,7 +1610,12 @@ var PargvCommand = (function () {
             k = this_1.stripToAlias(k);
             var v = obj[k];
             if (!utils.isValue(v) || !utils.isArray(v)) {
-                this_1.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('alias', colors.accent), colurs.applyAnsi(k, colors.accent)));
+                var aliasStr = this_1._pargv._localize('alias').done();
+                this_1.error(this_1._pargv._localize('cannot set %s for %s using value of undefined.')
+                    .setArg('alias')
+                    .setArg(k)
+                    .styles(colors.accent, colors.accent)
+                    .done());
             }
             v.forEach(function (el) {
                 el = utils.stripToken(el, /(<|>|\[|\])/g);
@@ -1467,7 +1630,7 @@ var PargvCommand = (function () {
     };
     PargvCommand.prototype.describe = function (key, describe) {
         var obj = key;
-        var colors = this.colors;
+        var colors = this._pargv.options.colors;
         if (utils.isString(key)) {
             key = this.stripToAlias(key);
             obj = {};
@@ -1477,14 +1640,18 @@ var PargvCommand = (function () {
             k = this.stripToAlias(k);
             var v = obj[k];
             if (!utils.isValue(v))
-                this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('describe', colors.accent), colurs.applyAnsi(k, colors.accent)));
+                this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                    .setArg('describe')
+                    .setArg(k)
+                    .styles(colors.accent, colors.accent)
+                    .done());
             this._describes[k] = v;
         }
         return this;
     };
     PargvCommand.prototype.coerce = function (key, fn, def) {
         var obj = key;
-        var colors = this.colors;
+        var colors = this._pargv.options.colors;
         if (utils.isString(key)) {
             key = this.stripToAlias(key);
             obj = {};
@@ -1497,7 +1664,11 @@ var PargvCommand = (function () {
             k = this.stripToAlias(k);
             var v = obj[k];
             if (!utils.isValue(v))
-                this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('coerce', colors.accent), colurs.applyAnsi(k, colors.accent)));
+                this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                    .setArg('coerce')
+                    .setArg(k)
+                    .styles(colors.accent, colors.accent)
+                    .done());
             if (v.def)
                 this.default(k, v.def);
             this._coercions[k] = v.fn;
@@ -1525,7 +1696,7 @@ var PargvCommand = (function () {
     };
     PargvCommand.prototype.when = function (key, demand, converse) {
         var obj = key;
-        var colors = this.colors;
+        var colors = this._pargv.options.colors;
         if (utils.isString(key)) {
             key = this.stripToAlias(key);
             demand = this.stripToAlias(demand);
@@ -1540,7 +1711,11 @@ var PargvCommand = (function () {
             var v = obj[k];
             v.demand = this.stripToAlias(v.demand);
             if (!utils.isValue(v.demand))
-                this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('when', colors.accent), colurs.applyAnsi(k, colors.accent)));
+                this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                    .setArg('when')
+                    .setArg(k)
+                    .styles(colors.accent, colors.accent)
+                    .done());
             this._whens[k] = v.demand;
             if (v.converse)
                 this._whens[v.demand] = k;
@@ -1556,7 +1731,7 @@ var PargvCommand = (function () {
      */
     PargvCommand.prototype.default = function (key, val) {
         var obj = key;
-        var colors = this.colors;
+        var colors = this._pargv.options.colors;
         if (utils.isString(key)) {
             key = this.stripToAlias(key);
             obj = {};
@@ -1566,9 +1741,36 @@ var PargvCommand = (function () {
             k = this.stripToAlias(k);
             var v = obj[k];
             if (!utils.isValue(v))
-                this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('default', colors.accent), colurs.applyAnsi(k, colors.accent)));
+                this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                    .setArg('default')
+                    .setArg(k)
+                    .styles(colors.accent, colors.accent)
+                    .done());
             this._defaults[k] = v;
         }
+        return this;
+    };
+    /**
+     * Completion At
+     * : Injects custom completion value for specified key.
+     * Key can be a know command, option or * for anonymous.
+     *
+     * @param key the key to inject completion values for.
+     * @param vals the completion values for the provided key.
+     */
+    PargvCommand.prototype.completionFor = function (key) {
+        var vals = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            vals[_i - 1] = arguments[_i];
+        }
+        key = key === '*' ? key : this.aliasToKey(key);
+        if (utils.isArray(vals[0]))
+            vals = vals[0];
+        var colors = this._pargv.options.colors;
+        if (!key)
+            this.error(this._pargv._localize('cannot set completion for using key of undefined.')
+                .done());
+        this._completions[key] = vals;
         return this;
     };
     /**
@@ -1580,7 +1782,11 @@ var PargvCommand = (function () {
     PargvCommand.prototype.action = function (fn) {
         var colors = this._pargv.options.colors;
         if (!fn)
-            this.error(__('parse failed: cannot set %s for %s using value of undefined.', colurs.applyAnsi('action', colors.accent), colurs.applyAnsi(this._name, colors.accent)));
+            this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                .setArg('action')
+                .setArg(this._name)
+                .styles(colors.accent, colors.accent)
+                .done());
         this._action = fn;
         return this;
     };
@@ -1795,10 +2001,16 @@ var PargvCommand = (function () {
         if (!utils.isValue(result) || !is[type](result)) {
             if (!opts.ignoreTypeErrors) {
                 if (!isListType) {
-                    this.error(__('type mismatch: expected type %s but got %s instead.', colurs.applyAnsi(type, colors.accent), colurs.applyAnsi(utils.getType(type), colors.accent)));
+                    this.error(this._pargv._localize('expected type %s but got %s instead.')
+                        .args(type, utils.getType(type))
+                        .styles(colors.accent, colors.accent)
+                        .done());
                 }
                 else {
-                    this.error(__('type mismatch: expected list or expression %s to contain value %s.', colurs.applyAnsi(listexp, colors.accent), colurs.applyAnsi(origVal, colors.accent)));
+                    this.error(this._pargv._localize('expected list or expression %s to contain %s.')
+                        .args(listexp, origVal)
+                        .styles(colors.accent, colors.accent)
+                        .done());
                 }
             }
             else {
@@ -1832,12 +2044,12 @@ var PargvCommand = (function () {
         return this.aliasToKey(key, key);
     };
     /**
-     * Find Aliases
+     * Aliases
      * Looks up aliases for a given key.
      *
      * @param key the primary key to find aliases for.
      */
-    PargvCommand.prototype.findAliases = function (key) {
+    PargvCommand.prototype.aliases = function (key) {
         key = this.aliasToKey(key); // get primary name.
         var found = [];
         for (var p in this._aliases) {

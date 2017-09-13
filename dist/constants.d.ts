@@ -19,3 +19,6 @@ export declare const CWD: string;
 export declare const ARGV: string[];
 export declare const NODE_PATH: string;
 export declare const EXEC_PATH: string;
+export declare const PARGV_ROOT: string;
+export declare const MOCHA_TESTING: boolean;
+export { EOL } from 'os';

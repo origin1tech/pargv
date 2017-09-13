@@ -14,14 +14,31 @@ function __export(m) {
 }
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
+var fs_1 = require("fs");
 var chek_1 = require("chek");
 var constants_1 = require("./constants");
 var prefix = require("global-prefix");
 var constants_2 = require("./constants");
 __export(require("chek"));
+var ctr = 5; // limit recursion.
+function findPackage(filename) {
+    if (!ctr)
+        return;
+    filename = filename || require.main.filename;
+    var parsed = path_1.parse(filename);
+    var curPath = path_1.join(parsed.dir, 'package.json');
+    if (!fs_1.existsSync(curPath)) {
+        ctr--;
+        return findPackage(parsed.dir);
+    }
+    else {
+        return chek_1.tryRequire(curPath, {});
+    }
+}
+exports.findPackage = findPackage;
 /**
  * Env Paths
- * Gets paths for the environment including executed path.
+ * : Gets paths for the environment including executed path.
  */
 function environment() {
     var exec = constants_1.ARGV
@@ -29,7 +46,7 @@ function environment() {
         .map(function (v, i) {
         if (i === 0 && constants_1.EXE_EXP.test(v))
             return;
-        var rebased = path_1.relative(constants_1.CWD, v);
+        var rebased = path_1.relative(constants_2.CWD, v);
         return v.match(/^(\/|([a-zA-Z]:)?\\)/) &&
             rebased.length < v.length ? rebased : v;
     }).join(' ').trim();
@@ -41,13 +58,15 @@ function environment() {
         NODE_PATH: constants_1.NODE_PATH || constants_1.ARGV[0],
         GLOBAL_PATH: prefix,
         NODE_ENV: process.env.NODE_ENV,
-        HOME_PATH: process.env.HOME
+        HOME_PATH: process.env.HOME,
+        PLATFORM: process.platform,
+        PKG: findPackage() // NOT bullet proof.
     };
 }
 exports.environment = environment;
 /**
  * Clear Screen
- * Clears the screen and resets cursor.
+ * : Clears the screen and resets cursor.
  * PLACEHOLDER future use.
  *
  * @param reset when not false cursor is reset.
@@ -70,7 +89,7 @@ function clearScreen(reset) {
 exports.clearScreen = clearScreen;
 /**
  * Is Flag
- * Checks if value is a flag (ex: -s or --save).
+ * : Checks if value is a flag (ex: -s or --save).
  *
  * @param val the value to inspect.
  */
@@ -80,7 +99,7 @@ function isFlag(val) {
 exports.isFlag = isFlag;
 /**
  * Is Dot Notation
- * Tests if value is dot notated string.
+ * : Tests if value is dot notated string.
  *
  * @param val the value to be inspected.
  */
@@ -92,7 +111,7 @@ function isDotNotation(val) {
 exports.isDotNotation = isDotNotation;
 /**
  * Strip Param
- * Strips -f, --flag <param> [param] resulting in
+ * : Strips -f, --flag <param> [param] resulting in
  * f, flag or param.
  *
  * @param val the value to be stripped.
@@ -104,7 +123,7 @@ function stripToken(val, exp) {
 exports.stripToken = stripToken;
 /**
  * Merge Args
- * Merges arguments into single array of values.
+ * : Merges arguments into single array of values.
  *
  * @param val the single value or array of values.
  * @param args rest param of args.
@@ -123,7 +142,7 @@ function mergeArgs(val) {
 exports.mergeArgs = mergeArgs;
 /**
  * Split To List
- * Takes a list 'small, medium, large' and
+ * : Takes a list 'small, medium, large' and
  * converts it to expression like
  * /^(small|medium|large)$/i
  *
@@ -135,7 +154,7 @@ function splitToList(val) {
 exports.splitToList = splitToList;
 /**
  * To Option Tokens
- * Formats option string to support Pargv syntax.
+ * : Formats option string to support Pargv syntax.
  * @example
  * converts: '-n, --name <value>'
  * to: '-n.--name <value>'
@@ -158,7 +177,7 @@ function toOptionToken(token) {
 exports.toOptionToken = toOptionToken;
 /**
  * Remove Duplicates
- * Removes any duplicate elements in an array.
+ * : Removes any duplicate elements in an array.
  *
  * @param args the array of elements to be inspected.
  */
@@ -176,7 +195,7 @@ function removeDuplicates() {
 exports.removeDuplicates = removeDuplicates;
 /**
  * Concat To
- * Helper method to ensure array in object property then concat values.
+ * : Helper method to ensure array in object property then concat values.
  *
  * @param obj the object collection containing keys.
  * @param key the key to concat values to.
@@ -190,7 +209,7 @@ function concatTo(obj, key, val) {
 exports.concatTo = concatTo;
 /**
  * Levenshtein
- * Computes the edit distance between two strings.
+ * : Computes the edit distance between two strings.
  *
  * Based on gist by Andrei Mackenzie
  * @see https://gist.github.com/andrei-m/982927
@@ -226,6 +245,23 @@ function levenshtein(source, compare) {
     return res;
 }
 exports.levenshtein = levenshtein;
+/**
+ * Set Blocking
+ * : Sets handle blocking for stdout, stderr.
+ *
+ * TypeScript version of:
+ * @see https://github.com/yargs/set-blocking/blob/master/index.js
+ *
+ * @param blocking toggles blocking.
+ */
+function setBlocking(blocking) {
+    var out = process.stdout, err = process.stderr;
+    [out, err].forEach(function (stream) {
+        if (stream._handle && stream.isTTY && chek_1.isFunction(stream._handle.setBlocking))
+            stream._handle.setBlocking(blocking);
+    });
+}
+exports.setBlocking = setBlocking;
 /**
  * Pargv Error
  */

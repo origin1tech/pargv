@@ -8,7 +8,7 @@ const assert = chai.assert;
 const colurs = Colurs.get();
 
 import { Pargv, PargvCommand } from './';
-const pargv = new Pargv();
+const pargv = new Pargv({ spreadCommands: true });
 
 const procArgs = process.argv.slice(0, 2);
 
@@ -36,7 +36,6 @@ describe('Pargv', () => {
       .default('-f', true);
 
     const parsed = pargv.parse(args);
-    // console.log(parsed);
 
     const expected = {
       '$exec': 'node_modules/mocha/bin/_mocha',
@@ -64,9 +63,42 @@ describe('Pargv', () => {
     pargv.command('generate <template> [name]')
       .describe('generate', 'Generates a new template with optional name.')
       .action((template, name, parsed, cmd) => {
+
         assert.equal(template, 'component.tpl');
         assert.equal(name, 'about.html');
         assert.instanceOf(cmd, PargvCommand);
+        done();
+      }).exec(args);
+
+  });
+
+  it('should spread args including anonymous for "generate <template> [name].', (done) => {
+
+    const args = procArgs.concat(['generate', 'component.tpl', 'about.html', 'other.jsx']);
+
+    pargv.command('generate <template> [name]')
+      .describe('generate', 'Generates a new template with optional name.')
+      .action((template, name, other, parsed, cmd) => {
+        assert.equal(template, 'component.tpl');
+        assert.equal(name, 'about.html');
+        assert.equal(other, 'other.jsx')
+        assert.instanceOf(cmd, PargvCommand);
+        done();
+      }).exec(args);
+
+  });
+
+  it('should DISABLE spread args for "generate <template> [name].', (done) => {
+
+    const args = procArgs.concat(['generate', 'component.tpl', 'about.html', 'other.jsx']);
+
+    pargv.set.option('spreadCommands', false);
+
+    pargv.command('generate <template> [name]')
+      .describe('generate', 'Generates a new template with optional name.')
+      .action((parsed, cmd) => {
+        assert.instanceOf(cmd, PargvCommand);
+        pargv.set.option('spreadCommands', true);
         done();
       }).exec(args);
 
@@ -110,7 +142,7 @@ describe('Pargv', () => {
   it('should set custom error callback.', (done) => {
 
     const func = function errorHandler(msg, args, instance) {
-      assert.equal('parse failed: at least 1 Commands are required but got 0.', colurs.strip(msg));
+      assert.equal('at least 1 commands are required but got 0.', colurs.strip(msg));
       done();
     };
 
@@ -124,7 +156,7 @@ describe('Pargv', () => {
   it('should require property when specified property exists.', (done) => {
 
     const func = function errorHandler(msg, args, instance) {
-      assert.equal('parse failed: -x requires -y but is missing.', colurs.strip(msg));
+      assert.equal('-x requires -y but is missing.', colurs.strip(msg));
       done();
     };
 
@@ -140,7 +172,7 @@ describe('Pargv', () => {
   it('should demand the -x and -y options.', (done) => {
 
     const func = function errorHandler(msg, args, instance) {
-      assert.equal('parse failed: missing required argument(s) -y or have no default value.', colurs.strip(msg));
+      assert.equal('missing required arguments -y or have no default value.', colurs.strip(msg));
       done();
     };
 

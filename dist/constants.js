@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var path_1 = require("path");
 exports.KEYVAL_EXP = /^(([.'"a-z0-9_-]+):\s?(['"a-z0-9_-]+)[+|]?){1,}$/i;
 exports.CSV_EXP = /^(.+,.+){1,}$/;
 exports.LIST_EXP = /^(.+(,|\||\s).+){1,}$/;
@@ -21,4 +22,8 @@ exports.CWD = process.cwd();
 exports.ARGV = process.argv;
 exports.NODE_PATH = process.env._;
 exports.EXEC_PATH = process.execPath;
+exports.PARGV_ROOT = path_1.join(__dirname, '../');
+exports.MOCHA_TESTING = /_mocha$/.test(process.argv[1]);
+var os_1 = require("os");
+exports.EOL = os_1.EOL;
 //# sourceMappingURL=constants.js.map

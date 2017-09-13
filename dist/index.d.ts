@@ -1,10 +1,17 @@
-import { IMap, IPargvOptions, ActionHandler, CoerceHandler, AnsiStyles, HelpHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler, IPargvMetadata, IPargvEnv } from './interfaces';
+import { IColurs } from 'colurs';
+import { IMap, IPargvOptions, ActionHandler, CoerceHandler, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, IPargvCoerceConfig, IPargvWhenConfig, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats } from './interfaces';
+export * from './interfaces';
 export declare class Pargv {
     private _helpEnabled;
     private _helpHandler;
     private _errorHandler;
-    private _completionHandler;
+    private _completionsHandler;
     private _command;
+    private _completions;
+    private _completionsCommand;
+    private _completionsReply;
+    _colurs: IColurs;
+    _localize: LocalizeInit;
     _env: IPargvEnv;
     _name: string;
     _nameFont: string;
@@ -44,7 +51,6 @@ export declare class Pargv {
      * @param command optional command to get help for.
      */
     private helpHandler(command?);
-    private completionHandler(args, fn);
     /**
      * Error Handler
      * The default error handler.
@@ -54,30 +60,20 @@ export declare class Pargv {
      */
     private errorHandler(message, err);
     /**
+     * Completions Reply
+     * Method called form bash profile for compreply.
+     *
+     * @param argv the current argv from tab completions.
+     * @param done the callback on done compiling completions.
+     */
+    private completionsReply(parsed);
+    /**
      * Build Help
      * Common method to get help before show or return.
      *
      * @param command optional command to get help for.
      */
     private buildHelp(command?);
-    /**
-     * Generate Completion Script
-     * Generates the completion script for use in terminal.
-     *
-     * @param name the name of the program.
-     * @param command the command name for getting completions.
-     */
-    private generateCompletionScript(name, command?);
-    /**
-     * UI
-     * Alias to layout.
-     */
-    readonly ui: (width?: number, wrap?: boolean) => IPargvLayout;
-    /**
-     * Epilogue
-     * Alias to epilog.
-     */
-    readonly epilogue: (val: string) => this;
     /**
      * Default Command
      * Exposes default command for parsing anonymous arguments.
@@ -86,27 +82,29 @@ export declare class Pargv {
      */
     readonly $: PargvCommand;
     /**
-     * Gets help, completion script, completions...
+     * Gets help, completion script, completions, options...
      */
     readonly get: {
         help: (command?: string | PargvCommand) => any;
-        completion: () => string;
-        completions: (args: any[], fn: Function) => any;
+        completion: (path?: string, template?: string) => string;
+        completions: (args: any[], fn: Function) => void;
+        command: (key: string) => PargvCommand;
         env: () => IPargvEnv;
+        option: (key: string) => any;
+    };
+    /**
+     * Methods for setting values.
+     */
+    readonly set: {
+        option: (key: string | IPargvOptions, val?: any) => void;
     };
     /**
      * Shows help completion script env.
      */
     readonly show: {
         help: (command?: string | PargvCommand) => void;
-        completion: () => void;
+        completion: (path?: string, template?: string) => void;
         env: () => void;
-    };
-    /**
-     * Finds objects, properties...
-     */
-    readonly find: {
-        command: (key: string) => PargvCommand;
     };
     /**
      * Removes elements and objects.
@@ -114,6 +112,21 @@ export declare class Pargv {
     readonly remove: {
         command: (key: string) => this;
     };
+    /**
+     * Listen
+     * : Alias for exec.
+     */
+    readonly listen: (...argv: any[]) => IPargvParsedResult;
+    /**
+     * Argv
+     * Alias to exec.
+     */
+    readonly argv: (...argv: any[]) => IPargvParsedResult;
+    /**
+     * Epilogue
+     * Alias to epilog.
+     */
+    readonly epilogue: (val: string) => this;
     /**
      * Meta
      * Accepts object containing metadata information for program.
@@ -126,6 +139,7 @@ export declare class Pargv {
     /**
      * App
      * Just adds a string to use as title of app, used in help.
+     * If invoked without value package.json name is used.
      *
      * @see http://flamingtext.com/tools/figlet/fontlist.html
      * Simple Font examples
@@ -139,10 +153,11 @@ export declare class Pargv {
     /**
      * Version
      * Just adds a string to use as the version for your program, used in help.
+     * If no value is provided package.json version is used.
      *
      * @param val the value to use as version name.
      */
-    version(val: string): this;
+    version(val?: string): this;
     /**
      * Description
      * The program's description or purpose.
@@ -230,15 +245,7 @@ export declare class Pargv {
      * @param command the command key to get stats for.
      * @param args args to gets stats for.
      */
-    stats(command: string, ...args: any[]): {
-        commands: any[];
-        options: any[];
-        anonymous: any[];
-        missing: any[];
-        map: any[];
-        normalized: any[];
-        whens: any;
-    };
+    stats(command: string, ...args: any[]): IPargvStats;
     /**
      * Normalize Args
      * Converts -abc to -a -b -c
@@ -247,7 +254,18 @@ export declare class Pargv {
      * @param args the arguments to normalize.
      */
     toNormalized(...args: any[]): any[];
-    setupCompletion(path?: string): void;
+    /**
+     * Completion
+     * Adds the completion command for use within your app for generating completion script.
+     *
+     * @param command the name of the commpletion install command.
+     * @param describe the description of the command or complete handler.
+     * @param template optional template for generating completions or complete handler.
+     * @param fn the optional completion handler.
+     */
+    completion(command?: string, fn?: CompletionHandler): Pargv;
+    completion(command?: string, describe?: string, fn?: CompletionHandler): Pargv;
+    completion(command?: string, describe?: string, template?: string, fn?: CompletionHandler): Pargv;
     /**
      * Logo
      * Builds or Displays an ASCII logo using Figlet.
@@ -293,6 +311,7 @@ export declare class PargvCommand {
     _minCommands: number;
     _minOptions: number;
     _showHelp: boolean;
+    _completions: IMap<any[]>;
     _pargv: Pargv;
     constructor(token: string, describe?: string, pargv?: Pargv);
     /**
@@ -325,16 +344,15 @@ export declare class PargvCommand {
      * @param enabled whether or not help is enabled.
      */
     private toggleHelp(enabled?);
-    readonly error: any;
-    readonly colors: {
-        primary: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
-        accent: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
-        alert: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
-        muted: "blue" | "bold" | "italic" | "underline" | "inverse" | "dim" | "hidden" | "strikethrough" | "black" | "red" | "green" | "yellow" | "magenta" | "cyan" | "white" | "grey" | "gray" | "bgBlack" | "bgRed" | "bgGreen" | "bgYellow" | "bgBlue" | "bgMagenta" | "bgCyan" | "bgWhite" | "bgGray" | "bgGrey" | AnsiStyles[];
-    };
+    private readonly error;
+    /**
+     * Command
+     * : Access to Pargv command.
+     */
+    readonly command: any;
     /**
      * Min
-     * Gets methods for adding min commands or options.
+     * : Gets methods for adding min commands or options.
      */
     readonly min: {
         commands: (count: number) => this;
@@ -342,15 +360,27 @@ export declare class PargvCommand {
     };
     /**
       * Max
-      * Gets methods for adding max commands or options.
+      * : Gets methods for adding max commands or options.
       */
     readonly max: {
         commands: (count: number) => this;
         options: (count: number) => this;
     };
-    readonly command: any;
+    /**
+     * Parse
+     * : Access Pargv parse method.
+     */
     readonly parse: any;
+    /**
+     * Exec
+     * : Access Pargv exec.
+     */
     readonly exec: any;
+    /**
+     * Listen
+     * : Alias to Pargv exec.
+     */
+    readonly listen: any;
     /**
       * Option
       * Adds option to command.
@@ -420,6 +450,15 @@ export declare class PargvCommand {
      */
     default(key: string | IMap<any>, val: any): this;
     /**
+     * Completion At
+     * : Injects custom completion value for specified key.
+     * Key can be a know command, option or * for anonymous.
+     *
+     * @param key the key to inject completion values for.
+     * @param vals the completion values for the provided key.
+     */
+    completionFor(key: string, ...vals: any[]): this;
+    /**
      * Action
      * Adds an action event to be called when parsing matches command.
      *
@@ -466,12 +505,12 @@ export declare class PargvCommand {
      */
     stripToAlias(key: string | number): string;
     /**
-     * Find Aliases
+     * Aliases
      * Looks up aliases for a given key.
      *
      * @param key the primary key to find aliases for.
      */
-    findAliases(key: string): any[];
+    aliases(key: string): any[];
     /**
      * Stats
      * Iterates arguments mapping to known options and commands
@@ -480,15 +519,7 @@ export declare class PargvCommand {
      * @param args the args to get stats for.
      * @param skip when true deamnds and whens are not built.
      */
-    stats(args: any[], skip?: boolean): {
-        commands: any[];
-        options: any[];
-        anonymous: any[];
-        missing: any[];
-        map: any[];
-        normalized: any[];
-        whens: any;
-    };
+    stats(args: any[], skip?: boolean): IPargvStats;
     /**
      * Has Command
      * Checks if a command exists by index or name.

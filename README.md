@@ -9,13 +9,13 @@ Pargv has been rewritten in TypeScript as of version **2.0.0**. If you need the 
 You can probably do this in your sleep but for completeness...
 
 ```sh
-$ npm install pargv --save
+$ npm install pargv
 ```
 
 OR (exlude dev dependencies)
 
 ```sh
-$ npm install pargv --save --production
+$ npm install pargvde  --production
 ```
 
 ## Quick Start

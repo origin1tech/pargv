@@ -394,7 +394,7 @@ export class Pargv {
     const finish = (comps) => { // outputs completions.
       comps.forEach(el => console.log(el));
       process.exit(0);
-    }
+    };
 
     utils.setBlocking(true); // set blocking on stream handle.
 
@@ -535,6 +535,7 @@ export class Pargv {
           if (~valKeys.indexOf(k))
             this.options[k] = obj[k];
         }
+        return this;
       }
 
     };
@@ -580,6 +581,7 @@ export class Pargv {
        */
       env: () => {
         this.log(this._env);
+        return this;
       }
 
     };
@@ -939,10 +941,18 @@ export class Pargv {
           result[formattedKey] = val;
       }
       else {
-        if (DOT_EXP.test(key)) // is dot notation key.
+        if (DOT_EXP.test(key)) { // is dot notation key.
           utils.set(result, key.replace(FLAG_EXP, ''), val);
-        else
+        }
+        else {
           result[formattedKey] = val;
+          if (this.options.extendAliases) { // extend each alias to object.
+            (cmd.aliases(key) || []).forEach((el) => {
+              const frmKey = utils.camelcase(el.replace(FLAG_EXP, ''));
+              result[frmKey] = val;
+            });
+          }
+        }
       }
 
     });
@@ -1160,13 +1170,13 @@ export class Pargv {
     command = command || this._localize(this._completionsCommand).done();
     this._completionsCommand = command; // save the name of the command.
     const getFlag = this._completionsReply;
-    const replyCmd = `${command} ${getFlag}` // the reply command for completions.sh.
+    const replyCmd = `${command} ${getFlag}`; // the reply command for completions.sh.
     command = `${command} [path]`; // our PargvCommand for completions.
     describe = describe || this._localize('tab completions command.').done();
 
     const cmd = this.command(command, <string>describe);
 
-    cmd.option('--install, -i', this._localize('when true installs completions.').done())
+    cmd.option('--install, -i', this._localize('when true installs completions.').done());
 
     cmd.option('--reply', this._localize('when true returns tab completions.').done());
 
@@ -1175,7 +1185,7 @@ export class Pargv {
     cmd.action((path, parsed) => {
 
       if (parsed.reply) {
-        return this.completionsReply(parsed) // reply with completions.
+        return this.completionsReply(parsed); // reply with completions.
       }
 
       else if (parsed.install) {  // install completions.

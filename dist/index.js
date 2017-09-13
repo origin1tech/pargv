@@ -431,6 +431,7 @@ var Pargv = /** @class */ (function () {
                         if (~valKeys.indexOf(k))
                             _this.options[k] = obj[k];
                     }
+                    return _this;
                 }
             };
         },
@@ -474,6 +475,7 @@ var Pargv = /** @class */ (function () {
                  */
                 env: function () {
                     _this.log(_this._env);
+                    return _this;
                 }
             };
         },
@@ -796,10 +798,18 @@ var Pargv = /** @class */ (function () {
                     result[formattedKey] = val;
             }
             else {
-                if (constants_1.DOT_EXP.test(key))
+                if (constants_1.DOT_EXP.test(key)) {
                     utils.set(result, key.replace(constants_1.FLAG_EXP, ''), val);
-                else
+                }
+                else {
                     result[formattedKey] = val;
+                    if (_this.options.extendAliases) {
+                        (cmd.aliases(key) || []).forEach(function (el) {
+                            var frmKey = utils.camelcase(el.replace(constants_1.FLAG_EXP, ''));
+                            result[frmKey] = val;
+                        });
+                    }
+                }
             }
         });
         if (isExec && this.options.spreadCommands) {

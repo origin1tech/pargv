@@ -53,7 +53,7 @@ export interface IPargvEnv {
   PKG: any;
 }
 
-export interface IPargvCompletionsPaths {
+export interface IPargvCompletionPaths {
   appName: string;  // the base app name
   appPath: string;    // the executable app path.
   bashPath: string | boolean;   // the bash profile path.
@@ -62,14 +62,14 @@ export interface IPargvCompletionsPaths {
 }
 
 export interface IPargvCompletionsConfig {
-  paths: IPargvCompletionsPaths;
+  paths: IPargvCompletionPaths;
   command: string;
   script: string;
   sourceScript: string;
 }
 
 export interface IPargvCompletions {
-  getPaths(path: string): IPargvCompletionsPaths;
+  getPaths(path: string): IPargvCompletionPaths;
   ensureDir(dir: string): boolean;
   generate(path?: string, command?: string, template?: string): IPargvCompletionsConfig;
   write(path: string, script: string, append?: boolean): boolean;
@@ -145,7 +145,7 @@ export interface IPargvLogo {
 
 export interface IPargvStats {
   commands?: any[];
-  options?: any[],
+  options?: any[];
   map?: any[];
   normalized: any[];
   missing?: any[];

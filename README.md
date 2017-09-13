@@ -9,7 +9,13 @@ Pargv has been rewritten in TypeScript as of version **2.0.0**. If you need the 
 You can probably do this in your sleep but for completeness...
 
 ```sh
-$ npm install pargv -save
+$ npm install pargv --save
+```
+
+OR (exlude dev dependencies)
+
+```sh
+$ npm install pargv --save --production
 ```
 
 ## Quick Start
@@ -44,7 +50,7 @@ import { Pargv } from 'pargv';
 // For ES5
 // const Pargv = require('pargv').Pargv;
 
-const pargv = new Pargv({ locale: 'en', divider: '#', extendCommands: true });
+const pargv = new Pargv({ locale: 'en', headingDivider: '#', extendCommands: true });
 
 // Command requires template name with optiona directory path.
 pargv.command('generate <template> [directory]')
@@ -61,9 +67,8 @@ pargv.command('generate <template> [directory]')
   // Adds description for "directory" sub command.
   .describe('directory', 'The directory path to save the template to.')
 
-  // Not very practical but if force is defined required extention.
-  // Note we specific --ext, we could also specify -e or --extension
-  // Pargv will figure it out meaning u can use the primary or an alias
+  // Note we specify --ext, we could also specify -e or --extension
+  // Pargv will figure it out meaning you can use the primary or an alias
   // as your key.
   .when('--force', '--ext')
 
@@ -81,9 +86,11 @@ pargv.command('generate <template> [directory]')
   .exec(); // the above action will be called.
 ```
 
+More [EXAMPLES.md](EXAMPLES.md) here.
+
 ## Options
 
-Below are the options supported by Pargv and their uses/descriptions.
+Pargv options, descriptions and defaults.
 
 <table>
   <thead>
@@ -99,24 +106,29 @@ Below are the options supported by Pargv and their uses/descriptions.
     <tr><td>autoHelp</td><td>When true help is displayed when exec cannot find matching command.</td><td>True</td></tr>
     <tr><td>defaultHelp</td><td>When true commands automatically to help.</td><td>True</td></tr>
     <tr><td>extendCommands</td><td>When true known sub commands extended as properties in result.</td><td>False</td></tr>
+    <tr><td>extendAliases</td><td>When true option aliases extended to result.</td><td>False</td></tr>
+    <tr><td>extendStats</td><td>When true stats object is extended to results.</td><td>False</td></tr>
+    <tr><td>spreadCommands</td><td>When true commands are spread in action callback.</td><td>True</td></tr>
     <tr><td>allowAnonymous</td><td>When true anonymous sub commands and options are allowed.</td><td>True</td></tr>
     <tr><td>ignoreTypeErrors</td><td>When true type checking is ignored.</td><td>False</td></tr>
     <tr><td>castBeforeCoerce</td><td>When true will attempt to cast to type before coerce is called.</td><td>True</td></tr>
     <tr><td>displayStackTrace</td><td>When true stack trace is displayed for errors.</td><td>True</td></tr>
     <tr><td>exitOnError</td><td>When true Pargv exists after errors.</td><td>True</td></tr>
-    <tr><td>colors</td><td>
-    <table>
-      <thead>
-       <tr><th>Option</th><th>Description</th><th>Default</th></tr>
-      </thead>
-      <tbody>
-      <tr><td>primary</td><td>The primary color in help.</td><td>blue</td></tr>
-      <tr><td>accent</td><td>The accent color in help.</td><td>cyan</td></tr>
-      <tr><td>alert</td><td>The alert, error or required color in help.</td><td>red</td></tr>
-      <tr><td>muted</td><td>The muted color in help.</td><td>gray</td></tr>
-      </tbody>
-    </table>
-    </td><td></td>
+    <tr><td>layoutWidth</td><td>The width of help text layout.</td><td>80</td></tr>
+    <tr><td>colors</td>
+    <td colspan="2">
+      <table width="100%">
+        <thead>
+        <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+        </thead>
+        <tbody>
+        <tr><td>primary</td><td>The primary color in help.</td><td>blue</td></tr>
+        <tr><td>accent</td><td>The accent color in help.</td><td>cyan</td></tr>
+        <tr><td>alert</td><td>The alert, error or required color in help.</td><td>red</td></tr>
+        <tr><td>muted</td><td>The muted color in help.</td><td>gray</td></tr>
+        </tbody>
+      </table>
+    </td>
     </tr>
   </tbody>
 </table>
@@ -173,16 +185,10 @@ The parsed result would be:
 
 ```ts
 parsed = {
-  '$exec': 'example',
-  '$command': 'generate',
-  '$commands': [ 'about' ],
-  '$metadata':
-   {
-     source: [ 'generate', 'about', '--ext', '.html' ],
-     execPath: '/some/path/example',
-     nodePath: '/usr/local/bin/node',
-     globalPrefix: '/usr/local'
-   },
+  $exec: 'example',
+  $command: 'generate',
+  $commands: [ 'about' ],
+  $source: [ 'generate', 'about', '--ext', '.html' ],
   ext: '.html'
 }
 ```
@@ -204,13 +210,13 @@ wrap in **<value>**. See below for more examples.
     <tr><th>Argument</th><th>Description</th></tr>
   </thead>
   <tbody>
-    <tr><td>< value ></td><td>denotes a required command or option.</td></tr>
-    <tr><td>[ value ]</td><td>denotes an optional command or option.</td></tr>
+    <tr><td>`<value>`</td><td>denotes a required command or option.</td></tr>
+    <tr><td>`[value]`</td><td>denotes an optional command or option.</td></tr>
     <tr><td>--option</td><td>denotes an option flag.</td></tr>
     <tr><td>-o</td><td>denotes short option flag.</td></tr>
     <tr><td>generate.gen.g</td><td>results in gen & g as aliases for generate command.</td></tr>
     <tr><td>--extension.ext.e</td><td>results in ext & e as aliases for extension option.</td></tr>
-    <tr><td>[ value:float ]</td><td>value should be of type float.</td></tr>
+    <tr><td>`[value:float]`</td><td>value should be of type float.</td></tr>
     <tr><td>-fsb</td><td>single - breaks out to '-f', '-s', '-b'</td></tr>
     <tr><td>--ext=.html</td><td>is the same as --ext .html</td></tr>
   </tbody>
@@ -315,18 +321,24 @@ Again if you are not using TypeScirpt don't worry they aren't needed it's just a
 + **...**       - indicates a spread operator.
 + **T**         - indicates generic type (if not using TypeScript you can ignore).
 
-For the following take a look at the [interfaces](dist/interfaces.d.ts) for more on what these objects contain.
+For the following take a look at the [interfaces](dist/interfaces.d.ts) for more on what these objects contain. The below is NOT a complete list be sure to see interfaces for more info along with docs.
 
 + **IPargvOptions** - denotes the Pargv options object.
 + **IPargvResult** - the resulting object after parse is called.
 + **IPargvLayout** - helpers/wrapper to [cliui](https://github.com/yargs/cliui) for displaying help text.
 + **IPargvLogo** - helpers/wrapper to [figlet](https://github.com/patorjk/figlet.js)
++ **IPargvEnv** - interface containing environment info.
++ **IPargvCompletionPaths** - interface containing paths used in tab completions.
++ **IPargvMetadata** - interface containing metadata for program.
++ **IPargvLocalize** - interface for localization helper methods.
 + **AnsiStyles** - type containing supported [colurs](https://github.com/origin1tech/colurs) styles.
 + **HelpHandler** - an override callback to be called for help.
 + **CoerceHandlerk** - callback used for custom coercion.
 + **IPargvCoerceConfig** - an object containing coerce configuration.
 + **IPargvWhenConfig** - an object containing when configuration.
 + **ErrorHandler** - custom handler for handling errors.
++ **ActionHandler** - handler for command action callbacks.
++ **CompletionHandler** - handler used for replying with tab completion results.
 + **IMap`<T>`**   - simple type which basically represents an object literal.
 
 ### Pargv
@@ -346,14 +358,18 @@ Always check [docs](docs/index.html) the below is for conveience and may not rep
     <tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
     <tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
     <tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
-    <tr><td>exec</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
+    <tr><td>exec (or listen)</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
     <tr><td>onHelp</td><td>overrides default help handler.</td><td>fn: HelpHandler</td><td>Pargv</td></tr>
+    <tr><td>get.option</td><td>gets value for option.</td><td>key: string</td><td>any</td></tr>
+    <tr><td>set.option</td><td>sets value for option.</td><td>key: string | IPargvOptions, val: any</td><td>Pargv</td></tr>
     <tr><td>show.help</td><td>displays help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
     <tr><td>get.help</td><td>gets help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
     <tr><td>get.completion</td><td>gets the completion script for manual install.</td><td>n/a</td><td>string</td></tr>
     <tr><td>show.completion</td><td>shows the completion script for manual in terminal.</td><td>n/a</td><td>void</td></tr>
     <tr><td>find.command</td><td>returns a command instance if found.</td><td>key: string</td><td>PargvCommand</td></tr>
     <tr><td>remove.command</td><td>removes a command instance if found.</td><td>key: string</td><td>Pargv</td></tr>
+    <tr><td>get.env</td><td>gets environment paths and properties.</td><td>n/a</td><td>IPargvEnv</td></tr>
+    <tr><td>show.env</td><td>displays environment paths and properties.</td><td>n/a</td><td>Pargv</td></tr>
     <tr><td>onError</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
     <tr><td>reset</td><td>deletes all commands and updates options if provided.</td><td>options?: IPargvOptions</td><td>Pargv</td></tr>
     <tr><td>stats</td><td>compares args to command config returning stats/metadata.</td><td>command: string, ...args: any[]</td><td>Pargv</td></tr>
@@ -379,6 +395,7 @@ Always check [docs](docs/index.html) the below is for conveience and may not rep
     <tr><td>demand</td><td>adds a demand requiring the specified command or option.</td><td>...keys: string[]</td><td>PargvCommand</td></tr>
     <tr><td>when</td><td>requires sibling command or option when present.</td><td>key: string | IMap< IPargvWhenConfig >, demand?: string | boolean, converse?: boolean</td><td>PargvCommand</td></tr>
     <tr><td>default</td><td>adds a default value for command or option.</td><td>key: string | IMap< any >, val: any</td><td>PargvCommand</td></tr>
+    <tr><td>completionFor</td><td>adds custom completion for variable.</td><td>key: string, ...vals: any[]</td><td>PargvCommand</td></tr>
     <tr><td>min</td><td>add min requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
     <tr><td>max</td><td>add max requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
     <tr><td>action</td><td>an action to be called when a command is matched on exec.</td><td>fn: ActionCallback</td><td>PargvCommand</td></tr>
@@ -398,10 +415,6 @@ See [EXAMPLES.md](EXAMPLES.md)
 ## Change
 
 See [CHANGE.md](CHANGE.md)
-
-## TODO
-
-Probably need to implement tab completion or a hood to make it easier to do manually :) Any thoughts? File an issue if you do.
 
 ## License
 

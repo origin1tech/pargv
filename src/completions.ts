@@ -1,7 +1,7 @@
 import { parse, relative, dirname, join, basename, resolve } from 'path';
 import { existsSync, mkdirSync, readFileSync, appendFileSync, writeFileSync } from 'fs';
 import { Pargv } from './';
-import { IPargvCompletions, IPargvCompletionsConfig, IPargvCompletionsPaths, IPargvParsedResult } from './interfaces';
+import { IPargvCompletions, IPargvCompletionsConfig, IPargvCompletionPaths, IPargvParsedResult } from './interfaces';
 import { IColurs } from 'colurs';
 import { PARGV_ROOT, FLAG_EXP } from './constants';
 import * as utils from './utils';
@@ -25,7 +25,7 @@ export function completions(pargv: Pargv): IPargvCompletions {
    *
    * @param path the path to the executable or file.
    */
-  function getPaths(path: string): IPargvCompletionsPaths {
+  function getPaths(path: string): IPargvCompletionPaths {
     let appPath = path;
     if (/dev\/temp\.ts$/.test(path)) // hack used when debugging.
       appPath = 'pargv';

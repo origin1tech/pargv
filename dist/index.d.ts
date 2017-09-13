@@ -96,7 +96,7 @@ export declare class Pargv {
      * Methods for setting values.
      */
     readonly set: {
-        option: (key: string | IPargvOptions, val?: any) => void;
+        option: (key: string | IPargvOptions, val?: any) => this;
     };
     /**
      * Shows help completion script env.
@@ -104,7 +104,7 @@ export declare class Pargv {
     readonly show: {
         help: (command?: string | PargvCommand) => void;
         completion: (path?: string, template?: string) => void;
-        env: () => void;
+        env: () => this;
     };
     /**
      * Removes elements and objects.

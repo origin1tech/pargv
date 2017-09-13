@@ -47,7 +47,7 @@ export interface IPargvEnv {
     PLATFORM: string;
     PKG: any;
 }
-export interface IPargvCompletionsPaths {
+export interface IPargvCompletionPaths {
     appName: string;
     appPath: string;
     bashPath: string | boolean;
@@ -55,13 +55,13 @@ export interface IPargvCompletionsPaths {
     completionsPath: string;
 }
 export interface IPargvCompletionsConfig {
-    paths: IPargvCompletionsPaths;
+    paths: IPargvCompletionPaths;
     command: string;
     script: string;
     sourceScript: string;
 }
 export interface IPargvCompletions {
-    getPaths(path: string): IPargvCompletionsPaths;
+    getPaths(path: string): IPargvCompletionPaths;
     ensureDir(dir: string): boolean;
     generate(path?: string, command?: string, template?: string): IPargvCompletionsConfig;
     write(path: string, script: string, append?: boolean): boolean;

@@ -201,6 +201,100 @@ pargv.command('login --username <username> --password [password]')
 pargv.command('login --username <username> --password [password]')
   .default('--username', 'jsmith');
 ```
+
+## Restrict to min or max commands:
+
+```ts
+pargv.command('download <url>')
+  .min.commands(1); // this is redundant but ensures <url> is provided.
+```
+
+```ts
+pargv.command('download <url>')
+  .max.commands(1); // ensure only <url> is allowed.
+// for example if your cli command was: $ download /some/path other_variable
+// max command error would be thrown.
+```
+
+## Restrict to min or max options:
+
+```ts
+pargv.command('download <url>')
+  .option('--force, -f')
+  .option('--other, -o')
+  .min.options(1); // would ensure either --force or --other is provided.
+```
+
+```ts
+pargv.command('download <url>')
+  .option('--force, -f')
+  .option('--other, -o')
+  .max.options(1); // would allow only --force or --other.
+```
+
+## Setup completions:
+
+```ts
+pargv.command('login --username <username> --password [password]')
+  .completion(); // auto adds command 'completions'
+```
+
+Or define custom command name for completions.
+
+```ts
+pargv.command('login --username <username> --password [password]')
+  .completion('comps');
+```
+
+Or define custom tab completions handler
+
+```ts
+pargv.command('login --username <username> --password [password]')
+  .completion('completions', (current: string, argv: any[], done?: CompletionHandlerCallback) => {
+    // current - the current argument for completions.
+    // argv - the array of all arguments in stream.
+    // done - optional callback for async completions.
+    //        done handler accepts 1 arg (completions: any[])
+  });
+  // Pargv is pretty good with tab completions unless you have a really
+  // special need and have the time to sort it out it is suggested to
+  // use built in tab completions. They work pretty good!
+```
+
+## Install completions:
+
+The following assume your "completions" command is named "completions"
+and your program name is called "app".
+
+```sh
+$ app completions --install
+```
+
+Or (with custom path)
+
+```sh
+$ app completions --install ~/.bash_profile
+```
+
+Or (manual redirect to path)
+
+```sh
+$ app completions >> ~/.bash_profile
+```
+
+Or (call without options prints to screen)
+
+```sh
+$ app completions
+```
+
+## Adding custom completions for:
+
+```ts
+pargv.command('login --username <username> --password [password]')
+  .completionFor('--username', 'jsmith', 'bjones');
+```
+
 ## Adding an example for your help text:
 
 Nothing exciting here just adds examples that are displayed
@@ -241,6 +335,8 @@ pargv
 ```ts
 pargv
   .help((command, commands) => {
+    // These args are injected for convenience you could just as
+    // easily access them from pargv._commands if you wish.
     // command - optional value if help was called with a specific command.
     // commands - contains all commands that have been configured.
   });
@@ -256,14 +352,14 @@ method "compileHelp" in the Pargv class.
 pargv
   .help((command, commands) => {
 
-    // We'll create a layout that is a 100 wide
-    const layout = this.layout(100);
+    // We'll create a layout that is a 80 wide
+    const layout = this.layout(80);
 
     for (const k in commands) {
       const cmd = commands[k];
       layout.section(cmd._name); // add the name of the command as a section.
       layout.repeat('=') // add a divider.
-      layout.div() // just some space you could also pad.
+      layout.div() // just some space you could also pad see cliui for padding instructions.
       layout.section('Commands:');
       cmd._commands.forEach((el) => {
         // iterate the commands add to layout.
@@ -274,5 +370,81 @@ pargv
       });
     }
 
+    // Quick note on .repeat() method. You can use patterns and
+    // Pargv layout will calculate the number of repeats so that
+    // it is constrained to the layout's width.
+
+    // ex: layout.repeat('><><')
+
   });
 ```
+
+## Parsing Objects
+
+```sh
+$ app --user.name Joe --user.age 35
+```
+
+OR
+
+```sh
+$ app --user.name=Joe --user.age=35
+```
+
+OR
+
+```sh
+$ app --user name:Joe|age:35
+```
+
+Result:
+
+```js
+const result = {
+  user: {
+    name: 'Joe',
+    age: 35
+  }
+};
+```
+
+## Parsing Arrays
+
+By default csv strings are converted to Arrays.
+
+```sh
+$ app --size 'small, medium,large, xl'
+```
+
+Result:
+
+```js
+const result = {
+  size: ['small', 'medium', 'large', 'xl']
+};
+```
+
+To disable auto cast to array of csv strings set to type "string".
+
+```ts
+// forces string instead of auto convert to array.
+pargv.command('--size, -s [size:string]')
+```
+
+## Parsing Date
+
+```sh
+$ app --start-date 01/01/2018
+```
+
+Result:
+
+```js
+const result = {
+  size: 2018-01-01T08:00:00.000Z // JavaScript Date object.
+};
+```
+
+## More Examples
+
+Take a look at [test.spec.ts](src/test.spec.ts) to see internal tests. May give you a few ideas. Will try to add more as time permits.

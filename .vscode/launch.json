@@ -5,10 +5,30 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Live Relative",
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
-      "program": "${workspaceRoot}/lib/index.js"
+      "program": "${workspaceRoot}/node_modules/ts-node/dist/_bin.js",
+      "args": [
+        "${relativeFile}"
+      ],
+      "cwd": "${workspaceRoot}",
+      "protocol": "inspector"
+    },
+    {
+      "name": "Live Temp",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceRoot}/node_modules/ts-node/dist/_bin.js",
+      "args": [
+        "-P",
+        "${workspaceRoot}/src/tsconfig.json",
+        "${workspaceRoot}/src/dev/temp.ts",
+        "completions"
+      ],
+      "runtimeArgs": [],
+      "cwd": "${workspaceRoot}",
+      "protocol": "inspector"
     },
     {
       "type": "node",

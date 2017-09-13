@@ -70,3 +70,11 @@ Ankh.NoLoad
 ehthumbs.db
 Thumbs.db
 
+.tmp/
+temp.js
+test.js
+src/dev/
+dist/dev/
+build/apikey.js
+
+

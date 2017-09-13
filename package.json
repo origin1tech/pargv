@@ -1,15 +1,25 @@
 {
   "name": "pargv",
-  "version": "1.5.1",
+  "version": "2.0.0",
   "description": "Minimal utility for parsing node command line arguments.",
-  "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/origin1tech/pargv.git"
   },
   "scripts": {
-    "test": "mocha"
+    "clean": "node ./build/clean",
+    "compile": "node ./node_modules/typescript/bin/tsc -p ./src/tsconfig.json",
+    "bump": "node ./build/bump",
+    "build": "npm run clean && npm run compile && npm run docs",
+    "build-trans": "npm run build && npm run translate",
+    "commit": "git add . && git commit -am 'auto commit' && git push",
+    "translate": "node ./build/translate",
+    "docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs ./src --options ./typedoc.json --tsconfig ./src/tsconfig.json",
+    "test": "mocha --opts ./src/mocha.opts",
+    "release": "npm run build && npm run commit && npm run bump && npm publish",
+    "release-trans": "npm run build-trans && npm run commit && npm run bump && npm publish"
   },
   "keywords": [
     "cli",
@@ -21,21 +31,29 @@
     "yargs"
   ],
   "author": "Origin1 Technologies <origin1tech@gmail.com>",
-  "license": "MIT",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/origin1tech/pargv/issues"
   },
   "homepage": "http://origin1tech.github.io/pargv/",
-  "devDependencies": {
-    "@types/chalk": "^0.4.31",
-    "chai": "^3.5.0",
-    "mocha": "^3.2.0"
-  },
   "dependencies": {
-    "chalk": "^1.1.3",
+    "chek": "^1.0.11",
     "cliui": "^3.2.0",
-    "extend": "^3.0.0",
+    "colurs": "^1.0.10",
     "figlet": "^1.2.0",
-    "global-prefix": "^0.1.5"
+    "global-prefix": "^0.1.5",
+    "lokales": "^1.0.0"
+  },
+  "devDependencies": {
+    "@google-cloud/translate": "^1.0.0",
+    "@types/chai": "^4.0.4",
+    "@types/mocha": "^2.2.42",
+    "@types/node": "^8.0.20",
+    "chai": "^3.5.0",
+    "del": "^3.0.0",
+    "mocha": "^3.5.0",
+    "ts-node": "^3.3.0",
+    "typedoc": "^0.8.0",
+    "typescript": "^2.4.2"
   }
 }

@@ -315,7 +315,7 @@ Again if you are not using TypeScirpt don't worry they aren't needed it's just a
 + **...**       - indicates a spread operator.
 + **T**         - indicates generic type (if not using TypeScript you can ignore).
 
-For the following take a look at the [interfaces](https://github.com/origin1tech/pargv/blob/master/dist/interfaces.d.ts) for more on what these objects contain.
+For the following take a look at the [interfaces](dist/interfaces.d.ts) for more on what these objects contain.
 
 + **IPargvOptions** - denotes the Pargv options object.
 + **IPargvResult** - the resulting object after parse is called.

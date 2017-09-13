@@ -2,7 +2,7 @@
 
 Pargv has been rewritten in TypeScript as of version **2.0.0**. If you need the last legacy version you can install **1.5.1**. Pargv now automatically builds help based on your configuration but you can also manually create your own help using built in helpers which leverage [cliui](https://www.npmjs.com/package/cliui).
 
-The best way to describe the Pargv cli argument parsing lib is that it is a mix of [commander](https://github.com/tj/commander.js) and [yargs](https://github.com/yargs/yargs). The most unique aspect of Pargv is how commands can be written which simplifies your configuration. Although you can chain calls for various features just like other parsing libs you can also enter them as a string and Pargv will parse out your config. The result is many command configurations can be written in a single. line.
+![help preview](screenshot.png)
 
 ## Installation
 

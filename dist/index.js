@@ -662,12 +662,10 @@ var Pargv = /** @class */ (function () {
         if (constants_1.FLAG_EXP.test(name))
             name = undefined;
         var cmd = this.get.command(name); // lookup the command.
-        if (!cmd && !normalized.length && this.options.autoHelp) {
-            this.show.help();
-            return;
-        }
+        if (isExec || cmd)
+            normalized.shift(); // shift first arg.
         if (cmd)
-            normalized.shift(); // found cmd shift first.
+            name = cmd._name;
         else
             cmd = this._command; // use the default command.
         if (name === this._completionsCommand && ~source.indexOf(this._completionsReply)) {
@@ -691,11 +689,8 @@ var Pargv = /** @class */ (function () {
             return;
         } // show help for command.
         if (name === 'help') {
-            var helpCmd = this.get.command(utils.first(normalized));
-            if (helpCmd && helpCmd._showHelp) {
-                this.show.help(helpCmd._name);
-                return;
-            }
+            this.show.help();
+            return;
         }
         result = {
             $exec: env.EXEC,
@@ -727,7 +722,7 @@ var Pargv = /** @class */ (function () {
         var cmdStr = this._localize('commands').done();
         var optStr = this._localize('options').done();
         var cmdsLen = stats.commands.length;
-        var optsLen = stats.options.map(function (o) { return constants_1.FLAG_EXP.test(o); }).length;
+        var optsLen = stats.options.filter(function (o) { return constants_1.FLAG_EXP.test(o); }).length;
         if (cmd._minCommands > 0 && stats.commands.length < cmd._minCommands) {
             this.error(// min commands required.
             this._localize('at least %s %s are required but got %s.')
@@ -747,7 +742,7 @@ var Pargv = /** @class */ (function () {
                 .styles(colors.accent, colors.primary, colors.accent)
                 .done());
         }
-        if (cmd._maxOptions > 0 && stats.commands.length > cmd._maxOptions) {
+        if (cmd._maxOptions > 0 && optsLen > cmd._maxOptions) {
             this.error(// max commands allowed.
             this._localize('got %s %s but no more than %s are allowed.')
                 .args(optsLen, optStr, cmd._maxOptions)
@@ -789,13 +784,12 @@ var Pargv = /** @class */ (function () {
             if (utils.isBoolean(def) && def === true && val === false)
                 val = true;
             val = wrapper(val, def);
-            var formattedKey = isFlag ?
-                utils.camelcase(key.replace(constants_1.FLAG_EXP, '')) :
-                key;
+            var formattedKey = utils.camelcase(key.replace(constants_1.FLAG_EXP, ''));
             if (!isFlag) {
                 result.$commands.push(val);
-                if (_this.options.extendCommands && key)
+                if (_this.options.extendCommands && key) {
                     result[formattedKey] = val;
+                }
             }
             else {
                 if (constants_1.DOT_EXP.test(key)) {
@@ -812,10 +806,13 @@ var Pargv = /** @class */ (function () {
                 }
             }
         });
-        if (isExec && this.options.spreadCommands) {
-            var offset = (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
-            while (offset > 0 && offset--)
-                result.$commands.push(null);
+        if (isExec) {
+            if (this.options.spreadCommands) {
+                var offset = (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
+                while (offset > 0 && offset--)
+                    result.$commands.push(null);
+            }
+            result.$stats = stats;
         }
         return result;
     };
@@ -835,7 +832,14 @@ var Pargv = /** @class */ (function () {
         var parsed = this.parse.apply(this, argv.concat(['__exec__']));
         if (!parsed)
             return;
-        var cmd = this._commands[parsed.$command];
+        var normLen = parsed.$stats && parsed.$stats.normalized.length;
+        if (!parsed.$command && !normLen && this.options.autoHelp) {
+            this.show.help();
+            return;
+        }
+        if (parsed.$stats && !this.options.extendStats)
+            delete parsed.$stats;
+        var cmd = this.get.command(parsed.$command);
         if (cmd && utils.isFunction(cmd._action)) {
             if (this._completionsCommand === cmd._name) {
                 cmd._action.call(this, parsed.$commands.shift() || null, parsed, cmd);
@@ -847,6 +851,8 @@ var Pargv = /** @class */ (function () {
                     cmd._action.call(this, parsed, cmd);
             }
         }
+        if (!cmd && this.options.autoHelp)
+            this.show.help();
         return parsed;
         var _a;
     };
@@ -1286,8 +1292,11 @@ var PargvCommand = /** @class */ (function () {
      */
     PargvCommand.prototype.parseToken = function (token, next) {
         token = token.replace(/\s/g, '');
+        token = token.replace(/(\>|])$/, '');
         var tokens = token.split(':'); // <age:number> to ['<age', 'number>'];
         var key = tokens[0]; // first element is command/option key.
+        var type = tokens[1]; // optional type.
+        var def = tokens[2]; // optional default value.
         if (!constants_1.TOKEN_PREFIX_EXP.test(key)) {
             this.error(this._pargv._localize('the token %s is missing, invalid or has unwanted space.')
                 .args(key)
@@ -1295,9 +1304,6 @@ var PargvCommand = /** @class */ (function () {
                 .done());
         } // ensure valid token.
         var isRequired = /^</.test(key); // starts with <.
-        var type;
-        if (utils.isString(tokens[1]))
-            type = utils.stripToken(tokens[1]).trim();
         var isFlag = utils.isFlag(key); // starts with - or -- or anonymous.
         var isBool = isFlag && !next; // if flag but no next val is bool flag.
         var aliases = key.split('.'); // split generate.g to ['generate', 'g']
@@ -1326,6 +1332,8 @@ var PargvCommand = /** @class */ (function () {
                 token.replace(/>$/, '') + '>' :
                 token.replace(/\]$/, '') + ']';
         }
+        if (def)
+            def = this.castToType(key, 'auto', def);
         var usage = [[token].concat(aliases).join(', ')];
         if (!next)
             return {
@@ -1335,6 +1343,7 @@ var PargvCommand = /** @class */ (function () {
                 flag: isFlag,
                 bool: isBool,
                 type: type,
+                default: def,
                 required: isRequired
             };
         next = this.parseToken(next, null);
@@ -1346,7 +1355,8 @@ var PargvCommand = /** @class */ (function () {
             bool: false,
             type: next.type,
             as: next.key,
-            required: next.required
+            required: next.required,
+            default: next.default
         };
     };
     /**
@@ -1365,6 +1375,9 @@ var PargvCommand = /** @class */ (function () {
         usage.push(name); // Add command key.
         // Iterate the tokens.
         split.forEach(function (el, i) {
+            if (el === '--tries') {
+                var x = true;
+            }
             var next = split[i + 1]; // next value.
             var isFlag = utils.isFlag(el); // if is -o or --opt.
             next = utils.isFlag(next) || // normalize next value.
@@ -1427,6 +1440,8 @@ var PargvCommand = /** @class */ (function () {
             this.alias(option.key, option.index + '');
         if (option.required)
             this.demand(option.key);
+        if (option.default)
+            this._defaults[option.key] = option.default;
         this._usages[option.key] = option.usage; // Add usage.
         this.coerce(option.key, option.type, option.default); // Add default coerce method.
     };
@@ -1452,6 +1467,32 @@ var PargvCommand = /** @class */ (function () {
                 if (!/^(--help|-h)$/.test(el))
                     return el;
             });
+        }
+    };
+    /**
+     * Clean
+     * : Filters arrays deletes keys from objects.
+     *
+     * @param key the key name to be cleaned.
+     */
+    PargvCommand.prototype.clean = function (key) {
+        var _this = this;
+        var isFlag = constants_1.FLAG_EXP.test(key);
+        key = this.aliasToKey(key);
+        var aliases = [key].concat(this.aliases(key));
+        delete this._usages[key];
+        delete this._defaults[key];
+        delete this._describes[key];
+        delete this._coercions[key];
+        delete this._whens[key];
+        this._demands = this._demands.filter(function (k) { return k !== key; });
+        aliases.forEach(function (k) { return delete _this._aliases[k]; });
+        if (!isFlag) {
+            this._commands = this._commands.filter(function (k) { return k !== key; });
+        }
+        else {
+            this._bools = this._bools.filter(function (k) { return k !== key; });
+            this._options = this._options.filter(function (k) { return k !== key; });
         }
     };
     Object.defineProperty(PargvCommand.prototype, "error", {
@@ -1572,6 +1613,17 @@ var PargvCommand = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(PargvCommand.prototype, "if", {
+        /**
+         * If
+         * : Alias for when.
+         */
+        get: function () {
+            return this.when;
+        },
+        enumerable: true,
+        configurable: true
+    });
     // METHODS //
     /**
       * Option
@@ -1599,6 +1651,7 @@ var PargvCommand = /** @class */ (function () {
             parsed.describe = describe || parsed.describe;
             parsed.default = def;
             parsed.type = type || parsed.type;
+            _this.clean(parsed.key); // clean so we don't end up with dupes.
             _this.expandOption(parsed);
         });
         return this;
@@ -1952,6 +2005,8 @@ var PargvCommand = /** @class */ (function () {
                 return utils.castType(v, 'number');
             },
             date: function (v) {
+                if (!isAuto)
+                    return utils.fromEpoch(to.number(v));
                 return utils.castType(v, 'date');
             },
             boolean: function (v) {
@@ -1962,15 +2017,16 @@ var PargvCommand = /** @class */ (function () {
             string: function (v) {
                 return v;
             },
-            // Never called in autoCast method.
+            // Following NOT called in auto cast.
             list: function (v) {
                 var exp = utils.isRegExp(listexp) ? listexp : utils.splitToList(listexp);
-                var match = v.match(exp);
+                var match = (v.match && v.match(exp)) || null;
                 result = match && match[0];
+                return result;
             },
         };
-        to.integer = to.number;
         to.float = to.number;
+        to.integer = to.number;
         function autoCast(v) {
             // Ensure type is set to auto.
             var origType = type;
@@ -1981,7 +2037,7 @@ var PargvCommand = /** @class */ (function () {
                 to.json.bind(null, v),
                 to.regexp.bind(null, v),
                 to.array.bind(null, v),
-                to.date.bind(null, v, 'date'),
+                to.date.bind(null, v),
                 to.number.bind(null, v),
                 to.boolean.bind(null, v)
             ];
@@ -1997,7 +2053,10 @@ var PargvCommand = /** @class */ (function () {
         }
         // If not a special type just cast to the type.
         if (type !== 'auto') {
-            result = to[type](val);
+            if (!to[type])
+                result = null;
+            else
+                result = to[type](val);
         }
         else {
             result = utils.toDefault(autoCast(val), val);
@@ -2012,7 +2071,7 @@ var PargvCommand = /** @class */ (function () {
             if (!opts.ignoreTypeErrors) {
                 if (!isListType) {
                     this.error(this._pargv._localize('expected type %s but got %s instead.')
-                        .args(type, utils.getType(type))
+                        .args(type, utils.getType(result))
                         .styles(colors.accent, colors.accent)
                         .done());
                 }
@@ -2171,7 +2230,7 @@ var PargvCommand = /** @class */ (function () {
         if (!skip)
             for (var k in this._whens) {
                 var demand = this._whens[k];
-                if (utils.contains(map, k))
+                if (!utils.contains(map, demand))
                     whens.push([k, demand]);
             }
         return {

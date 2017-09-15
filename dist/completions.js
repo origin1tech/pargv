@@ -201,24 +201,26 @@ function completions(pargv) {
             if (tmpCmd._completions['*'])
                 completions = completions.concat(tmpCmd._completions['*']);
         }
-        var _loop_1 = function (k) {
-            var cmd = cmds[k];
-            [cmd._name].concat(cmd.aliases(cmd._name) || []) // iterate commands.
-                .forEach(function (el, i) {
-                if (!~completions.indexOf(el))
-                    completions.push(el);
-            });
-            cmd._options.forEach(function (o) {
-                if (!~completions.indexOf(o))
-                    completions.push(o);
-                (cmd.aliases(o) || []).forEach(function (el) {
+        else {
+            var _loop_1 = function (k) {
+                var cmd = cmds[k];
+                [cmd._name].concat(cmd.aliases(cmd._name) || []) // iterate commands.
+                    .forEach(function (el, i) {
                     if (!~completions.indexOf(el))
                         completions.push(el);
                 });
-            });
-        };
-        for (var k in cmds) {
-            _loop_1(k);
+                cmd._options.forEach(function (o) {
+                    if (!~completions.indexOf(o))
+                        completions.push(o);
+                    (cmd.aliases(o) || []).forEach(function (el) {
+                        if (!~completions.indexOf(el))
+                            completions.push(el);
+                    });
+                });
+            };
+            for (var k in cmds) {
+                _loop_1(k);
+            }
         }
         return completions;
     }

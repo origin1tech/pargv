@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
-exports.KEYVAL_EXP = /^(([.'"a-z0-9_-]+):\s?(['"a-z0-9_-]+)[+|]?){1,}$/i;
+exports.KEYVAL_EXP = /^(([.'"a-z0-9_-]+):\s?(['"a-z0-9_-\s]+)[+|]?){1,}$/i;
 exports.CSV_EXP = /^(.+,.+){1,}$/;
-exports.LIST_EXP = /^(.+(,|\||\s).+){1,}$/;
+exports.LIST_EXP = /^(.+(,|\|).+){1,}$/;
 exports.JSON_EXP = /^"?{.+}"?$/;
 exports.REGEX_EXP = /^\/.+\/(g|i|m)?([m,i,u,y]{1,4})?/;
 exports.REGEX_OPTS_EXP = /(g|i|m)?([m,i,u,y]{1,4})?$/;

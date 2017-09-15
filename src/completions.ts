@@ -250,25 +250,28 @@ export function completions(pargv: Pargv): IPargvCompletions {
         completions = completions.concat(tmpCmd._completions['*']);
 
     }
+    else {
 
-    for (const k in cmds) { // iterate the commands/options and build completes.
+      for (const k in cmds) { // iterate the commands/options and build completes.
 
-      const cmd = cmds[k];
+        const cmd = cmds[k];
 
-      [cmd._name].concat(cmd.aliases(cmd._name) || []) // iterate commands.
-        .forEach((el, i) => {
-          if (!~completions.indexOf(el))
-            completions.push(el);
+        [cmd._name].concat(cmd.aliases(cmd._name) || []) // iterate commands.
+          .forEach((el, i) => {
+            if (!~completions.indexOf(el))
+              completions.push(el);
+          });
+
+        cmd._options.forEach((o) => {   // iterate options.
+          if (!~completions.indexOf(o))
+            completions.push(o);
+          (cmd.aliases(o) || []).forEach((el) => {
+            if (!~completions.indexOf(el))
+              completions.push(el);
+          });
         });
 
-      cmd._options.forEach((o) => {   // iterate options.
-        if (!~completions.indexOf(o))
-          completions.push(o);
-        (cmd.aliases(o) || []).forEach((el) => {
-          if (!~completions.indexOf(el))
-            completions.push(el);
-        });
-      });
+      }
 
     }
 

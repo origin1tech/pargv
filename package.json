@@ -14,11 +14,11 @@
     "bump": "node ./build/bump",
     "build": "npm run clean && npm run compile && npm run docs",
     "build-trans": "npm run build && npm run translate",
-    "commit": "git add . && git commit -am 'auto commit' && git push",
     "translate": "node ./build/translate",
     "docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs ./src --options ./typedoc.json --tsconfig ./src/tsconfig.json",
+    "commit": "git add . && git commit -am 'auto commit' && git push",
     "test": "mocha --opts ./src/mocha.opts",
-    "release": "npm run build && npm run commit && npm run bump && npm publish",
+    "release": "npm run build && npm run docs && npm run commit && npm run bump && npm publish",
     "release-trans": "npm run build-trans && npm run commit && npm run bump && npm publish"
   },
   "keywords": [
@@ -53,6 +53,7 @@
     "@types/node": "^8.0.20",
     "chai": "^3.5.0",
     "del": "^3.0.0",
+    "fs-extra": "^4.0.2",
     "mocha": "^3.5.0",
     "ts-node": "^3.3.0",
     "typedoc": "^0.8.0",

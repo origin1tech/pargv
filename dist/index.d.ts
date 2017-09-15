@@ -344,6 +344,13 @@ export declare class PargvCommand {
      * @param enabled whether or not help is enabled.
      */
     private toggleHelp(enabled?);
+    /**
+     * Clean
+     * : Filters arrays deletes keys from objects.
+     *
+     * @param key the key name to be cleaned.
+     */
+    private clean(key);
     private readonly error;
     /**
      * Command
@@ -381,6 +388,14 @@ export declare class PargvCommand {
      * : Alias to Pargv exec.
      */
     readonly listen: any;
+    /**
+     * If
+     * : Alias for when.
+     */
+    readonly if: {
+        (config: IMap<IPargvWhenConfig>): PargvCommand;
+        (key: string, demand?: string, converse?: boolean): PargvCommand;
+    };
     /**
       * Option
       * Adds option to command.
@@ -439,7 +454,6 @@ export declare class PargvCommand {
      * @param converse when true the coverse when is also created.
      */
     when(config: IMap<IPargvWhenConfig>): PargvCommand;
-    when(key: string, converse?: boolean): PargvCommand;
     when(key: string, demand?: string, converse?: boolean): PargvCommand;
     /**
      * Default

@@ -24,7 +24,7 @@ const DEFAULTS: IPargvOptions = {
   itemDivider: '.',         // divider char(s) used in help command sections.
   locale: 'en',             // localization code.
   localeDir: './locales',
-  autoHelp: true,           // on no command && no args show help automatially.
+  autoHelp: true,           // on no command && no args show help automatially from exec.
   defaultHelp: true,        // when true new commands are auto added to help.
   layoutWidth: 80,          // layout width for help.
   castBeforeCoerce: false,  // when true parsed values are auto cast before coerce funn.
@@ -767,13 +767,11 @@ export class Pargv {
       name = undefined;
     let cmd = this.get.command(name);              // lookup the command.
 
-    if (!cmd && !normalized.length && this.options.autoHelp) { // show help no cmd or opts
-      this.show.help();
-      return;
-    }
+    if (isExec || cmd)
+      normalized.shift(); // shift first arg.
 
     if (cmd)
-      normalized.shift();                           // found cmd shift first.
+      name = cmd._name;
     else
       cmd = this._command;                          // use the default command.
 
@@ -800,12 +798,9 @@ export class Pargv {
       return;
     } // show help for command.
 
-    if (name === 'help') { // check if first arg is command name.
-      const helpCmd = this.get.command(utils.first(normalized));
-      if (helpCmd && helpCmd._showHelp) { // arg is a command.
-        this.show.help(helpCmd._name);
-        return;
-      }
+    if (name === 'help') {
+      this.show.help();
+      return;
     }
 
     result = {
@@ -847,7 +842,7 @@ export class Pargv {
     const optStr = this._localize('options').done();
 
     const cmdsLen = stats.commands.length;
-    const optsLen = stats.options.map(o => FLAG_EXP.test(o)).length;
+    const optsLen = stats.options.filter(o => FLAG_EXP.test(o)).length;
 
     if (cmd._minCommands > 0 && stats.commands.length < cmd._minCommands) {
       this.error( // min commands required.
@@ -865,7 +860,6 @@ export class Pargv {
       );
     }
 
-
     if (cmd._maxCommands > 0 && stats.commands.length > cmd._maxCommands) {
       this.error( // max commands allowed.
         this._localize('got %s %s but no more than %s are allowed.')
@@ -875,7 +869,7 @@ export class Pargv {
       );
     }
 
-    if (cmd._maxOptions > 0 && stats.commands.length > cmd._maxOptions) {
+    if (cmd._maxOptions > 0 && optsLen > cmd._maxOptions) {
       this.error( // max commands allowed.
         this._localize('got %s %s but no more than %s are allowed.')
           .args(optsLen, optStr, cmd._maxOptions)
@@ -926,19 +920,21 @@ export class Pargv {
       val = isFlag ? !isBool ? next : true : el;
       val = isFlag && isBool && isNot ? false : val;
 
+
+
       if (utils.isBoolean(def) && def === true && val === false)
         val = true;
 
       val = wrapper(val, def);
 
-      const formattedKey = isFlag ?       // normalize key to camelcase if when flag.
-        utils.camelcase(key.replace(FLAG_EXP, '')) :
-        key;
+      const formattedKey = utils.camelcase(key.replace(FLAG_EXP, ''));
 
       if (!isFlag) {
         result.$commands.push(val);
-        if (this.options.extendCommands && key)
+        if (this.options.extendCommands && key) {
+
           result[formattedKey] = val;
+        }
       }
       else {
         if (DOT_EXP.test(key)) { // is dot notation key.
@@ -957,13 +953,15 @@ export class Pargv {
 
     });
 
-    if (isExec && this.options.spreadCommands) { // ensures correct number of cmd args.
-      let offset =
-        (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
-      while (offset > 0 && offset--)
-        result.$commands.push(null);
+    if (isExec) { // ensures correct number of cmd args.
+      if (this.options.spreadCommands) {
+        let offset =
+          (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
+        while (offset > 0 && offset--)
+          result.$commands.push(null);
+      }
+      result.$stats = stats;
     }
-
     return result;
 
   }
@@ -980,7 +978,15 @@ export class Pargv {
     const parsed: IPargvParsedResult = this.parse(...argv, '__exec__');
     if (!parsed)
       return;
-    const cmd = this._commands[parsed.$command];
+    const normLen = parsed.$stats && parsed.$stats.normalized.length;
+    if (!parsed.$command && !normLen && this.options.autoHelp) {
+      this.show.help();
+      return;
+    }
+    if (parsed.$stats && !this.options.extendStats)
+      delete parsed.$stats
+
+    const cmd = this.get.command(parsed.$command);
     if (cmd && utils.isFunction(cmd._action)) {
       if (this._completionsCommand === cmd._name) {
         cmd._action.call(this, parsed.$commands.shift() || null, parsed, cmd);
@@ -992,6 +998,8 @@ export class Pargv {
           cmd._action.call(this, parsed, cmd);
       }
     }
+    if (!cmd && this.options.autoHelp)
+      this.show.help();
     return parsed;
   }
 
@@ -1414,7 +1422,7 @@ export class Pargv {
       console.log(get());
     }
 
-    const methods = {
+    const methods: IPargvLayout = {
       div,
       span,
       repeat,
@@ -1426,8 +1434,6 @@ export class Pargv {
     };
 
     return methods;
-
-
   }
 
 }
@@ -1477,8 +1483,11 @@ export class PargvCommand {
   private parseToken(token: string, next?: any): IPargvCommandOption {
 
     token = token.replace(/\s/g, '');
+    token = token.replace(/(\>|])$/, '');
     let tokens = token.split(':');                // <age:number> to ['<age', 'number>'];
     let key = tokens[0];                          // first element is command/option key.
+    let type = tokens[1];                         // optional type.
+    let def = tokens[2];                          // optional default value.
 
     if (!TOKEN_PREFIX_EXP.test(key)) {
       this.error(
@@ -1489,9 +1498,7 @@ export class PargvCommand {
       );
     }          // ensure valid token.
     const isRequired = /^</.test(key);            // starts with <.
-    let type;
-    if (utils.isString(tokens[1]))                // strip < or [ from type if any.
-      type = utils.stripToken(tokens[1]).trim();
+
     let isFlag = utils.isFlag(key);              // starts with - or -- or anonymous.
     const isBool = isFlag && !next;              // if flag but no next val is bool flag.
     let aliases = key.split('.');                // split generate.g to ['generate', 'g']
@@ -1525,6 +1532,9 @@ export class PargvCommand {
         token.replace(/\]$/, '') + ']';
     }
 
+    if (def) // try to parse default val.
+      def = this.castToType(key, 'auto', def);
+
     let usage: string[] = [[token].concat(aliases).join(', ')];
 
     if (!next)
@@ -1535,6 +1545,7 @@ export class PargvCommand {
         flag: isFlag,
         bool: isBool,
         type: type,
+        default: def,
         required: isRequired
       };
 
@@ -1548,7 +1559,8 @@ export class PargvCommand {
       bool: false,
       type: next.type,
       as: next.key,
-      required: next.required
+      required: next.required,
+      default: next.default
     };
 
   }
@@ -1570,6 +1582,10 @@ export class PargvCommand {
 
     // Iterate the tokens.
     split.forEach((el, i) => {
+
+      if (el === '--tries') {
+        const x = true;
+      }
 
       let next = split[i + 1];                              // next value.
       const isFlag = utils.isFlag(el);                       // if is -o or --opt.
@@ -1653,6 +1669,8 @@ export class PargvCommand {
       this.alias(option.key, option.index + '');
     if (option.required)                                   // set as required.
       this.demand(option.key);
+    if (option.default)
+      this._defaults[option.key] = option.default;
     this._usages[option.key] = option.usage;               // Add usage.
     this.coerce(option.key, option.type, option.default);  // Add default coerce method.
 
@@ -1681,6 +1699,37 @@ export class PargvCommand {
           return el;
       });
     }
+  }
+
+  /**
+   * Clean
+   * : Filters arrays deletes keys from objects.
+   *
+   * @param key the key name to be cleaned.
+   */
+  private clean(key: string) {
+
+    const isFlag = FLAG_EXP.test(key);
+
+    key = this.aliasToKey(key);
+    const aliases = [key].concat(this.aliases(key));
+
+    delete this._usages[key];
+    delete this._defaults[key];
+    delete this._describes[key];
+    delete this._coercions[key];
+    delete this._whens[key];
+    this._demands = this._demands.filter(k => k !== key);
+    aliases.forEach(k => delete this._aliases[k]);
+
+    if (!isFlag) {
+      this._commands = this._commands.filter(k => k !== key);
+    }
+    else {
+      this._bools = this._bools.filter(k => k !== key);
+      this._options = this._options.filter(k => k !== key);
+    }
+
   }
 
   // GETTERS //
@@ -1790,6 +1839,14 @@ export class PargvCommand {
     return this._pargv.exec.bind(this._pargv);
   }
 
+  /**
+   * If
+   * : Alias for when.
+   */
+  get if() {
+    return this.when;
+  }
+
   // METHODS //
 
   /**
@@ -1817,6 +1874,7 @@ export class PargvCommand {
       parsed.describe = describe || parsed.describe;
       parsed.default = def;
       parsed.type = type || parsed.type;
+      this.clean(parsed.key); // clean so we don't end up with dupes.
       this.expandOption(parsed);
     });
     return this;
@@ -1956,7 +2014,6 @@ export class PargvCommand {
    * @param converse when true the coverse when is also created.
    */
   when(config: IMap<IPargvWhenConfig>): PargvCommand;
-  when(key: string, converse?: boolean): PargvCommand;
   when(key: string, demand?: string, converse?: boolean): PargvCommand;
   when(key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): PargvCommand {
     let obj: any = key;
@@ -2231,6 +2288,8 @@ export class PargvCommand {
       },
 
       date: (v) => {
+        if (!isAuto)
+          return utils.fromEpoch(to.number(v));
         return utils.castType(v, 'date');
       },
 
@@ -2244,17 +2303,19 @@ export class PargvCommand {
         return v;
       },
 
-      // Never called in autoCast method.
+      // Following NOT called in auto cast.
+
       list: (v) => {
         const exp = utils.isRegExp(listexp) ? listexp : utils.splitToList(<string>listexp);
-        const match = v.match(exp);
+        const match = (v.match && v.match(exp)) || null
         result = match && match[0];
+        return result;
       },
 
     };
 
-    to.integer = to.number;
     to.float = to.number;
+    to.integer = to.number;
 
     function autoCast(v) {
 
@@ -2269,7 +2330,7 @@ export class PargvCommand {
         to.json.bind(null, v),
         to.regexp.bind(null, v), // should be before array.
         to.array.bind(null, v),
-        to.date.bind(null, v, 'date'),
+        to.date.bind(null, v),
         to.number.bind(null, v),
         to.boolean.bind(null, v)
       ];
@@ -2290,7 +2351,10 @@ export class PargvCommand {
 
     // If not a special type just cast to the type.
     if (type !== 'auto') {
-      result = to[<string>type](val);
+      if (!to[<string>type])
+        result = null;
+      else
+        result = to[<string>type](val);
     }
 
     // Try to auto cast type.
@@ -2310,7 +2374,7 @@ export class PargvCommand {
         if (!isListType) {
           this.error(
             this._pargv._localize('expected type %s but got %s instead.')
-              .args(<string>type, utils.getType(type))
+              .args(<string>type, utils.getType(result))
               .styles(colors.accent, colors.accent)
               .done()
           );
@@ -2330,6 +2394,7 @@ export class PargvCommand {
     }
 
     return result;
+
 
   }
 
@@ -2491,7 +2556,7 @@ export class PargvCommand {
     if (!skip) // skipped when getting completions, not needed
       for (const k in this._whens) {                // iterate whens ensure demand exists.
         const demand = this._whens[k];
-        if (utils.contains(map, k))
+        if (!utils.contains(map, demand))
           whens.push([k, demand]);
       }
 

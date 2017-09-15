@@ -15,7 +15,7 @@ $ npm install pargv
 OR (exlude dev dependencies)
 
 ```sh
-$ npm install pargvde  --production
+$ npm install pargv  --production
 ```
 
 ## Quick Start

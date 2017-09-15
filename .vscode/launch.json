@@ -23,8 +23,7 @@
       "args": [
         "-P",
         "${workspaceRoot}/src/tsconfig.json",
-        "${workspaceRoot}/src/dev/temp.ts",
-        "completions"
+        "${workspaceRoot}/src/dev/temp.ts"
       ],
       "runtimeArgs": [],
       "cwd": "${workspaceRoot}",

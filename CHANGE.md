@@ -8,6 +8,7 @@ List of changes in descending order.
   <tr><td>Update Readme</td><td>Update various options/properties in Readme.</td></tr>
   <tr><td>test.spec.ts</td><td>Correctly refactor .fail() to .onError.</td></tr>
   <tr><td>command.ts</td><td>index.ts was a monster refactored to own file.</td></tr>
+  <tr><td>.parse()</td><td>fix error message didn't display all missing args.</td></tr>
 </table>
 
 ### 9.15.2017

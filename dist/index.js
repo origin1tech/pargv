@@ -716,8 +716,9 @@ var Pargv = /** @class */ (function () {
         if (stats.missing.length) {
             this.err(// no anon in strict mode.
             this._localize('missing required arguments %s or have no default value.')
-                .args(stats.missing)
-                .styles(colors.accent).done());
+                .args(stats.missing.join(', '))
+                .styles(colors.accent)
+                .done());
         }
         if (stats.whens.length) {
             var when = stats.whens.shift();

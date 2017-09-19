@@ -836,8 +836,9 @@ export class Pargv {
     if (stats.missing.length) {
       this.err( // no anon in strict mode.
         this._localize('missing required arguments %s or have no default value.')
-          .args(stats.missing)
-          .styles(colors.accent).done()
+          .args(stats.missing.join(', '))
+          .styles(colors.accent)
+          .done()
       );
     }
 
@@ -931,8 +932,6 @@ export class Pargv {
 
       val = isFlag ? !isBool ? next : true : el;
       val = isFlag && isBool && isNot ? false : val;
-
-
 
       if (utils.isBoolean(def) && def === true && val === false)
         val = true;

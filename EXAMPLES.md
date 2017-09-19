@@ -5,6 +5,9 @@ omit calling .parse() or .exec() which is required to either parsed the args or
 parse and execute a matching action. This is done for brevity sake and to help
 focus on the primary purpose of the example.
 
+You can view a [Video Tutorial](https://www.youtube.com/watch?v=c2tg32oNC8E) on YouTube
+also which may also help.
+
 ## Import or Require
 
 ES6 or TypeScript
@@ -84,11 +87,15 @@ pargv.command('download <url> <savedir>')
     // command instance.
   });
 pargv.exec(['download', 'http://someurl.com']);
+
+// NOTE: both .parse() & .exec() can accept rest params or array of args.
+// The following is also valid.
+pargv.exec('download', 'http://someurl.com');
 ```
 
 ## Specify type for command or option:
 
-Supported types "date, number, integer, float, regexp, array, boolean, json, object"
+**Supported types**:  "date, number, integer, float, regexp, array, boolean, json, object"
 
 ```ts
 pargv.command('download <url> <timeout:number>')
@@ -97,6 +104,21 @@ pargv.command('download <url> <timeout:number>')
   });
 pargv.exec(['download', 'http://someurl.com']);
 ```
+
+## Specify a default inline:
+
+Define a default value inline in our command. In this example "deadpool" is the default username.
+The syntax is as follows:
+
+[key : type : default]
+
+Each segement or part must have a value. If you have a default but do not need to ensure a type you can set the type segment to "string" or "auto". Meaning the "default" can't be the second arg in the segments.
+
+```ts
+const result = pargv.command('download <url> --username [username:string:deadpool]')
+  .parse('download', 'http://someurl.com');
+```
+
 
 ## Require min or max:
 

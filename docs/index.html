@@ -66,7 +66,7 @@
 			<div class="tsd-panel tsd-typography">
 				<h1 id="pargv-2-x">Pargv 2.x</h1>
 				<p>Pargv has been rewritten in TypeScript as of version <strong>2.0.0</strong>. If you need the last legacy version you can install <strong>1.5.1</strong>. Pargv now automatically builds help based on your configuration but you can also manually create your own help using built in helpers which leverage <a href="https://www.npmjs.com/package/cliui">cliui</a>.</p>
-				<p><img src="screenshot.png" alt="help preview"></p>
+				<p><a href="https://www.youtube.com/watch?v=c2tg32oNC8E"><img src="screenshot.png" alt="Help Preview"></a></p>
 				<h2 id="installation">Installation</h2>
 				<p>You can probably do this in your sleep but for completeness...</p>
 				<pre><code class="lang-sh">$ npm install pargv
@@ -126,6 +126,13 @@ pargv.command(<span class="hljs-string">'generate &lt;template&gt; [directory]'<
 
   <span class="hljs-comment">// Ensures the value for extension is contained in our expression.</span>
   .coerce(<span class="hljs-string">'--extension'</span>, <span class="hljs-regexp">/^\.(html|hbs|ejs)$/</span>, <span class="hljs-string">'could set default val here as well'</span>)
+
+  .coerce(<span class="hljs-string">'directory'</span>, <span class="hljs-function">(<span class="hljs-params">value, command</span>) =&gt;</span> {
+    <span class="hljs-comment">// value is the argument value.</span>
+    <span class="hljs-comment">// command the PargvCommand instance.</span>
+    <span class="hljs-comment">// do something and return value.</span>
+    <span class="hljs-keyword">return</span> value;
+  })
 
   .action(<span class="hljs-function">(<span class="hljs-params">template, parsed, command</span>) =&gt;</span> {
     <span class="hljs-comment">// template - the &lt;template&gt; sub command you defined in your command.</span>
@@ -388,6 +395,19 @@ pargv.command(<span class="hljs-string">'query &lt;table&gt; --start [start:date
 						<tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
 					</tbody>
 				</table>
+				<h2 id="localization">Localization</h2>
+				<p>The following are the supported languages however you could certainly copy the built in locales located in <strong>node_modules/pargv/locales</strong> of your project and then extend with whatever language you prefer. It&#39;s as simple as creating a copy of <strong>en.json</strong> file then changing the values to your language. Then initialize Pargv with that locale and you&#39;re off.</p>
+				<ul>
+					<li>English</li>
+					<li>Spanish</li>
+					<li>French</li>
+					<li>Hindi</li>
+					<li>Italian</li>
+					<li>Japanese</li>
+					<li>Russian</li>
+					<li>Chinese (Simplified)</li>
+					<li>Chinese (Traditional)</li>
+				</ul>
 				<h2 id="examples">Examples</h2>
 				<p>See <a href="EXAMPLES.md">EXAMPLES.md</a></p>
 				<h2 id="change">Change</h2>

@@ -6,10 +6,10 @@ export declare class Pargv {
     private _helpHandler;
     private _errorHandler;
     private _completionsHandler;
-    private _command;
     private _completions;
     private _completionsCommand;
     private _completionsReply;
+    private _command;
     _colurs: IColurs;
     _localize: LocalizeInit;
     _env: IPargvEnv;
@@ -202,6 +202,14 @@ export declare class Pargv {
      */
     exec(...argv: any[]): IPargvParsedResult;
     /**
+      * Reset
+      * Deletes all commands and resets the default command.
+      * Reset does to reset or clear custom help or error handlers
+      * nor your name, description license or version. If you wish
+      * to reset everyting pass true as second arg.
+      */
+    reset(options?: IPargvOptions, all?: boolean): this;
+    /**
      * On Help
      * Method for adding custom help handler.
      *
@@ -216,20 +224,12 @@ export declare class Pargv {
      */
     onError(fn: ErrorHandler): this;
     /**
-     * Reset
-     * Deletes all commands and resets the default command.
-     * Reset does to reset or clear custom help or error handlers
-     * nor your name, description license or version. If you wish
-     * to reset everyting pass true as second arg.
-     */
-    reset(options?: IPargvOptions, all?: boolean): this;
-    /**
      * Error
      * Handles error messages.
      *
      * @param args args to be formatted and logged.
      */
-    error(...args: any[]): this;
+    err(...args: any[]): this;
     /**
      * Log
      * Displays log messages after formatting, supports metadata.
@@ -351,7 +351,7 @@ export declare class PargvCommand {
      * @param key the key name to be cleaned.
      */
     private clean(key);
-    private readonly error;
+    private readonly err;
     /**
      * Command
      * : Access to Pargv command.
@@ -375,17 +375,23 @@ export declare class PargvCommand {
     };
     /**
      * Parse
-     * : Access Pargv parse method.
+     * Parses the provided arguments inspecting for commands and options.
+     *
+     * @param argv the process.argv or custom args array.
      */
     readonly parse: any;
     /**
      * Exec
-     * : Access Pargv exec.
+     * Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
      */
     readonly exec: any;
     /**
      * Listen
-     * : Alias to Pargv exec.
+     * Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
      */
     readonly listen: any;
     /**
@@ -566,7 +572,7 @@ export declare class PargvCommand {
      *
      * @param fn the error handler function.
      */
-    fail(fn: ErrorHandler): this;
+    onError(fn: ErrorHandler): this;
     /**
      * Epilog
      * Displays trailing message.

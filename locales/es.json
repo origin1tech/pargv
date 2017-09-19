@@ -19,6 +19,7 @@
   "when": "cuando",
   "default": "defecto",
   "force": "fuerza",
+  "help": "ayuda",
   "completions": "terminaciones",
   "tab completions command.": "comando tabulaciones.",
   "%s %s.": "%s %s.",

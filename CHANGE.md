@@ -2,6 +2,18 @@
 
 List of changes in descending order.
 
+### 9.16.2017
+
+<table>
+  <tr><td>Update Readme</td><td>Update various options/properties in Readme.</td></tr>
+</table>
+
+### 9.15.2017
+
+<table>
+  <tr><td>Update Readme</td><td>Update readme with tutorial video link.</td></tr>
+</table>
+
 ### 9.14.2017
 
 <table>

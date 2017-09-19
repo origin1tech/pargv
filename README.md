@@ -2,7 +2,7 @@
 
 Pargv has been rewritten in TypeScript as of version **2.0.0**. If you need the last legacy version you can install **1.5.1**. Pargv now automatically builds help based on your configuration but you can also manually create your own help using built in helpers which leverage [cliui](https://www.npmjs.com/package/cliui).
 
-![help preview](screenshot.png)
+[![Help Preview](screenshot.png)](https://www.youtube.com/watch?v=c2tg32oNC8E)
 
 ## Installation
 
@@ -77,6 +77,13 @@ pargv.command('generate <template> [directory]')
 
   // Ensures the value for extension is contained in our expression.
   .coerce('--extension', /^\.(html|hbs|ejs)$/, 'could set default val here as well')
+
+  .coerce('directory', (value, command) => {
+    // value is the argument value.
+    // command the PargvCommand instance.
+    // do something and return value.
+    return value;
+  })
 
   .action((template, parsed, command) => {
     // template - the <template> sub command you defined in your command.
@@ -407,6 +414,20 @@ Always check [docs](docs/index.html) the below is for conveience and may not rep
     <tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
   </tbody>
 </table>
+
+## Localization
+
+The following are the supported languages however you could certainly copy the built in locales located in **node_modules/pargv/locales** of your project and then extend with whatever language you prefer. It's as simple as creating a copy of **en.json** file then changing the values to your language. Then initialize Pargv with that locale and you're off.
+
++ English
++ Spanish
++ French
++ Hindi
++ Italian
++ Japanese
++ Russian
++ Chinese (Simplified)
++ Chinese (Traditional)
 
 ## Examples
 

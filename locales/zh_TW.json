@@ -19,6 +19,7 @@
   "when": "什麼時候",
   "default": "默認",
   "force": "力",
+  "help": "幫幫我",
   "completions": "落成",
   "tab completions command.": "標籤完成命令。",
   "%s %s.": "%s %s。",

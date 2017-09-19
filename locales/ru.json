@@ -19,6 +19,7 @@
   "when": "когда",
   "default": "по умолчанию",
   "force": "сила",
+  "help": "Помогите",
   "completions": "пополнения",
   "tab completions command.": "вкладка завершения.",
   "%s %s.": "%s %s.",

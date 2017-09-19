@@ -19,6 +19,7 @@
   "when": "quand",
   "default": "défaut",
   "force": "Obliger",
+  "help": "aidez",
   "completions": "terminaisons",
   "tab completions command.": "commande d'achèvement des tabulations.",
   "%s %s.": "%s %s.",

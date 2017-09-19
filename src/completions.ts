@@ -132,7 +132,7 @@ export function completions(pargv: Pargv): IPargvCompletions {
     const gen = generate(path, command, template); // generate script and paths.
 
     if (existsSync(gen.paths.completionsPath) && force !== true) {
-      pargv.error(
+      pargv.err(
         pargv._localize(`completions already installed at %s, use --force to reinstall.`)
           .args(gen.paths.completionsPath)
           .styles(colors.accent)
@@ -142,7 +142,7 @@ export function completions(pargv: Pargv): IPargvCompletions {
     }
 
     if (!gen.paths.bashPath) { // failed to gen bash path probably windows.
-      pargv.error(
+      pargv.err(
         pargv._localize(`"cannot automatically install completions on platform %s.`)
           .args(pargv._env.PLATFORM)
           .styles(colors.accent)
@@ -162,7 +162,7 @@ export function completions(pargv: Pargv): IPargvCompletions {
           return gen; // return the successful configuration.
         }
         else {
-          pargv.error(
+          pargv.err(
             pargv._localize(`could not write, append or create path %s.`)
               .args(<string>gen.paths.bashPath)
               .styles(colors.accent)
@@ -172,7 +172,7 @@ export function completions(pargv: Pargv): IPargvCompletions {
 
       }
       else {
-        pargv.error(
+        pargv.err(
           pargv._localize(`could not write, append or create path %s.`)
             .args(<string>gen.paths.completionsPath)
             .styles(colors.accent)
@@ -182,7 +182,7 @@ export function completions(pargv: Pargv): IPargvCompletions {
 
     }
     else {
-      pargv.error(
+      pargv.err(
         pargv._localize(`could not write, append or create path %s.`)
           .args(<string>gen.paths.completionsDir)
           .styles(colors.accent)

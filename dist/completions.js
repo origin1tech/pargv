@@ -115,14 +115,14 @@ function completions(pargv) {
     function install(path, command, template, force) {
         var gen = generate(path, command, template); // generate script and paths.
         if (fs_1.existsSync(gen.paths.completionsPath) && force !== true) {
-            pargv.error(pargv._localize("completions already installed at %s, use --force to reinstall.")
+            pargv.err(pargv._localize("completions already installed at %s, use --force to reinstall.")
                 .args(gen.paths.completionsPath)
                 .styles(colors.accent)
                 .done());
             return;
         }
         if (!gen.paths.bashPath) {
-            pargv.error(pargv._localize("\"cannot automatically install completions on platform %s.")
+            pargv.err(pargv._localize("\"cannot automatically install completions on platform %s.")
                 .args(pargv._env.PLATFORM)
                 .styles(colors.accent)
                 .done());
@@ -136,21 +136,21 @@ function completions(pargv) {
                     return gen; // return the successful configuration.
                 }
                 else {
-                    pargv.error(pargv._localize("could not write, append or create path %s.")
+                    pargv.err(pargv._localize("could not write, append or create path %s.")
                         .args(gen.paths.bashPath)
                         .styles(colors.accent)
                         .done());
                 }
             }
             else {
-                pargv.error(pargv._localize("could not write, append or create path %s.")
+                pargv.err(pargv._localize("could not write, append or create path %s.")
                     .args(gen.paths.completionsPath)
                     .styles(colors.accent)
                     .done());
             }
         }
         else {
-            pargv.error(pargv._localize("could not write, append or create path %s.")
+            pargv.err(pargv._localize("could not write, append or create path %s.")
                 .args(gen.paths.completionsDir)
                 .styles(colors.accent)
                 .done());

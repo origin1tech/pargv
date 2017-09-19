@@ -19,6 +19,7 @@
   "when": "कब",
   "default": "चूक",
   "force": "बल",
+  "help": "मदद",
   "completions": "पूर्तियों",
   "tab completions command.": "टैब समापन आदेश",
   "%s %s.": "%s $ $",

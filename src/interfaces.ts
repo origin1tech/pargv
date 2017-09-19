@@ -1,5 +1,6 @@
 import { PargvCommand, Pargv } from './';
 import { PargvError } from './utils';
+import { IAnsiStyles } from 'colurs';
 
 export type ErrorHandler = (message: string, error: PargvError, pargv?: Pargv) => void;
 export type CoerceHandler = (val: any, command?: PargvCommand) => any;
@@ -8,8 +9,8 @@ export type CompletionHandler = (current: string, argv: any[], done?: Completion
 export type CompletionHandlerCallback = (completions: any[]) => void;
 export type HelpHandler = (command: string, commands?: IMap<PargvCommand>) => string;
 export type LocalizeInit = (singular: string, plural?: string) => IPargvLocalize;
+export type AnsiStyles = keyof IAnsiStyles;
 
-export type AnsiStyles = 'bold' | 'italic' | 'underline' | 'inverse' | 'dim' | 'hidden' | 'strikethrough' | 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'grey' | 'gray' | 'bgBlack' | 'bgRed' | 'bgGreen' | 'bgYellow' | 'bgBlue' | 'bgMagenta' | 'bgCyan' | 'bgWhite' | 'bgGray' | 'bgGrey';
 export type FigletLayout = 'default' | 'full' | 'fitted' | 'controlled smushing' | 'universal smushing';
 
 export interface IMap<T> {
@@ -20,7 +21,8 @@ export interface IPargvOptions {
   cast?: boolean;
   colorize?: boolean;
   headingDivider?: string;
-  itemDivider?: string;
+  commandDivider?: string;
+  itemDivider?: string; // legacy support.
   locale?: string;
   localeDir?: string;
   autoHelp?: boolean;

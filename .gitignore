@@ -76,5 +76,6 @@ test.js
 src/dev/
 dist/dev/
 build/apikey.js
+video/
 
 

@@ -19,6 +19,7 @@
   "when": "いつ",
   "default": "デフォルト",
   "force": "力",
+  "help": "助けて",
   "completions": "完了",
   "tab completions command.": "タブ補完コマンド。",
   "%s %s.": "%s %s。",

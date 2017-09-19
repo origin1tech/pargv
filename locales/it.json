@@ -19,6 +19,7 @@
   "when": "quando",
   "default": "predefinito",
   "force": "vigore",
+  "help": "aiuto",
   "completions": "completamenti",
   "tab completions command.": "comando completamenti tab.",
   "%s %s.": "%s %s.",

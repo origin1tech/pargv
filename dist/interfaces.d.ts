@@ -1,4 +1,4 @@
-import { PargvCommand, Pargv } from './';
+import { Pargv, PargvCommand } from './';
 import { PargvError } from './utils';
 import { IAnsiStyles } from 'colurs';
 export declare type ErrorHandler = (message: string, error: PargvError, pargv?: Pargv) => void;

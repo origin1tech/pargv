@@ -4,6 +4,10 @@ Pargv has been rewritten in TypeScript as of version **2.0.0**. If you need the 
 
 [![Help Preview](screenshot.png)](https://www.youtube.com/watch?v=c2tg32oNC8E)
 
+### Tutorial Video
+
+See >> [https://www.youtube.com/watch?v=c2tg32oNC8E](https://www.youtube.com/watch?v=c2tg32oNC8E)
+
 ## Installation
 
 You can probably do this in your sleep but for completeness...

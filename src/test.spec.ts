@@ -81,7 +81,7 @@ describe('Pargv', () => {
       .action((template, name, other, parsed, cmd) => {
         assert.equal(template, 'component.tpl');
         assert.equal(name, 'about.html');
-        assert.equal(other, 'other.jsx')
+        assert.equal(other, 'other.jsx');
         assert.instanceOf(cmd, PargvCommand);
         done();
       }).exec(args);
@@ -148,7 +148,7 @@ describe('Pargv', () => {
 
     pargv.$
       .min.commands(1)
-      .fail(func)
+      .onError(func)
       .parse(['test']);
 
   });
@@ -164,7 +164,7 @@ describe('Pargv', () => {
 
     pargv.$
       .when('-x', '-y')
-      .fail(func)
+      .onError(func)
       .parse(['-x']);
 
   });
@@ -180,7 +180,7 @@ describe('Pargv', () => {
 
     pargv.$
       .demand('-x', '-y')
-      .fail(func)
+      .onError(func)
       .parse(['-x']);
 
   });

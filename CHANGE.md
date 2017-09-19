@@ -6,6 +6,8 @@ List of changes in descending order.
 
 <table>
   <tr><td>Update Readme</td><td>Update various options/properties in Readme.</td></tr>
+  <tr><td>test.spec.ts</td><td>Correctly refactor .fail() to .onError.</td></tr>
+  <tr><td>command.ts</td><td>index.ts was a monster refactored to own file.</td></tr>
 </table>
 
 ### 9.15.2017

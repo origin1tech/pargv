@@ -2,6 +2,15 @@
 
 List of changes in descending order.
 
+### 9.20.2017
+
+<table>
+  <tr><td>.cwd()</td><td>Allow specifying cwd base dir for external commands.</td></tr>
+  <tr><td>Examples</td><td>Add more examples for calling external commands.</td></tr>
+  <tr><td>.reset()</td><td>Remove redundancy from reset command.</td></tr>
+  <tr><td>external commands</td><td>Allow for specifying external commands prefixed with "@" see examples.</td></tr>
+</table>
+
 ### 9.16.2017
 
 <table>

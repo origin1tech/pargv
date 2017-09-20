@@ -2,6 +2,7 @@
 import { Pargv } from './';
 import { IMap, ActionHandler, CoerceHandler, IPargvCommandOption, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler } from './interfaces';
 import { TOKEN_PREFIX_EXP, SPLIT_CHARS, FLAG_EXP, COMMAND_VAL_EXP, LIST_EXP, KEYVAL_EXP, SPLIT_PAIRS_EXP, DOT_EXP, SPLIT_KEYVAL_EXP, JSON_EXP, REGEX_EXP } from './constants';
+import { sep, extname, basename, join } from 'path';
 import * as utils from './utils';
 
 export class PargvCommand {
@@ -27,6 +28,9 @@ export class PargvCommand {
   _minOptions: number = 0;
   _showHelp: boolean;
   _completions: IMap<any[]> = {};
+  _external: string = null;
+  _cwd: string | boolean = false;
+  _extension: string = null;
 
   _pargv: Pargv;
 
@@ -139,10 +143,34 @@ export class PargvCommand {
    */
   private parseCommand(token?: string) {
 
-    let split = utils.split(token.trim(), SPLIT_CHARS);   // Break out usage command.
+    let split = utils.split(token.trim(), SPLIT_CHARS);     // Break out usage command.
+    let origExt;
+
+    if (/^@/.test(split[0])) {      // is external program cmd.
+      let tmpExt = origExt = split.shift().trim().replace(/^@/, '');
+      const splitExt = tmpExt.split(sep);
+      tmpExt = splitExt.pop().replace(/^@/, '');
+      this._extension = extname(tmpExt);
+      this._external = basename(tmpExt, this._extension);
+      this._cwd = splitExt.join(sep) || '';
+    }
+
     let ctr = 0;                                            // Counter for command keys.
-    let aliases = split.shift().trim().split('.');          // Break out command aliases.
+    let aliases = (split.shift() || '').trim().split('.');  // Break out command aliases.
     let name = aliases.shift();                             // First is key name.
+
+    if (/(<|\[)/.test(name)) {
+      split.unshift(name);
+      name = undefined;
+    }
+
+    if (this._external && !name) { // if no command name and is program use program.
+      name = this._external;
+      aliases.push(origExt); // full path alias.
+      aliases.push(this._external + this._extension || ''); // name & ext alias.
+      aliases.push(join(this._cwd, this._external)); // full path w/o ext.
+    }
+
     const usage = [];                                       // Usage command values.
     usage.push(name);                                       // Add command key.
 
@@ -243,21 +271,19 @@ export class PargvCommand {
    * @param enabled whether or not help is enabled.
    */
   private toggleHelp(enabled?: boolean) {
-    if (this._name === 'help') {
-      this._showHelp = true;
-      return;
-    }
     if (!utils.isValue(enabled))
       enabled = true;
+    const helpCmd = '--' + this._pargv._helpCommand;
     this._showHelp = enabled;
     if (enabled) {
-      const str = this._pargv._localize('displays help for %s.').args(this._name).done();
-      this.option('--help, -h', str);
+      const str = this._pargv._localize('displays help for %s.')
+        .args(this._name)
+        .done();
+      this.option(helpCmd, str);
     }
     else {
-      this._options = this._options.map((el) => {
-        if (!/^(--help|-h)$/.test(el))
-          return el;
+      this._options = this._options.filter((el) => {
+        return el !== helpCmd;
       });
     }
   }
@@ -681,7 +707,26 @@ export class PargvCommand {
           .styles(colors.accent, colors.accent)
           .done()
       );
-    this._action = fn;
+    this._action = <ActionHandler>fn;
+    return this;
+  }
+
+  /**
+   * CWD
+   * : The directory prepended to external commands/programs. Ignored when action is present.
+   *
+   * @param path the base path when command is external program.
+   */
+  cwd(path: string | boolean) {
+    if (this._action || !this._external) // not needed if action defined.
+      return;
+    this._cwd = path;
+    if (this._external !== this._name || utils.isBoolean(path)) // external prog is not cmd just return.
+      return;
+    const fullPath = join(<string>path, this._external);
+    this._aliases[fullPath] = this._name;
+    if (this._extension)
+      this._aliases[fullPath + this._extension] = this._name;
     return this;
   }
 

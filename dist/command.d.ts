@@ -22,6 +22,9 @@ export declare class PargvCommand {
     _minOptions: number;
     _showHelp: boolean;
     _completions: IMap<any[]>;
+    _external: string;
+    _cwd: string | boolean;
+    _extension: string;
     _pargv: Pargv;
     constructor(token: string, describe?: string, pargv?: Pargv);
     /**
@@ -195,6 +198,13 @@ export declare class PargvCommand {
      * @param fn the callback function when parsed command matches.
      */
     action(fn: ActionHandler): this;
+    /**
+     * CWD
+     * : The directory prepended to external commands/programs. Ignored when action is present.
+     *
+     * @param path the base path when command is external program.
+     */
+    cwd(path: string | boolean): this;
     /**
      * Help
      * Enables or disables help for this command.

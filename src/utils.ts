@@ -1,6 +1,6 @@
 import { format, inspect } from 'util';
 import { join, relative, dirname, parse } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, statSync } from 'fs';
 import { IPargvCommandOption, IPargvEnv, WriteStreamExtended } from './interfaces';
 import { isString, isArray, flatten, split, last, isFunction, isPlainObject, isError, isValue, keys, isUndefined, first, contains, noop, isWindows, tryRequire, tryRootRequire } from 'chek';
 import { NODE_PATH, ARGV, EXEC_PATH, EXE_EXP } from './constants';
@@ -230,6 +230,52 @@ export function setBlocking(blocking?: boolean) {
     if (stream._handle && stream.isTTY && isFunction(stream._handle.setBlocking))
       stream._handle.setBlocking(blocking);
   });
+}
+
+/**
+ * Is Executable
+ * : Tests if path is executable.
+ *
+ * @param path the path to the executable.
+ */
+export function isExecutable(path: string) {
+
+  if (!existsSync(path))
+    return false;
+
+  try {
+
+    const stats = statSync(path);
+
+    if (isWindows()) { // just return if is file, not ideal.
+      return stats && stats.isFile();
+    }
+
+    else {
+
+      const hasGroup = stats.gid
+        ? process.getgid && stats.gid === process.getgid()
+        : true;
+      const hasUser = stats.uid
+        ? process.getuid && stats.uid === process.getuid()
+        : true;
+
+      // just didn't want additional depend.
+      // see https://github.com/kevva/executable/blob/master/index.js#L13
+
+      return Boolean(
+        (stats.mode & parseInt('0001', 8)) ||
+        ((stats.mode & parseInt('0010', 8)) && hasGroup) ||
+        ((stats.mode & parseInt('0100', 8)) && hasUser)
+      );
+
+    }
+
+  }
+  catch (ex) {
+    return false;
+  }
+
 }
 
 /**

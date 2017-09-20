@@ -93,6 +93,7 @@ export interface IPargvCommandOption {
 export interface IPargvParsedResult {
     $exec?: string;
     $command?: string;
+    $external?: string;
     $commands?: string[];
     $source?: string[];
     $stats?: IPargvStats;

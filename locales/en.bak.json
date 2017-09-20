@@ -9,6 +9,7 @@
   "License": "License",
   "Usage": "Usage",
   "Alias": "Alias",
+  "external": "external",
   "alias": "alias",
   "options": "options",
   "none": "none",
@@ -20,6 +21,8 @@
   "default": "default",
   "force": "force",
   "completions": "completions",
+  "false": "false",
+  "true": "true",
   "tab completions command.": "tab completions command.",
   "%s %s.": "%s %s.",
   "Required command.": "Required command.",
@@ -46,5 +49,7 @@
   "successfully installed tab completions, quit and reopen terminal.": "successfully installed tab completions, quit and reopen terminal.",
   "displays help for %s.": "displays help for %s.",
   "when true installs completions.": "when true installs completions.",
-  "cannot set completion for using key of undefined.": "cannot set completion for using key of undefined."
+  "cannot set completion for using key of undefined.": "cannot set completion for using key of undefined.",
+  "%s could not be executed, check permissions or run as root.": "%s could not be executed, check permissions or run as root.",
+  "%s does not exist, try --%s.": "%s does not exist, try --%s."
 }

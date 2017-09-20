@@ -1,3 +1,4 @@
+import { SpawnOptions } from 'child_process';
 import { Pargv, PargvCommand } from './';
 import { PargvError } from './utils';
 import { IAnsiStyles } from 'colurs';
@@ -104,6 +105,7 @@ export interface IPargvCommandOption {
 export interface IPargvParsedResult {
   $exec?: string;
   $command?: string;
+  $external?: string;
   $commands?: string[];
   $source?: string[];
   $stats?: IPargvStats;

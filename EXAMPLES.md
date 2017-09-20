@@ -254,6 +254,62 @@ pargv.command('download <url>')
   .max.options(1); // would allow only --force or --other.
 ```
 
+## External Commands:
+
+Pargv supports executing any external command. To define a command as external the command must be prefixed with an **@**. This tells Pargv that **@some_program** should be executed externally as opposed to calling a callback action.
+
+#### Basic Usage
+
+This example would be synonymous with calling **$ git push** in your terminal.
+
+```ts
+pargv.command('@git push')
+```
+
+This could be called in the following manner where "app" is the name of your program that is using Pargv and has been added to your path.
+
+```sh
+$ app push
+```
+
+You could also call it directly via full path to Pargv config.
+
+```sh
+$ node /some/path/to/pargv/config push
+```
+
+#### Full Path
+
+You can also specify a full path to an executable file. The below would result in a command name of **run**. However Pargv will auto create aliases to the full path and the full path without an extension.
+
+```ts
+pargv.command('@some/full/path/run.sh [arg1]')
+```
+
+```sh
+$ app run arg1
+```
+
+Or call with full path, however the above would be best practice!
+
+```sh
+$ app some/full/path/run.sh arg1 arg2...
+```
+
+#### External Command Only
+
+You can also just specify the external command by itself which essentially creates a wrapper if you will. This may not seem very useful at first but it allows you to create your own config and constraints on the external command. In the below example you must have at least two --flag type options.
+
+```ts
+pargv.command('@git')
+  .min.options(2);
+```
+
+This will allow you to pass whatever you wish to the git command now wrapped into your application.
+
+```sh
+$ app git ...args
+```
 ## Setup completions:
 
 ```ts

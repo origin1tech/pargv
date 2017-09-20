@@ -110,6 +110,13 @@ export declare function levenshtein(source: any, compare: any): any;
  */
 export declare function setBlocking(blocking?: boolean): void;
 /**
+ * Is Executable
+ * : Tests if path is executable.
+ *
+ * @param path the path to the executable.
+ */
+export declare function isExecutable(path: string): boolean;
+/**
  * Pargv Error
  */
 export declare class PargvError extends Error {

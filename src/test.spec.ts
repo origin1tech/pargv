@@ -7,10 +7,25 @@ const should = chai.should;
 const assert = chai.assert;
 const colurs = Colurs.get();
 
+import { Stream } from 'stream';
 import { Pargv, PargvCommand } from './';
-const pargv = new Pargv({ spreadCommands: true });
+const pargv = new Pargv();
 
 const procArgs = process.argv.slice(0, 2);
+
+// Helper for piping spawn test chunks.
+function throughHandler(fn) {
+  const PassThrough = Stream.PassThrough;
+  const pass = new PassThrough;
+  let _chunk = '';
+  pass.on('data', (chunk) => {
+    _chunk += chunk;
+  });
+  pass.on('end', () => {
+    fn(_chunk.trim());
+  });
+  return pass;
+}
 
 describe('Pargv', () => {
 
@@ -40,6 +55,7 @@ describe('Pargv', () => {
     const expected = {
       '$exec': 'node_modules/mocha/bin/_mocha',
       '$command': 'generate',
+      '$external': null,
       '$commands': ['component.tpl', 'aboutus.html'],
       '$source': ['generate', 'component.tpl'],
       force: true
@@ -51,9 +67,9 @@ describe('Pargv', () => {
 
   it('should reset Pargv and add extendCommands option.', () => {
     pargv.reset({ extendCommands: true });
-    const len = Object.keys(pargv._commands).length; // should be only one now.
+    const len = Object.keys(pargv._commands).length; // should be zero now.
     assert.isTrue(pargv.options.extendCommands);
-    assert.equal(len, 1);
+    assert.equal(len, 0);
   });
 
   it('should parse args for command "generate <template> [name] and execute action.', (done) => {
@@ -186,12 +202,12 @@ describe('Pargv', () => {
   });
 
   it('should get auto generated help text.', () => {
-
-    const helpTxt = 'Usage: help [command]Alias: hhelp command.Commands:commandOptional command.Options:none';
-    let resultTxt = colurs.strip(pargv.reset().get.help());
-    resultTxt = resultTxt.replace(/\s\s+/g, ''); // remove multi spaces.
+    const helpTxt = 'Usage:helpAlias:nonehelpcommand.Commands:noneOptions:--helpdisplayshelpforhelp.';
+    pargv.reset();
+    pargv.command('help');
+    let resultTxt = colurs.strip(pargv.get.help()).replace(/\s/g, '');
     assert.equal(resultTxt, helpTxt);
-
+    pargv.remove.command('help');
   });
 
   it('should parse value to date.', () => {
@@ -248,4 +264,30 @@ describe('Pargv', () => {
     assert.deepEqual(parsed.obj3, { work: { office: 5555679897, secretary: 5553459878 } });
   });
 
+  it('should spawn and test bash script.', (done) => {
+    const cmd = pargv.command('@bash.sh');
+    cmd.cwd('src/test');
+    const parsed = pargv.parse(['bash.sh']);
+    const proc = pargv.spawn(parsed, cmd, [], false);
+    const pass = throughHandler((chunk) => {
+      assert.equal(chunk, 'executed bash script.');
+      done();
+    });
+    proc.stdout.pipe(pass);
+  });
+
+  it('should spawn and test node script.', (done) => {
+    const cmd = pargv.command('@node.js');
+    pargv.base('src/test');
+    const parsed = pargv.parse(['node.js']);
+    const proc = pargv.spawn(parsed, cmd, [], false);
+    const pass = throughHandler((chunk) => {
+      assert.equal(chunk, 'executed node script.');
+      pargv.base(null);
+      done();
+    });
+    proc.stdout.pipe(pass);
+  });
+
 });
+

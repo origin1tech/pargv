@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var constants_1 = require("./constants");
+var path_1 = require("path");
 var utils = require("./utils");
-var PargvCommand = /** @class */ (function () {
+var PargvCommand = (function () {
     function PargvCommand(token, describe, pargv) {
         this._commands = [];
         this._options = [];
@@ -20,6 +21,9 @@ var PargvCommand = /** @class */ (function () {
         this._minCommands = 0;
         this._minOptions = 0;
         this._completions = {};
+        this._external = null;
+        this._cwd = false;
+        this._extension = null;
         this._describe = describe;
         this._pargv = pargv;
         this.parseCommand(token);
@@ -111,9 +115,28 @@ var PargvCommand = /** @class */ (function () {
     PargvCommand.prototype.parseCommand = function (token) {
         var _this = this;
         var split = utils.split(token.trim(), constants_1.SPLIT_CHARS); // Break out usage command.
+        var origExt;
+        if (/^@/.test(split[0])) {
+            var tmpExt = origExt = split.shift().trim().replace(/^@/, '');
+            var splitExt = tmpExt.split(path_1.sep);
+            tmpExt = splitExt.pop().replace(/^@/, '');
+            this._extension = path_1.extname(tmpExt);
+            this._external = path_1.basename(tmpExt, this._extension);
+            this._cwd = splitExt.join(path_1.sep) || '';
+        }
         var ctr = 0; // Counter for command keys.
-        var aliases = split.shift().trim().split('.'); // Break out command aliases.
+        var aliases = (split.shift() || '').trim().split('.'); // Break out command aliases.
         var name = aliases.shift(); // First is key name.
+        if (/(<|\[)/.test(name)) {
+            split.unshift(name);
+            name = undefined;
+        }
+        if (this._external && !name) {
+            name = this._external;
+            aliases.push(origExt); // full path alias.
+            aliases.push(this._external + this._extension || ''); // name & ext alias.
+            aliases.push(path_1.join(this._cwd, this._external)); // full path w/o ext.
+        }
         var usage = []; // Usage command values.
         usage.push(name); // Add command key.
         // Iterate the tokens.
@@ -123,7 +146,7 @@ var PargvCommand = /** @class */ (function () {
             }
             var next = split[i + 1]; // next value.
             var isFlag = utils.isFlag(el); // if is -o or --opt.
-            next = utils.isFlag(next) || // normalize next value.
+            next = utils.isFlag(next) ||
                 !constants_1.COMMAND_VAL_EXP.test(next || '') ? null : next;
             var parsed = _this.parseToken(el, next); // parse the token.
             var describe;
@@ -140,7 +163,7 @@ var PargvCommand = /** @class */ (function () {
         });
         var cmdStr = this._pargv._localize('command').done();
         this._name = name; // Save the commmand name.
-        this._describe = this._describe || // Ensure command description.
+        this._describe = this._describe ||
             name + " " + cmdStr + ".";
         this._usage = usage.join(' '); // create usage string.
         this.alias.apply(// create usage string.
@@ -190,21 +213,19 @@ var PargvCommand = /** @class */ (function () {
      * @param enabled whether or not help is enabled.
      */
     PargvCommand.prototype.toggleHelp = function (enabled) {
-        if (this._name === 'help') {
-            this._showHelp = true;
-            return;
-        }
         if (!utils.isValue(enabled))
             enabled = true;
+        var helpCmd = '--' + this._pargv._helpCommand;
         this._showHelp = enabled;
         if (enabled) {
-            var str = this._pargv._localize('displays help for %s.').args(this._name).done();
-            this.option('--help, -h', str);
+            var str = this._pargv._localize('displays help for %s.')
+                .args(this._name)
+                .done();
+            this.option(helpCmd, str);
         }
         else {
-            this._options = this._options.map(function (el) {
-                if (!/^(--help|-h)$/.test(el))
-                    return el;
+            this._options = this._options.filter(function (el) {
+                return el !== helpCmd;
             });
         }
     };
@@ -596,6 +617,24 @@ var PargvCommand = /** @class */ (function () {
                 .styles(colors.accent, colors.accent)
                 .done());
         this._action = fn;
+        return this;
+    };
+    /**
+     * CWD
+     * : The directory prepended to external commands/programs. Ignored when action is present.
+     *
+     * @param path the base path when command is external program.
+     */
+    PargvCommand.prototype.cwd = function (path) {
+        if (this._action || !this._external)
+            return;
+        this._cwd = path;
+        if (this._external !== this._name || utils.isBoolean(path))
+            return;
+        var fullPath = path_1.join(path, this._external);
+        this._aliases[fullPath] = this._name;
+        if (this._extension)
+            this._aliases[fullPath + this._extension] = this._name;
         return this;
     };
     /**

@@ -263,9 +263,42 @@ function setBlocking(blocking) {
 }
 exports.setBlocking = setBlocking;
 /**
+ * Is Executable
+ * : Tests if path is executable.
+ *
+ * @param path the path to the executable.
+ */
+function isExecutable(path) {
+    if (!fs_1.existsSync(path))
+        return false;
+    try {
+        var stats = fs_1.statSync(path);
+        if (chek_1.isWindows()) {
+            return stats && stats.isFile();
+        }
+        else {
+            var hasGroup = stats.gid
+                ? process.getgid && stats.gid === process.getgid()
+                : true;
+            var hasUser = stats.uid
+                ? process.getuid && stats.uid === process.getuid()
+                : true;
+            // just didn't want additional depend.
+            // see https://github.com/kevva/executable/blob/master/index.js#L13
+            return Boolean((stats.mode & parseInt('0001', 8)) ||
+                ((stats.mode & parseInt('0010', 8)) && hasGroup) ||
+                ((stats.mode & parseInt('0100', 8)) && hasUser));
+        }
+    }
+    catch (ex) {
+        return false;
+    }
+}
+exports.isExecutable = isExecutable;
+/**
  * Pargv Error
  */
-var PargvError = /** @class */ (function (_super) {
+var PargvError = (function (_super) {
     __extends(PargvError, _super);
     function PargvError(message) {
         var args = [];

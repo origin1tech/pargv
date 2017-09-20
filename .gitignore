@@ -73,7 +73,6 @@ Thumbs.db
 .tmp/
 temp.js
 test.js
-src/test/
 dist/test/
 build/apikey.js
 video/

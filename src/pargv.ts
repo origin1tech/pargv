@@ -796,8 +796,9 @@ export class Pargv {
       // check if is symlink, if true get path.
       prog = lstatSync(prog).isSymbolicLink() ? readlinkSync(prog) : prog;
 
-      if (/\.js$/.test(prog) && !utils.isExecutable(prog)) {
+      if (/\.js$/.test(prog) && !utils.isExecutable(prog) || utils.isWindows()) {
         // if is .js and not executable add prog to args run with Node.
+        // for windows always set program as node.
         args.unshift(prog);
         prog = process.execPath;
       }
@@ -812,6 +813,7 @@ export class Pargv {
       }
 
     }
+
 
     proc = spawn(prog, args, { stdio: stdio || 'inherit' });
 

@@ -9,6 +9,7 @@ const colurs = Colurs.get();
 
 import { Stream } from 'stream';
 import { Pargv, PargvCommand } from './';
+import { isWindows } from 'chek';
 const pargv = new Pargv();
 
 const procArgs = process.argv.slice(0, 2);
@@ -60,6 +61,9 @@ describe('Pargv', () => {
       '$source': ['generate', 'component.tpl'],
       force: true
     };
+
+    if (isWindows())
+      expected.$exec = "node_modules\\mocha\\bin\\_mocha";
 
     assert.deepEqual(parsed, expected);
 
@@ -265,6 +269,8 @@ describe('Pargv', () => {
   });
 
   it('should spawn and test bash script.', (done) => {
+    if (isWindows()) // windows can't run bash.
+      return done();
     const cmd = pargv.command('@bash.sh');
     cmd.cwd('src/test');
     const parsed = pargv.parse(['bash.sh']);

@@ -1,7 +1,7 @@
 import { format, inspect } from 'util';
 import { join, relative, dirname, parse } from 'path';
 import { existsSync, statSync } from 'fs';
-import { IPargvCommandOption, IPargvEnv, WriteStreamExtended } from './interfaces';
+import { IPargvCommandOption, IPargvEnv } from './interfaces';
 import { isString, isArray, flatten, split, last, isFunction, isPlainObject, isError, isValue, keys, isUndefined, first, contains, noop, isWindows, tryRequire, tryRootRequire } from 'chek';
 import { NODE_PATH, ARGV, EXEC_PATH, EXE_EXP } from './constants';
 import * as prefix from 'global-prefix';
@@ -226,7 +226,7 @@ export function levenshtein(source, compare) {
  */
 export function setBlocking(blocking?: boolean) {
   const out = process.stdout, err = process.stderr;
-  [out, err].forEach((stream: WriteStreamExtended) => {
+  [out, err].forEach((stream: any) => {
     if (stream._handle && stream.isTTY && isFunction(stream._handle.setBlocking))
       stream._handle.setBlocking(blocking);
   });

@@ -1,5 +1,5 @@
-// IMPORTS //
 "use strict";
+// IMPORTS //
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
 var fs_1 = require("fs");
@@ -40,7 +40,7 @@ var DEFAULTS = {
     },
 };
 // CLASSES //
-var Pargv = (function () {
+var Pargv = /** @class */ (function () {
     function Pargv(options) {
         this._completionsCommand = 'completions';
         this._completionsReply = '--reply';
@@ -679,8 +679,9 @@ var Pargv = (function () {
         if (isPath) {
             // check if is symlink, if true get path.
             prog = fs_1.lstatSync(prog).isSymbolicLink() ? fs_1.readlinkSync(prog) : prog;
-            if (/\.js$/.test(prog) && !utils.isExecutable(prog)) {
+            if (/\.js$/.test(prog) && !utils.isExecutable(prog) || utils.isWindows()) {
                 // if is .js and not executable add prog to args run with Node.
+                // for windows always set program as node.
                 args.unshift(prog);
                 prog = process.execPath;
             }

@@ -165,7 +165,3 @@ export interface IPargvLocalize {
   count(count: number): IPargvLocalize;
   done(): string;
 }
-
-export interface WriteStreamExtended extends NodeJS.WriteStream {
-  _handle: any;
-}

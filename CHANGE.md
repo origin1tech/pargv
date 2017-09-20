@@ -9,6 +9,7 @@ List of changes in descending order.
   <tr><td>Examples</td><td>Add more examples for calling external commands.</td></tr>
   <tr><td>.reset()</td><td>Remove redundancy from reset command.</td></tr>
   <tr><td>external commands</td><td>Allow for specifying external commands prefixed with "@" see examples.</td></tr>
+  <tr><td>WriteStreamExtended</td><td>Remove unneeded custom interface.</td></tr>
 </table>
 
 ### 9.16.2017

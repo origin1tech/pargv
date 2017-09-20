@@ -168,7 +168,7 @@ export class PargvCommand {
       name = this._external;
       aliases.push(origExt); // full path alias.
       aliases.push(this._external + this._extension || ''); // name & ext alias.
-      aliases.push(join(this._cwd, this._external)); // full path w/o ext.
+      aliases.push(join(<string>this._cwd, this._external)); // full path w/o ext.
     }
 
     const usage = [];                                       // Usage command values.

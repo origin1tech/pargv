@@ -298,7 +298,7 @@ exports.isExecutable = isExecutable;
 /**
  * Pargv Error
  */
-var PargvError = (function (_super) {
+var PargvError = /** @class */ (function (_super) {
     __extends(PargvError, _super);
     function PargvError(message) {
         var args = [];

@@ -96,11 +96,14 @@
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_coercions" class="tsd-kind-icon">_coercions</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_commands" class="tsd-kind-icon">_commands</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_completions" class="tsd-kind-icon">_completions</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_cwd" class="tsd-kind-icon">_cwd</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_defaults" class="tsd-kind-icon">_defaults</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_demands" class="tsd-kind-icon">_demands</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_describe" class="tsd-kind-icon">_describe</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_describes" class="tsd-kind-icon">_describes</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_examples" class="tsd-kind-icon">_examples</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_extension" class="tsd-kind-icon">_extension</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_external" class="tsd-kind-icon">_external</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_maxcommands" class="tsd-kind-icon">_max<wbr>Commands</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_maxoptions" class="tsd-kind-icon">_max<wbr>Options</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_command_.pargvcommand.html#_mincommands" class="tsd-kind-icon">_min<wbr>Commands</a></li>
@@ -138,6 +141,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_command_.pargvcommand.html#clean" class="tsd-kind-icon">clean</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_command_.pargvcommand.html#coerce" class="tsd-kind-icon">coerce</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_command_.pargvcommand.html#completionfor" class="tsd-kind-icon">completion<wbr>For</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_command_.pargvcommand.html#cwd" class="tsd-kind-icon">cwd</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_command_.pargvcommand.html#default" class="tsd-kind-icon">default</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_command_.pargvcommand.html#demand" class="tsd-kind-icon">demand</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_command_.pargvcommand.html#describe" class="tsd-kind-icon">describe</a></li>
@@ -168,13 +172,13 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Pargv<wbr>Command<span class="tsd-signature-symbol">(</span>token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, describe<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span>, pargv<span class="tsd-signature-symbol">?: </span><a href="_index_.pargv.html" class="tsd-signature-type">Pargv</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_command_.pargvcommand.html" class="tsd-signature-type">PargvCommand</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Pargv<wbr>Command<span class="tsd-signature-symbol">(</span>token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, describe<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span>, pargv<span class="tsd-signature-symbol">?: </span><a href="_pargv_.pargv.html" class="tsd-signature-type">Pargv</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_command_.pargvcommand.html" class="tsd-signature-type">PargvCommand</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L31">command.ts:31</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L35">command.ts:35</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -186,7 +190,7 @@
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> describe: <span class="tsd-signature-type">string</span></h5>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> pargv: <a href="_index_.pargv.html" class="tsd-signature-type">Pargv</a></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> pargv: <a href="_pargv_.pargv.html" class="tsd-signature-type">Pargv</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_command_.pargvcommand.html" class="tsd-signature-type">PargvCommand</a></h4>
@@ -202,7 +206,7 @@
 					<div class="tsd-signature tsd-kind-icon">_action<span class="tsd-signature-symbol">:</span> <a href="../modules/_interfaces_.html#actionhandler" class="tsd-signature-type">ActionHandler</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L23">command.ts:23</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L24">command.ts:24</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -212,7 +216,7 @@
 					<div class="tsd-signature tsd-kind-icon">_aliases<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_interfaces_.imap.html" class="tsd-signature-type">IMap</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L15">command.ts:15</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L16">command.ts:16</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -222,7 +226,7 @@
 					<div class="tsd-signature tsd-kind-icon">_bools<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L14">command.ts:14</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L15">command.ts:15</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -232,7 +236,7 @@
 					<div class="tsd-signature tsd-kind-icon">_coercions<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_interfaces_.imap.html" class="tsd-signature-type">IMap</a><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_interfaces_.html#coercehandler" class="tsd-signature-type">CoerceHandler</a><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L19">command.ts:19</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L20">command.ts:20</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -242,7 +246,7 @@
 					<div class="tsd-signature tsd-kind-icon">_commands<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L12">command.ts:12</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L13">command.ts:13</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -252,7 +256,17 @@
 					<div class="tsd-signature tsd-kind-icon">_completions<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_interfaces_.imap.html" class="tsd-signature-type">IMap</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L29">command.ts:29</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L30">command.ts:30</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="_cwd" class="tsd-anchor"></a>
+					<h3>_cwd</h3>
+					<div class="tsd-signature tsd-kind-icon">_cwd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> =&nbsp;false</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L32">command.ts:32</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -262,7 +276,7 @@
 					<div class="tsd-signature tsd-kind-icon">_defaults<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_interfaces_.imap.html" class="tsd-signature-type">IMap</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L17">command.ts:17</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L18">command.ts:18</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -272,7 +286,7 @@
 					<div class="tsd-signature tsd-kind-icon">_demands<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L20">command.ts:20</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L21">command.ts:21</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -282,7 +296,7 @@
 					<div class="tsd-signature tsd-kind-icon">_describe<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L11">command.ts:11</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L12">command.ts:12</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -292,7 +306,7 @@
 					<div class="tsd-signature tsd-kind-icon">_describes<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_interfaces_.imap.html" class="tsd-signature-type">IMap</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L18">command.ts:18</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L19">command.ts:19</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -302,7 +316,27 @@
 					<div class="tsd-signature tsd-kind-icon">_examples<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L22">command.ts:22</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L23">command.ts:23</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="_extension" class="tsd-anchor"></a>
+					<h3>_extension</h3>
+					<div class="tsd-signature tsd-kind-icon">_extension<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;null</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L33">command.ts:33</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="_external" class="tsd-anchor"></a>
+					<h3>_external</h3>
+					<div class="tsd-signature tsd-kind-icon">_external<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;null</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L31">command.ts:31</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -312,7 +346,7 @@
 					<div class="tsd-signature tsd-kind-icon">_max<wbr>Commands<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;0</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L24">command.ts:24</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L25">command.ts:25</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -322,7 +356,7 @@
 					<div class="tsd-signature tsd-kind-icon">_max<wbr>Options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;0</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L25">command.ts:25</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L26">command.ts:26</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -332,7 +366,7 @@
 					<div class="tsd-signature tsd-kind-icon">_min<wbr>Commands<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;0</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L26">command.ts:26</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L27">command.ts:27</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -342,7 +376,7 @@
 					<div class="tsd-signature tsd-kind-icon">_min<wbr>Options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;0</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L27">command.ts:27</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L28">command.ts:28</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -352,7 +386,7 @@
 					<div class="tsd-signature tsd-kind-icon">_name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L9">command.ts:9</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L10">command.ts:10</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -362,17 +396,17 @@
 					<div class="tsd-signature tsd-kind-icon">_options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L13">command.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L14">command.ts:14</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="_pargv" class="tsd-anchor"></a>
 					<h3>_pargv</h3>
-					<div class="tsd-signature tsd-kind-icon">_pargv<span class="tsd-signature-symbol">:</span> <a href="_index_.pargv.html" class="tsd-signature-type">Pargv</a></div>
+					<div class="tsd-signature tsd-kind-icon">_pargv<span class="tsd-signature-symbol">:</span> <a href="_pargv_.pargv.html" class="tsd-signature-type">Pargv</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L31">command.ts:31</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L35">command.ts:35</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -382,7 +416,7 @@
 					<div class="tsd-signature tsd-kind-icon">_show<wbr>Help<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L28">command.ts:28</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L29">command.ts:29</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -392,7 +426,7 @@
 					<div class="tsd-signature tsd-kind-icon">_usage<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L10">command.ts:10</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L11">command.ts:11</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -402,7 +436,7 @@
 					<div class="tsd-signature tsd-kind-icon">_usages<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_interfaces_.imap.html" class="tsd-signature-type">IMap</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L16">command.ts:16</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L17">command.ts:17</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -412,7 +446,7 @@
 					<div class="tsd-signature tsd-kind-icon">_whens<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_interfaces_.imap.html" class="tsd-signature-type">IMap</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L21">command.ts:21</a></li>
+							<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L22">command.ts:22</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -429,7 +463,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L306">command.ts:306</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L332">command.ts:332</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -452,7 +486,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L298">command.ts:298</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L324">command.ts:324</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4>
@@ -469,7 +503,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L394">command.ts:394</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L420">command.ts:420</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -492,7 +526,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L412">command.ts:412</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L438">command.ts:438</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -515,7 +549,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L404">command.ts:404</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L430">command.ts:430</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -538,7 +572,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L348">command.ts:348</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L374">command.ts:374</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -558,7 +592,7 @@
 										<li class="tsd-description">
 											<aside class="tsd-sources">
 												<ul>
-													<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L358">command.ts:358</a></li>
+													<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L384">command.ts:384</a></li>
 												</ul>
 											</aside>
 											<div class="tsd-comment tsd-typography">
@@ -590,7 +624,7 @@
 										<li class="tsd-description">
 											<aside class="tsd-sources">
 												<ul>
-													<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L369">command.ts:369</a></li>
+													<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L395">command.ts:395</a></li>
 												</ul>
 											</aside>
 											<div class="tsd-comment tsd-typography">
@@ -627,7 +661,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L314">command.ts:314</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L340">command.ts:340</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -647,7 +681,7 @@
 										<li class="tsd-description">
 											<aside class="tsd-sources">
 												<ul>
-													<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L324">command.ts:324</a></li>
+													<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L350">command.ts:350</a></li>
 												</ul>
 											</aside>
 											<div class="tsd-comment tsd-typography">
@@ -679,7 +713,7 @@
 										<li class="tsd-description">
 											<aside class="tsd-sources">
 												<ul>
-													<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L335">command.ts:335</a></li>
+													<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L361">command.ts:361</a></li>
 												</ul>
 											</aside>
 											<div class="tsd-comment tsd-typography">
@@ -716,7 +750,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L384">command.ts:384</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L410">command.ts:410</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -742,7 +776,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L674">command.ts:674</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L700">command.ts:700</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -775,7 +809,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L456">command.ts:456</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L482">command.ts:482</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -795,7 +829,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L457">command.ts:457</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L483">command.ts:483</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -821,7 +855,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L974">command.ts:974</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1019">command.ts:1019</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -859,7 +893,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L999">command.ts:999</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1044">command.ts:1044</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -891,7 +925,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L724">command.ts:724</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L769">command.ts:769</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -935,7 +969,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L271">command.ts:271</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L297">command.ts:297</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -968,7 +1002,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L528">command.ts:528</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L554">command.ts:554</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -991,7 +1025,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L529">command.ts:529</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L555">command.ts:555</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1020,7 +1054,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L654">command.ts:654</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L680">command.ts:680</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1050,6 +1084,38 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="cwd" class="tsd-anchor"></a>
+					<h3>cwd</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">cwd<span class="tsd-signature-symbol">(</span>path<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L720">command.ts:720</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>CWD
+									: The directory prepended to external commands/programs. Ignored when action is present.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>path: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the base path when command is external program.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="default" class="tsd-anchor"></a>
 					<h3>default</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -1059,7 +1125,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L622">command.ts:622</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L648">command.ts:648</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1097,7 +1163,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L566">command.ts:566</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L592">command.ts:592</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1130,7 +1196,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L494">command.ts:494</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L520">command.ts:520</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1150,7 +1216,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L495">command.ts:495</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L521">command.ts:521</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1176,7 +1242,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L1205">command.ts:1205</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1250">command.ts:1250</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1208,7 +1274,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L707">command.ts:707</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L752">command.ts:752</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1242,7 +1308,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L198">command.ts:198</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L226">command.ts:226</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1276,7 +1342,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L694">command.ts:694</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L739">command.ts:739</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1308,7 +1374,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L1181">command.ts:1181</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1226">command.ts:1226</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1340,7 +1406,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L1147">command.ts:1147</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1192">command.ts:1192</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1372,7 +1438,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L1156">command.ts:1156</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1201">command.ts:1201</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1401,7 +1467,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L1167">command.ts:1167</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1212">command.ts:1212</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1433,7 +1499,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L1194">command.ts:1194</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1239">command.ts:1239</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1465,7 +1531,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L430">command.ts:430</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L456">command.ts:456</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1521,7 +1587,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L140">command.ts:140</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L144">command.ts:144</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1553,7 +1619,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L49">command.ts:49</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L53">command.ts:53</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1591,7 +1657,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L1017">command.ts:1017</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1062">command.ts:1062</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1630,7 +1696,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L987">command.ts:987</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L1032">command.ts:1032</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1662,7 +1728,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L245">command.ts:245</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L273">command.ts:273</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1695,7 +1761,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L582">command.ts:582</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L608">command.ts:608</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1715,7 +1781,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/22740a0/src/command.ts#L583">command.ts:583</a></li>
+									<li>Defined in <a href="https://github.com/origin1tech/pargv/blob/2540363/src/command.ts#L609">command.ts:609</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1752,9 +1818,6 @@
 						<a href="../modules/_constants_.html">"constants"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="../modules/_dev_temp_.html">"dev/temp"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
 						<a href="../modules/_index_.html">"index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -1762,6 +1825,12 @@
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_localize_.html">"localize"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_pargv_.html">"pargv"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_test_temp_.html">"test/temp"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_utils_.html">"utils"</a>
@@ -1797,6 +1866,9 @@
 								<a href="_command_.pargvcommand.html#_completions" class="tsd-kind-icon">_completions</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_command_.pargvcommand.html#_cwd" class="tsd-kind-icon">_cwd</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_command_.pargvcommand.html#_defaults" class="tsd-kind-icon">_defaults</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
@@ -1810,6 +1882,12 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_command_.pargvcommand.html#_examples" class="tsd-kind-icon">_examples</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_command_.pargvcommand.html#_extension" class="tsd-kind-icon">_extension</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_command_.pargvcommand.html#_external" class="tsd-kind-icon">_external</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_command_.pargvcommand.html#_maxcommands" class="tsd-kind-icon">_max<wbr>Commands</a>
@@ -1891,6 +1969,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_command_.pargvcommand.html#completionfor" class="tsd-kind-icon">completion<wbr>For</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_command_.pargvcommand.html#cwd" class="tsd-kind-icon">cwd</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_command_.pargvcommand.html#default" class="tsd-kind-icon">default</a>

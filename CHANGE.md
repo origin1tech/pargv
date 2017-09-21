@@ -2,6 +2,13 @@
 
 List of changes in descending order.
 
+### 9.21.2017 (v2.0.10)
+
+<table>
+  <tr><td>help</td><td>flag option optional/required values were not showing in help.</td></tr>
+  <tr><td>help alias</td><td>add first char of localized help as alias to command help.</td></tr>
+</table>
+
 ### 9.21.2017 (v2.0.9)
 
 <table>

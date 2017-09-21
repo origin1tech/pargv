@@ -273,7 +273,8 @@ export class PargvCommand {
   private toggleHelp(enabled?: boolean) {
     if (!utils.isValue(enabled))
       enabled = true;
-    const helpCmd = '--' + this._pargv._helpCommand;
+    let helpCmd = '--' + this._pargv._helpCommand;
+    helpCmd = `${helpCmd}, -${this._pargv._helpCommand.charAt(0)}`;
     this._showHelp = enabled;
     if (enabled) {
       const str = this._pargv._localize('displays help for %s.')

@@ -157,7 +157,6 @@ export interface IPargvStats {
   whens?: any[];
 }
 
-
 export interface IPargvLocalize {
   args(...args: any[]): IPargvLocalize;
   setArg(singular: string, plural?: string | number, index?: number): IPargvLocalize;

@@ -159,6 +159,10 @@ export class Pargv {
     const layout = this.layout(layoutWidth);
     const obj: any = {};
 
+    const col1w = Math.floor(layoutWidth * .30);
+    const col2w = Math.floor(layoutWidth * .55);
+    const col3w = layoutWidth - (col1w + col2w);
+
     // Define color vars.
     const primary = this.options.colors.primary;
     const alert = this.options.colors.alert;
@@ -188,8 +192,11 @@ export class Pargv {
 
       cmd._commands.forEach((el) => { // build commands.
         const isRequired = utils.contains(cmd._demands, el);
-        const arr: any = [{ text: el, padding: [0, 0, 0, 2] }, { text: this._colurs.applyAnsi(cmd._describes[el] || '', muted) }];
-        const lastCol = isRequired ? { text: this._colurs.applyAnsi(`${reqStr}`, alert), align: 'right' } : '';
+        const arr: any = [
+          { text: el, padding: [0, 1, 0, 2], width: col1w },
+          { text: this._colurs.applyAnsi(cmd._describes[el] || '', muted), width: col2w }
+        ];
+        const lastCol = isRequired ? { text: this._colurs.applyAnsi(`${reqStr}`, alert), align: 'right', width: col3w } : { text: '', width: col3w };
         arr.push(lastCol);
         layout.div(...arr);
       });
@@ -202,9 +209,19 @@ export class Pargv {
       cmd._options.sort().forEach((el) => { // build options.
         const isRequired = utils.contains(cmd._demands, el);
         const aliases = cmd.aliases(el).sort();
-        const names = [el].concat(aliases).join(', ');
-        const arr: any = [{ text: names, padding: [0, 0, 0, 2] }, { text: this._colurs.applyAnsi(cmd._describes[el] || '', muted) }];
-        const lastCol = isRequired ? { text: this._colurs.applyAnsi(`${reqStr}`, alert), align: 'right' } : '';
+        // const names = [el].concat(aliases).join(', ');
+        let usages: any = cmd._usages[el]; // get without first key.
+        let usageVal;
+        if (/^(\[|<)/.test(utils.last(usages)))
+          usageVal = usages.pop();
+        let describe = this._colurs.applyAnsi(cmd._describes[el] || '', muted);
+        if (usageVal)
+          describe = usageVal + ': ' + describe;
+        const arr: any = [
+          { text: usages.join(', '), padding: [0, 1, 0, 2], width: col1w },
+          { text: describe, width: col2w }
+        ];
+        const lastCol = isRequired ? { text: this._colurs.applyAnsi(`${reqStr}`, alert), align: 'right', width: col3w } : { text: '', width: col3w };
         arr.push(lastCol);
         layout.div(...arr);
       });

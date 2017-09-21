@@ -121,6 +121,9 @@ var Pargv = /** @class */ (function () {
         var layoutWidth = this.options.layoutWidth;
         var layout = this.layout(layoutWidth);
         var obj = {};
+        var col1w = Math.floor(layoutWidth * .30);
+        var col2w = Math.floor(layoutWidth * .55);
+        var col3w = layoutWidth - (col1w + col2w);
         // Define color vars.
         var primary = this.options.colors.primary;
         var alert = this.options.colors.alert;
@@ -143,8 +146,11 @@ var Pargv = /** @class */ (function () {
             layout.section(_this._colurs.applyAnsi(cmdsStr + ":", accent), [1, 0, 0, 1]);
             cmd._commands.forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
-                var arr = [{ text: el, padding: [0, 0, 0, 2] }, { text: _this._colurs.applyAnsi(cmd._describes[el] || '', muted) }];
-                var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right' } : '';
+                var arr = [
+                    { text: el, padding: [0, 1, 0, 2], width: col1w },
+                    { text: _this._colurs.applyAnsi(cmd._describes[el] || '', muted), width: col2w }
+                ];
+                var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
@@ -154,9 +160,19 @@ var Pargv = /** @class */ (function () {
             cmd._options.sort().forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
                 var aliases = cmd.aliases(el).sort();
-                var names = [el].concat(aliases).join(', ');
-                var arr = [{ text: names, padding: [0, 0, 0, 2] }, { text: _this._colurs.applyAnsi(cmd._describes[el] || '', muted) }];
-                var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right' } : '';
+                // const names = [el].concat(aliases).join(', ');
+                var usages = cmd._usages[el]; // get without first key.
+                var usageVal;
+                if (/^(\[|<)/.test(utils.last(usages)))
+                    usageVal = usages.pop();
+                var describe = _this._colurs.applyAnsi(cmd._describes[el] || '', muted);
+                if (usageVal)
+                    describe = usageVal + ': ' + describe;
+                var arr = [
+                    { text: usages.join(', '), padding: [0, 1, 0, 2], width: col1w },
+                    { text: describe, width: col2w }
+                ];
+                var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });

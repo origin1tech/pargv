@@ -216,6 +216,7 @@ var PargvCommand = /** @class */ (function () {
         if (!utils.isValue(enabled))
             enabled = true;
         var helpCmd = '--' + this._pargv._helpCommand;
+        helpCmd = helpCmd + ", -" + this._pargv._helpCommand.charAt(0);
         this._showHelp = enabled;
         if (enabled) {
             var str = this._pargv._localize('displays help for %s.')

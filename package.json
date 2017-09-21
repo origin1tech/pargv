@@ -1,6 +1,6 @@
 {
   "name": "pargv",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Minimal utility for parsing node command line arguments.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -44,7 +44,7 @@
     "colurs": "^1.0.13",
     "figlet": "^1.2.0",
     "global-prefix": "^0.1.5",
-    "lokales": "^1.0.0"
+    "lokales": "^1.0.6"
   },
   "devDependencies": {
     "@google-cloud/translate": "^1.0.0",

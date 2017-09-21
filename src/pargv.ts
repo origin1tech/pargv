@@ -1130,7 +1130,7 @@ export class Pargv {
 
     }
 
-    if (this.options.autoHelp && !MOCHA_TESTING)
+    if (this.options.autoHelp && !MOCHA_TESTING && !cmd)
       this.show.help();
 
     return parsed;

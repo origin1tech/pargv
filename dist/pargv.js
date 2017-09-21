@@ -941,7 +941,7 @@ var Pargv = /** @class */ (function () {
                     cmd._action.call(this, parsed, cmd);
             }
         }
-        if (this.options.autoHelp && !constants_1.MOCHA_TESTING)
+        if (this.options.autoHelp && !constants_1.MOCHA_TESTING && !cmd)
             this.show.help();
         return parsed;
         var _a;

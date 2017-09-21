@@ -66,11 +66,6 @@ export declare class PargvCommand {
     private clean(key);
     private readonly err;
     /**
-     * Command
-     * : Access to Pargv command.
-     */
-    readonly command: any;
-    /**
      * Min
      * : Gets methods for adding min commands or options.
      */
@@ -286,6 +281,14 @@ export declare class PargvCommand {
      * @param key the option key to check.
      */
     isBool(key: string): boolean;
+    /**
+     * Command
+     * A string containing Parv tokens to be parsed.
+     *
+     * @param command the command token string to parse.
+     * @param describe a description describing the command.
+     */
+    command(command: string, describe?: string): PargvCommand;
     /**
      * Fail
      * Add custom on error handler.

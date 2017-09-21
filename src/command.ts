@@ -325,13 +325,7 @@ export class PargvCommand {
     return this._pargv.err.bind(this._pargv);
   }
 
-  /**
-   * Command
-   * : Access to Pargv command.
-   */
-  get command() {
-    return this._pargv.command.bind(this._pargv);
-  }
+
 
   /**
    * Min
@@ -1229,6 +1223,19 @@ export class PargvCommand {
   }
 
   // PARGV WRAPPERS //
+
+  /**
+   * Command
+   * A string containing Parv tokens to be parsed.
+   *
+   * @param command the command token string to parse.
+   * @param describe a description describing the command.
+   */
+  command(command: string, describe?: string): PargvCommand {
+    const cmd = new PargvCommand(command, describe, this._pargv);
+    this._pargv._commands[cmd._name] = cmd;
+    return cmd;
+  }
 
   /**
    * Fail

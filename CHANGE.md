@@ -11,6 +11,7 @@ List of changes in descending order.
   <tr><td>external commands</td><td>Allow for specifying external commands prefixed with "@" see examples.</td></tr>
   <tr><td>WriteStreamExtended</td><td>Remove unneeded custom interface.</td></tr>
   <tr><td>.exec()</td><td>fix issue where help shows incorrectly.</td></tr>
+  <tr><td>.command()</td><td>fix issue where intellisense not chaining.</td></tr>
 </table>
 
 ### 9.16.2017

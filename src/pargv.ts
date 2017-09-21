@@ -757,7 +757,7 @@ export class Pargv {
    * @param command the command token string to parse.
    * @param describe a description describing the command.
    */
-  command(command: string, describe?: string) {
+  command(command: string, describe?: string): PargvCommand {
     const cmd = new PargvCommand(command, describe, this);
     if (command !== '__default__')
       this._commands[cmd._name] = cmd;

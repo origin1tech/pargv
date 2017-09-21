@@ -263,17 +263,6 @@ var PargvCommand = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(PargvCommand.prototype, "command", {
-        /**
-         * Command
-         * : Access to Pargv command.
-         */
-        get: function () {
-            return this._pargv.command.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(PargvCommand.prototype, "min", {
         /**
          * Min
@@ -1069,6 +1058,18 @@ var PargvCommand = /** @class */ (function () {
         return utils.contains(this._bools, key);
     };
     // PARGV WRAPPERS //
+    /**
+     * Command
+     * A string containing Parv tokens to be parsed.
+     *
+     * @param command the command token string to parse.
+     * @param describe a description describing the command.
+     */
+    PargvCommand.prototype.command = function (command, describe) {
+        var cmd = new PargvCommand(command, describe, this._pargv);
+        this._pargv._commands[cmd._name] = cmd;
+        return cmd;
+    };
     /**
      * Fail
      * Add custom on error handler.

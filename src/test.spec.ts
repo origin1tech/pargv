@@ -206,7 +206,7 @@ describe('Pargv', () => {
   });
 
   it('should get auto generated help text.', () => {
-    const helpTxt = 'Usage:helpAlias:nonehelpcommand.Commands:noneOptions:--helpdisplayshelpforhelp.';
+    const helpTxt = 'Usage:helpAlias:nonehelpcommand.Commands:noneOptions:--help,-hdisplayshelpforhelp.';
     pargv.reset();
     pargv.command('help');
     let resultTxt = colurs.strip(pargv.get.help()).replace(/\s/g, '');

@@ -1,6 +1,6 @@
 {
   "name": "pargv",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "Minimal utility for parsing node command line arguments.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",

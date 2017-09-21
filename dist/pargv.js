@@ -955,6 +955,47 @@ var Pargv = /** @class */ (function () {
     Pargv.prototype.base = function (path) {
         this._base = path;
     };
+    Pargv.prototype.completion = function (command, describe, template, fn) {
+        var _this = this;
+        if (utils.isFunction(describe)) {
+            fn = describe;
+            template = undefined;
+            describe = undefined;
+        }
+        if (utils.isFunction(template)) {
+            fn = template;
+            template = undefined;
+        }
+        command = command || this._localize(this._completionsCommand).done();
+        this._completionsCommand = command; // save the name of the command.
+        var getFlag = this._completionsReply;
+        var replyCmd = command + " " + getFlag; // the reply command for completions.sh.
+        command = command + " [path]"; // our PargvCommand for completions.
+        describe = describe || this._localize('tab completions command.').done();
+        var cmd = this.command(command, describe);
+        cmd.option('--install, -i', this._localize('when true installs completions.').done());
+        cmd.option('--reply', this._localize('when true returns tab completions.').done());
+        cmd.option('--force, -f', this._localize('when true allows overwrite or reinstallation.').done());
+        cmd.action(function (path, parsed) {
+            if (parsed.reply) {
+                return _this.completionsReply(parsed); // reply with completions.
+            }
+            else if (parsed.install) {
+                var success = _this._completions.install(path || _this._env.EXEC, replyCmd, template, parsed.force);
+                if (success) {
+                    console.log();
+                    _this.log(_this._localize('successfully installed tab completions, quit and reopen terminal.').done());
+                    console.log();
+                }
+            }
+            else {
+                _this.show.completion(path || _this._env.EXEC);
+            }
+        });
+        if (fn)
+            this._completionsHandler = fn;
+        return this;
+    };
     // ERRORS & RESET //
     /**
       * Reset
@@ -1006,7 +1047,7 @@ var Pargv = /** @class */ (function () {
     // UTIL METHODS //
     /**
      * Error
-     * Handles error messages.
+     * : Handles error messages.
      *
      * @param args args to be formatted and logged.
      */
@@ -1017,6 +1058,8 @@ var Pargv = /** @class */ (function () {
         }
         var formatted = this.formatLogMessage.apply(this, args);
         var err = new utils.PargvError(formatted);
+        if (this._name)
+            err.name = utils.capitalize(this._name) + 'Error';
         if (err.stack) {
             var stack = err.stack.split(constants_1.EOL);
             stack = stack.slice(2, stack.length).join(constants_1.EOL); // remove message & error call.
@@ -1039,8 +1082,9 @@ var Pargv = /** @class */ (function () {
         if (constants_1.MOCHA_TESTING)
             return this;
         var colors = ['bold'].concat(utils.toArray(this.options.colors.primary));
-        var prefix = this._colurs.applyAnsi('Pargv:', colors);
-        console.log(prefix, this.formatLogMessage.apply(this, args));
+        var prefix = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
+        prefix = this._colurs.applyAnsi(prefix, colors);
+        console.log(prefix + ':', this.formatLogMessage.apply(this, args));
         return this;
     };
     /**
@@ -1101,47 +1145,6 @@ var Pargv = /** @class */ (function () {
             }
         });
         return arr;
-    };
-    Pargv.prototype.completion = function (command, describe, template, fn) {
-        var _this = this;
-        if (utils.isFunction(describe)) {
-            fn = describe;
-            template = undefined;
-            describe = undefined;
-        }
-        if (utils.isFunction(template)) {
-            fn = template;
-            template = undefined;
-        }
-        command = command || this._localize(this._completionsCommand).done();
-        this._completionsCommand = command; // save the name of the command.
-        var getFlag = this._completionsReply;
-        var replyCmd = command + " " + getFlag; // the reply command for completions.sh.
-        command = command + " [path]"; // our PargvCommand for completions.
-        describe = describe || this._localize('tab completions command.').done();
-        var cmd = this.command(command, describe);
-        cmd.option('--install, -i', this._localize('when true installs completions.').done());
-        cmd.option('--reply', this._localize('when true returns tab completions.').done());
-        cmd.option('--force, -f', this._localize('when true allows overwrite or reinstallation.').done());
-        cmd.action(function (path, parsed) {
-            if (parsed.reply) {
-                return _this.completionsReply(parsed); // reply with completions.
-            }
-            else if (parsed.install) {
-                var success = _this._completions.install(path || _this._env.EXEC, replyCmd, template, parsed.force);
-                if (success) {
-                    console.log();
-                    _this.log(_this._localize('successfully installed tab completions, quit and reopen terminal.').done());
-                    console.log();
-                }
-            }
-            else {
-                _this.show.completion(path || _this._env.EXEC);
-            }
-        });
-        if (fn)
-            this._completionsHandler = fn;
-        return this;
     };
     // EXTENDED METHODS //
     /**

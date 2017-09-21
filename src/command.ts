@@ -321,12 +321,6 @@ export class PargvCommand {
 
   // GETTERS //
 
-  private get err() {
-    return this._pargv.err.bind(this._pargv);
-  }
-
-
-
   /**
    * Min
    * : Gets methods for adding min commands or options.
@@ -396,8 +390,26 @@ export class PargvCommand {
   }
 
   /**
+   * If
+   * : Alias for when.
+   */
+  get if() {
+    return this.when;
+  }
+
+  /**
+   * Error
+   * : Handles error messages.
+   *
+   * @param args args to be formatted and logged.
+   */
+  private get err() {
+    return this._pargv.err.bind(this._pargv);
+  }
+
+  /**
    * Parse
-   * Parses the provided arguments inspecting for commands and options.
+   * : Parses the provided arguments inspecting for commands and options.
    *
    * @param argv the process.argv or custom args array.
    */
@@ -407,7 +419,7 @@ export class PargvCommand {
 
   /**
    * Exec
-   * Parses arguments then executes command action if any.
+   * : Parses arguments then executes command action if any.
    *
    * @param argv optional arguments otherwise defaults to process.argv.
    */
@@ -416,21 +428,26 @@ export class PargvCommand {
   }
 
   /**
+   * Completion
+   * : Adds the completion command for use within your app for generating completion script.
+   *
+   * @param command the name of the commpletion install command.
+   * @param describe the description of the command or complete handler.
+   * @param template optional template for generating completions or complete handler.
+   * @param fn the optional completion handler.
+   */
+  get completion() {
+    return this._pargv.completion.bind(this._pargv);
+  }
+
+  /**
    * Listen
-   * Parses arguments then executes command action if any.
+   * : Parses arguments then executes command action if any.
    *
    * @param argv optional arguments otherwise defaults to process.argv.
    */
   get listen() {
     return this._pargv.exec.bind(this._pargv);
-  }
-
-  /**
-   * If
-   * : Alias for when.
-   */
-  get if() {
-    return this.when;
   }
 
   // METHODS //

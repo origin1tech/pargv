@@ -64,7 +64,6 @@ export declare class PargvCommand {
      * @param key the key name to be cleaned.
      */
     private clean(key);
-    private readonly err;
     /**
      * Min
      * : Gets methods for adding min commands or options.
@@ -82,27 +81,6 @@ export declare class PargvCommand {
         options: (count: number) => this;
     };
     /**
-     * Parse
-     * Parses the provided arguments inspecting for commands and options.
-     *
-     * @param argv the process.argv or custom args array.
-     */
-    readonly parse: any;
-    /**
-     * Exec
-     * Parses arguments then executes command action if any.
-     *
-     * @param argv optional arguments otherwise defaults to process.argv.
-     */
-    readonly exec: any;
-    /**
-     * Listen
-     * Parses arguments then executes command action if any.
-     *
-     * @param argv optional arguments otherwise defaults to process.argv.
-     */
-    readonly listen: any;
-    /**
      * If
      * : Alias for when.
      */
@@ -110,6 +88,44 @@ export declare class PargvCommand {
         (config: IMap<IPargvWhenConfig>): PargvCommand;
         (key: string, demand?: string, converse?: boolean): PargvCommand;
     };
+    /**
+     * Error
+     * : Handles error messages.
+     *
+     * @param args args to be formatted and logged.
+     */
+    private readonly err;
+    /**
+     * Parse
+     * : Parses the provided arguments inspecting for commands and options.
+     *
+     * @param argv the process.argv or custom args array.
+     */
+    readonly parse: any;
+    /**
+     * Exec
+     * : Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
+     */
+    readonly exec: any;
+    /**
+     * Completion
+     * : Adds the completion command for use within your app for generating completion script.
+     *
+     * @param command the name of the commpletion install command.
+     * @param describe the description of the command or complete handler.
+     * @param template optional template for generating completions or complete handler.
+     * @param fn the optional completion handler.
+     */
+    readonly completion: any;
+    /**
+     * Listen
+     * : Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
+     */
+    readonly listen: any;
     /**
       * Option
       * Adds option to command.

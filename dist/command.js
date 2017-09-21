@@ -255,15 +255,8 @@ var PargvCommand = /** @class */ (function () {
             this._options = this._options.filter(function (k) { return k !== key; });
         }
     };
-    Object.defineProperty(PargvCommand.prototype, "err", {
-        // GETTERS //
-        get: function () {
-            return this._pargv.err.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(PargvCommand.prototype, "min", {
+        // GETTERS //
         /**
          * Min
          * : Gets methods for adding min commands or options.
@@ -329,10 +322,34 @@ var PargvCommand = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(PargvCommand.prototype, "if", {
+        /**
+         * If
+         * : Alias for when.
+         */
+        get: function () {
+            return this.when;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PargvCommand.prototype, "err", {
+        /**
+         * Error
+         * : Handles error messages.
+         *
+         * @param args args to be formatted and logged.
+         */
+        get: function () {
+            return this._pargv.err.bind(this._pargv);
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(PargvCommand.prototype, "parse", {
         /**
          * Parse
-         * Parses the provided arguments inspecting for commands and options.
+         * : Parses the provided arguments inspecting for commands and options.
          *
          * @param argv the process.argv or custom args array.
          */
@@ -345,12 +362,28 @@ var PargvCommand = /** @class */ (function () {
     Object.defineProperty(PargvCommand.prototype, "exec", {
         /**
          * Exec
-         * Parses arguments then executes command action if any.
+         * : Parses arguments then executes command action if any.
          *
          * @param argv optional arguments otherwise defaults to process.argv.
          */
         get: function () {
             return this._pargv.exec.bind(this._pargv);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PargvCommand.prototype, "completion", {
+        /**
+         * Completion
+         * : Adds the completion command for use within your app for generating completion script.
+         *
+         * @param command the name of the commpletion install command.
+         * @param describe the description of the command or complete handler.
+         * @param template optional template for generating completions or complete handler.
+         * @param fn the optional completion handler.
+         */
+        get: function () {
+            return this._pargv.completion.bind(this._pargv);
         },
         enumerable: true,
         configurable: true
@@ -358,23 +391,12 @@ var PargvCommand = /** @class */ (function () {
     Object.defineProperty(PargvCommand.prototype, "listen", {
         /**
          * Listen
-         * Parses arguments then executes command action if any.
+         * : Parses arguments then executes command action if any.
          *
          * @param argv optional arguments otherwise defaults to process.argv.
          */
         get: function () {
             return this._pargv.exec.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(PargvCommand.prototype, "if", {
-        /**
-         * If
-         * : Alias for when.
-         */
-        get: function () {
-            return this.when;
         },
         enumerable: true,
         configurable: true

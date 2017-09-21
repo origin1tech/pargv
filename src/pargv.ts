@@ -1147,6 +1147,73 @@ export class Pargv {
     this._base = path;
   }
 
+  /**
+    * Completion
+    * : Adds the completion command for use within your app for generating completion script.
+    *
+    * @param command the name of the commpletion install command.
+    * @param describe the description of the command or complete handler.
+    * @param template optional template for generating completions or complete handler.
+    * @param fn the optional completion handler.
+    */
+  completion(command?: string, fn?: CompletionHandler): Pargv;
+  completion(command?: string, describe?: string, fn?: CompletionHandler): Pargv;
+  completion(command?: string, describe?: string, template?: string, fn?: CompletionHandler): Pargv;
+  completion(command?: string, describe?: string | CompletionHandler, template?: string | CompletionHandler, fn?: CompletionHandler): Pargv {
+
+    if (utils.isFunction(describe)) {
+      fn = <CompletionHandler>describe;
+      template = undefined;
+      describe = undefined;
+    }
+
+    if (utils.isFunction(template)) {
+      fn = <CompletionHandler>template;
+      template = undefined;
+    }
+
+    command = command || this._localize(this._completionsCommand).done();
+    this._completionsCommand = command; // save the name of the command.
+    const getFlag = this._completionsReply;
+    const replyCmd = `${command} ${getFlag}`; // the reply command for completions.sh.
+    command = `${command} [path]`; // our PargvCommand for completions.
+    describe = describe || this._localize('tab completions command.').done();
+
+    const cmd = this.command(command, <string>describe);
+
+    cmd.option('--install, -i', this._localize('when true installs completions.').done());
+
+    cmd.option('--reply', this._localize('when true returns tab completions.').done());
+
+    cmd.option('--force, -f', this._localize('when true allows overwrite or reinstallation.').done());
+
+    cmd.action((path, parsed) => {
+
+      if (parsed.reply) {
+        return this.completionsReply(parsed); // reply with completions.
+      }
+
+      else if (parsed.install) {  // install completions.
+        const success = this._completions.install(path || this._env.EXEC, replyCmd, <string>template, parsed.force);
+        if (success) {
+          console.log();
+          this.log(
+            this._localize('successfully installed tab completions, quit and reopen terminal.').done()
+          );
+          console.log();
+        }
+      }
+
+      else {
+        this.show.completion(path || this._env.EXEC);
+      }
+
+    });
+    if (fn)
+      this._completionsHandler = fn;
+    return this;
+  }
+
   // ERRORS & RESET //
 
   /**
@@ -1202,13 +1269,15 @@ export class Pargv {
 
   /**
    * Error
-   * Handles error messages.
+   * : Handles error messages.
    *
    * @param args args to be formatted and logged.
    */
   err(...args: any[]) {
     const formatted = this.formatLogMessage(...args);
     const err = new utils.PargvError(formatted);
+    if (this._name)
+      err.name = utils.capitalize(this._name) + 'Error';
     if (err.stack) {
       let stack: any = err.stack.split(EOL);
       stack = stack.slice(2, stack.length).join(EOL); // remove message & error call.
@@ -1228,8 +1297,9 @@ export class Pargv {
     if (MOCHA_TESTING) // when testing don't log anything.
       return this;
     const colors = ['bold'].concat(utils.toArray<string>(this.options.colors.primary));
-    const prefix = this._colurs.applyAnsi('Pargv:', colors);
-    console.log(prefix, this.formatLogMessage(...args));
+    let prefix: any = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
+    prefix = this._colurs.applyAnsi(prefix, colors);
+    console.log(prefix + ':', this.formatLogMessage(...args));
     return this;
   }
 
@@ -1289,73 +1359,6 @@ export class Pargv {
       }
     });
     return arr;
-  }
-
-  /**
-   * Completion
-   * Adds the completion command for use within your app for generating completion script.
-   *
-   * @param command the name of the commpletion install command.
-   * @param describe the description of the command or complete handler.
-   * @param template optional template for generating completions or complete handler.
-   * @param fn the optional completion handler.
-   */
-  completion(command?: string, fn?: CompletionHandler): Pargv;
-  completion(command?: string, describe?: string, fn?: CompletionHandler): Pargv;
-  completion(command?: string, describe?: string, template?: string, fn?: CompletionHandler): Pargv;
-  completion(command?: string, describe?: string | CompletionHandler, template?: string | CompletionHandler, fn?: CompletionHandler): Pargv {
-
-    if (utils.isFunction(describe)) {
-      fn = <CompletionHandler>describe;
-      template = undefined;
-      describe = undefined;
-    }
-
-    if (utils.isFunction(template)) {
-      fn = <CompletionHandler>template;
-      template = undefined;
-    }
-
-    command = command || this._localize(this._completionsCommand).done();
-    this._completionsCommand = command; // save the name of the command.
-    const getFlag = this._completionsReply;
-    const replyCmd = `${command} ${getFlag}`; // the reply command for completions.sh.
-    command = `${command} [path]`; // our PargvCommand for completions.
-    describe = describe || this._localize('tab completions command.').done();
-
-    const cmd = this.command(command, <string>describe);
-
-    cmd.option('--install, -i', this._localize('when true installs completions.').done());
-
-    cmd.option('--reply', this._localize('when true returns tab completions.').done());
-
-    cmd.option('--force, -f', this._localize('when true allows overwrite or reinstallation.').done());
-
-    cmd.action((path, parsed) => {
-
-      if (parsed.reply) {
-        return this.completionsReply(parsed); // reply with completions.
-      }
-
-      else if (parsed.install) {  // install completions.
-        const success = this._completions.install(path || this._env.EXEC, replyCmd, <string>template, parsed.force);
-        if (success) {
-          console.log();
-          this.log(
-            this._localize('successfully installed tab completions, quit and reopen terminal.').done()
-          );
-          console.log();
-        }
-      }
-
-      else {
-        this.show.completion(path || this._env.EXEC);
-      }
-
-    });
-    if (fn)
-      this._completionsHandler = fn;
-    return this;
   }
 
   // EXTENDED METHODS //

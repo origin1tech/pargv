@@ -222,6 +222,18 @@ export declare class Pargv {
      */
     base(path: string | boolean): void;
     /**
+      * Completion
+      * : Adds the completion command for use within your app for generating completion script.
+      *
+      * @param command the name of the commpletion install command.
+      * @param describe the description of the command or complete handler.
+      * @param template optional template for generating completions or complete handler.
+      * @param fn the optional completion handler.
+      */
+    completion(command?: string, fn?: CompletionHandler): Pargv;
+    completion(command?: string, describe?: string, fn?: CompletionHandler): Pargv;
+    completion(command?: string, describe?: string, template?: string, fn?: CompletionHandler): Pargv;
+    /**
       * Reset
       * : Deletes all commands and resets the default command and handlers.
       * If you wish to reset all meta data like name, describe, license etc
@@ -246,7 +258,7 @@ export declare class Pargv {
     onError(fn: ErrorHandler): this;
     /**
      * Error
-     * Handles error messages.
+     * : Handles error messages.
      *
      * @param args args to be formatted and logged.
      */
@@ -275,18 +287,6 @@ export declare class Pargv {
      * @param args the arguments to normalize.
      */
     toNormalized(...args: any[]): any[];
-    /**
-     * Completion
-     * Adds the completion command for use within your app for generating completion script.
-     *
-     * @param command the name of the commpletion install command.
-     * @param describe the description of the command or complete handler.
-     * @param template optional template for generating completions or complete handler.
-     * @param fn the optional completion handler.
-     */
-    completion(command?: string, fn?: CompletionHandler): Pargv;
-    completion(command?: string, describe?: string, fn?: CompletionHandler): Pargv;
-    completion(command?: string, describe?: string, template?: string, fn?: CompletionHandler): Pargv;
     /**
      * Logo
      * Builds or Displays an ASCII logo using Figlet.

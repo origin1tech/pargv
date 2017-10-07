@@ -62,7 +62,7 @@ export class Pargv {
   _localize: LocalizeInit;
 
   _env: IPargvEnv;
-  _name: string;
+  _name: string = 'Pargv';
   _nameFont: string;
   _nameStyles: AnsiStyles[];
   _version: string;
@@ -259,23 +259,33 @@ export class Pargv {
       verStr = this._localize('Version').done();
       licStr = this._localize('License').done();
 
+      let nameFont = this._nameFont;
+      let nameStyles: any = this._nameStyles;
+
+      if (this._name === 'Pargv') { // Is default name.
+        nameFont = 'ogre';
+        nameStyles = primary;
+      }
+
       // Add the name to the layout.
       if (this._name) {
 
-        if (!this._nameFont)
+        if (!nameFont)
           layout.repeat(<string>this._colurs.applyAnsi(div, muted));
 
         let tmpName = this._name;
-        const nameStyles = this._nameStyles && this._nameStyles.length ? this._nameStyles : primary;
 
-        if (this._nameFont)
-          tmpName = this.logo(tmpName, this._nameFont, nameStyles).get();
-        else
+        // nameStyles = this._nameStyles && this._nameStyles.length ? this._nameStyles : null;
+
+        if (nameFont)
+          tmpName = this.logo(tmpName, nameFont, nameStyles).get();
+
+        if (!nameFont && nameStyles)
           tmpName = <string>this._colurs.applyAnsi(tmpName, nameStyles);
 
         layout.div(tmpName);
 
-        if (this._nameFont)
+        if (nameFont)
           layout.div();
 
         // Add description to layout.
@@ -349,6 +359,9 @@ export class Pargv {
         buildOptions(cmd);
 
       });
+
+      if (!cmdKeys.length)
+        layout.div(this._colurs.applyAnsi('~ No commands configured ~', accent));
 
     };
 
@@ -732,8 +745,8 @@ export class Pargv {
    */
   name(val: string, styles?: AnsiStyles | AnsiStyles[], font?: string) {
     this._name = val || utils.capitalize(this._env.PKG.name || '');
-    this._nameStyles = utils.toArray<AnsiStyles>(styles, ['cyan']);
-    this._nameFont = font || 'ogre';
+    this._nameStyles = utils.toArray<AnsiStyles>(styles, null);
+    this._nameFont = font;
     return this;
   }
 

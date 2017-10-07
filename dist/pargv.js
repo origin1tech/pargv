@@ -44,6 +44,7 @@ var Pargv = /** @class */ (function () {
     function Pargv(options) {
         this._completionsCommand = 'completions';
         this._completionsReply = '--reply';
+        this._name = 'Pargv';
         this._base = false;
         this._commands = {};
         this.init(options);
@@ -199,18 +200,24 @@ var Pargv = /** @class */ (function () {
             descStr = _this._localize('Description').done();
             verStr = _this._localize('Version').done();
             licStr = _this._localize('License').done();
+            var nameFont = _this._nameFont;
+            var nameStyles = _this._nameStyles;
+            if (_this._name === 'Pargv') {
+                nameFont = 'ogre';
+                nameStyles = primary;
+            }
             // Add the name to the layout.
             if (_this._name) {
-                if (!_this._nameFont)
+                if (!nameFont)
                     layout.repeat(_this._colurs.applyAnsi(div, muted));
                 var tmpName = _this._name;
-                var nameStyles = _this._nameStyles && _this._nameStyles.length ? _this._nameStyles : primary;
-                if (_this._nameFont)
-                    tmpName = _this.logo(tmpName, _this._nameFont, nameStyles).get();
-                else
+                // nameStyles = this._nameStyles && this._nameStyles.length ? this._nameStyles : null;
+                if (nameFont)
+                    tmpName = _this.logo(tmpName, nameFont, nameStyles).get();
+                if (!nameFont && nameStyles)
                     tmpName = _this._colurs.applyAnsi(tmpName, nameStyles);
                 layout.div(tmpName);
-                if (_this._nameFont)
+                if (nameFont)
                     layout.div();
                 // Add description to layout.
                 if (_this._describe)
@@ -262,6 +269,8 @@ var Pargv = /** @class */ (function () {
                 }
                 buildOptions(cmd);
             });
+            if (!cmdKeys.length)
+                layout.div(_this._colurs.applyAnsi('~ No commands configured ~', accent));
         };
         var buildFooter = function () {
             // Add epilog if any.
@@ -625,8 +634,8 @@ var Pargv = /** @class */ (function () {
      */
     Pargv.prototype.name = function (val, styles, font) {
         this._name = val || utils.capitalize(this._env.PKG.name || '');
-        this._nameStyles = utils.toArray(styles, ['cyan']);
-        this._nameFont = font || 'ogre';
+        this._nameStyles = utils.toArray(styles, null);
+        this._nameFont = font;
         return this;
     };
     /**

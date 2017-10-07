@@ -2,12 +2,13 @@
 
 List of changes in descending order.
 
-### 10.6.2017 (v2.0.12)
+### 10.6.2017 (v2.0.12-13)
 
 <table>
   <tr><td>onLog</td><td>added onLog override for custom handling of log messages.</td></tr>
   <tr><td>error</td><td>improve error handling.</td></tr>
   <tr><td>log</td><td>improve log handling.</td></tr>
+  <tr><td>help text</td><td>show defaults when no command are configured, makes sure a blank line isn't output basically, essentially showing something.</td></tr>
 </table>
 
 ### 9.21.2017 (v2.0.11)

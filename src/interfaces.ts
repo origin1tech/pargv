@@ -1,9 +1,9 @@
 import { SpawnOptions } from 'child_process';
 import { Pargv, PargvCommand } from './';
-import { PargvError } from './utils';
 import { IAnsiStyles } from 'colurs';
 
-export type ErrorHandler = (message: string, error: PargvError, pargv?: Pargv) => void;
+export type ErrorHandler = (message: string, err: Error, pargv?: Pargv) => void;
+export type LogHandler = (message: string, pargv?: Pargv) => void;
 export type CoerceHandler = (val: any, command?: PargvCommand) => any;
 export type ActionHandler = (...args: any[]) => void;
 export type CompletionHandler = (current: string, argv: any[], done?: CompletionHandlerCallback) => any[];

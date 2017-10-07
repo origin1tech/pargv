@@ -1,7 +1,7 @@
 import { Pargv, PargvCommand } from './';
-import { PargvError } from './utils';
 import { IAnsiStyles } from 'colurs';
-export declare type ErrorHandler = (message: string, error: PargvError, pargv?: Pargv) => void;
+export declare type ErrorHandler = (message: string, err: Error, pargv?: Pargv) => void;
+export declare type LogHandler = (message: string, pargv?: Pargv) => void;
 export declare type CoerceHandler = (val: any, command?: PargvCommand) => any;
 export declare type ActionHandler = (...args: any[]) => void;
 export declare type CompletionHandler = (current: string, argv: any[], done?: CompletionHandlerCallback) => any[];

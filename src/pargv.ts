@@ -11,7 +11,7 @@ import * as utils from './utils';
 import { completions } from './completions';
 import { localize } from './localize';
 import { PargvCommand } from './command';
-import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler } from './interfaces';
+import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler } from './interfaces';
 import { TOKEN_PREFIX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, DOT_EXP, FORMAT_TOKENS_EXP, EXE_EXP, PARGV_ROOT, ARGV, MOCHA_TESTING, EOL } from './constants';
 
 // VARIABLES & CONSTANTS //
@@ -49,6 +49,7 @@ export class Pargv {
   private _helpEnabled: boolean;
   private _helpHandler: HelpHandler;
   private _errorHandler: ErrorHandler;
+  private _logHandler: LogHandler;
 
   private _completionsHandler: CompletionHandler;
   private _completions: IPargvCompletions;
@@ -72,6 +73,7 @@ export class Pargv {
   _commands: IMap<PargvCommand> = {};
 
   _helpCommand: string;
+
   options: IPargvOptions;
 
   constructor(options?: IPargvOptions) {
@@ -110,6 +112,7 @@ export class Pargv {
     this._helpHandler = this.helpHandler; // default help handler.
     this._errorHandler = this.errorHandler; // default error handler.
     this._completionsHandler = this._completions.handler; // default completion handler.
+    this._logHandler = this.logHandler; // default log handler.
 
     return this;
 
@@ -398,7 +401,7 @@ export class Pargv {
    * @param message the error message to display.
    * @param err the PargvError instance.
    */
-  private errorHandler(message: string, err: utils.PargvError) {
+  private errorHandler(message: string, err: Error) {
 
     if (MOCHA_TESTING) // if we're testing just throw the error.
       throw err;
@@ -415,9 +418,23 @@ export class Pargv {
       console.log(stack);
     }
     console.log();
-
     process.exit(1);
 
+  }
+
+  /**
+   * Log Handler
+   * : Handles internal log messages.
+   *
+   * @param message the message to be logged.
+   */
+  private logHandler(message: string) {
+    const colors = ['bold'].concat(utils.toArray<string>(this.options.colors.primary));
+    let prefix: any = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
+    prefix = this._colurs.applyAnsi(prefix, colors);
+    console.log();
+    console.log(prefix + ': ' + message);
+    console.log();
   }
 
   /**
@@ -820,7 +837,7 @@ export class Pargv {
         prog = process.execPath;
       }
       else if (!utils.isExecutable(prog)) {
-        this.err(
+        this.error(
           self._localize('%s could not be executed, check permissions or run as root.')
             .args(prog)
             .styles(colors.accent)
@@ -854,7 +871,7 @@ export class Pargv {
     proc.on('error', (err) => {
 
       if (err['code'] === 'ENOENT')
-        this.err(
+        this.error(
           self._localize('%s does not exist, try --%s.')
             .args(prog)
             .setArg('help')
@@ -863,7 +880,7 @@ export class Pargv {
         );
 
       else if (err['code'] === 'EACCES')
-        this.err(
+        this.error(
           self._localize('%s could not be executed, check permissions or run as root.')
             .args(prog)
             .styles(colors.accent)
@@ -952,13 +969,13 @@ export class Pargv {
       result.$stats = stats;
 
     if (!this.options.allowAnonymous && stats.anonymous.length) {
-      this.err( // no anon in strict mode.
+      this.error( // no anon in strict mode.
         lstatSync
       );
     }
 
     if (stats.missing.length) {
-      this.err( // no anon in strict mode.
+      this.error( // no anon in strict mode.
         this._localize('missing required arguments %s or have no default value.')
           .args(stats.missing.join(', '))
           .styles(colors.accent)
@@ -968,7 +985,7 @@ export class Pargv {
 
     if (stats.whens.length) { // just display first.
       const when = stats.whens.shift();
-      this.err( // no anon in strict mode.
+      this.error( // no anon in strict mode.
         this._localize('%s requires %s but is missing.')
           .args(when[0], when[1])
           .styles(colors.accent, colors.accent).done()
@@ -982,7 +999,7 @@ export class Pargv {
     const optsLen = stats.options.filter(o => FLAG_EXP.test(o)).length;
 
     if (cmd._minCommands > 0 && stats.commands.length < cmd._minCommands) {
-      this.err( // min commands required.
+      this.error( // min commands required.
         this._localize('at least %s %s are required but got %s.')
           .args(cmd._minCommands, cmdStr, cmdsLen + '')
           .styles(colors.accent, colors.primary, colors.accent).done()
@@ -990,7 +1007,7 @@ export class Pargv {
     }
 
     if (cmd._minOptions > 0 && optsLen < cmd._minOptions) {
-      this.err( // min options required.
+      this.error( // min options required.
         this._localize('at least %s %s are required but got %s.')
           .args(cmd._minOptions, optStr, optsLen + '')
           .styles(colors.accent, colors.primary, colors.accent).done()
@@ -998,7 +1015,7 @@ export class Pargv {
     }
 
     if (cmd._maxCommands > 0 && stats.commands.length > cmd._maxCommands) {
-      this.err( // max commands allowed.
+      this.error( // max commands allowed.
         this._localize('got %s %s but no more than %s are allowed.')
           .args(cmdsLen, cmdStr, cmd._maxCommands)
           .styles(colors.accent, colors.primary, colors.accent)
@@ -1007,7 +1024,7 @@ export class Pargv {
     }
 
     if (cmd._maxOptions > 0 && optsLen > cmd._maxOptions) {
-      this.err( // max commands allowed.
+      this.error( // max commands allowed.
         this._localize('got %s %s but no more than %s are allowed.')
           .args(optsLen, optStr, cmd._maxOptions)
           .styles(colors.accent, colors.primary, colors.accent)
@@ -1049,7 +1066,7 @@ export class Pargv {
       let coercion: CoerceHandler = cmd._coercions[key];  // lookup user coerce function.
 
       if (isNot && !isBool) {
-        this.err(
+        this.error(
           this._localize('cannot set option %s to boolean, a value is expected.')
             .args(key).styles(colors.accent).done()
         );
@@ -1282,6 +1299,18 @@ export class Pargv {
     return this;
   }
 
+  /**
+   * On Log
+   * Add custom on log handler.
+   *
+   * @param fn the log handler function.
+   */
+  onLog(fn: LogHandler) {
+    if (fn)
+      this._logHandler = fn;
+    return this;
+  }
+
   // UTIL METHODS //
 
   /**
@@ -1290,15 +1319,26 @@ export class Pargv {
    *
    * @param args args to be formatted and logged.
    */
-  err(...args: any[]) {
-    const formatted = this.formatLogMessage(...args);
-    const err = new utils.PargvError(formatted);
+  error(...args: any[]) {
+    let formatted, err;
+    let prune = 1;
+    if (!(args[0] instanceof Error)) {
+      formatted = this.formatLogMessage(...args);
+      err = new Error(formatted);
+    }
+    else {
+      err = args[0];
+      formatted = err.message;
+      prune = 0;
+    }
     if (this._name)
       err.name = utils.capitalize(this._name) + 'Error';
     if (err.stack) {
       let stack: any = err.stack.split(EOL);
-      stack = stack.slice(2, stack.length).join(EOL); // remove message & error call.
-      err.stack = stack;
+      let stackMsg = stack.shift();
+      stack = stack.slice(prune); // remove message & error call.
+      stack.unshift(stackMsg);
+      err.stack = stack.join(EOL);
     }
     this._errorHandler.call(this, formatted, err, this);
     return this;
@@ -1313,10 +1353,7 @@ export class Pargv {
   log(...args: any[]) {
     if (MOCHA_TESTING) // when testing don't log anything.
       return this;
-    const colors = ['bold'].concat(utils.toArray<string>(this.options.colors.primary));
-    let prefix: any = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
-    prefix = this._colurs.applyAnsi(prefix, colors);
-    console.log(prefix + ':', this.formatLogMessage(...args));
+    this._logHandler.call(this, this.formatLogMessage(...args), this);
     return this;
   }
 
@@ -1332,7 +1369,7 @@ export class Pargv {
     if (utils.isArray(args[0]))
       args = args[0];
     if (!args.length) {
-      this.err(
+      this.error(
         this._localize('method %s failed using invalid or undefined arguments.')
           .args('stats').styles(this.options.colors.accent).done()
       );
@@ -1340,7 +1377,7 @@ export class Pargv {
     args = this.toNormalized(args);               // normalize args to known syntax.
     const cmd = this.get.command(command);
     if (!cmd) {
-      this.err(
+      this.error(
         this._localize('method %s failed using invalid or undefined arguments.')
           .args('stats').styles(this.options.colors.accent).done()
       );

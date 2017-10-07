@@ -277,15 +277,3 @@ export function isExecutable(path: string) {
   }
 
 }
-
-/**
- * Pargv Error
- */
-export class PargvError extends Error {
-  constructor(message: string, ...args: any[]) {
-    super(message);
-    this.name = `PargvError`; // TODO: add detailed types.
-    PargvError.captureStackTrace(this, PargvError);
-  }
-}
-

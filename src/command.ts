@@ -405,7 +405,7 @@ export class PargvCommand {
    * @param args args to be formatted and logged.
    */
   private get err() {
-    return this._pargv.err.bind(this._pargv);
+    return this._pargv.error.bind(this._pargv);
   }
 
   /**

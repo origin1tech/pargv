@@ -2,7 +2,15 @@
 
 List of changes in descending order.
 
-### 9.21.2017 (v2.0.10)
+### 10.6.2017 (v2.0.12)
+
+<table>
+  <tr><td>onLog</td><td>added onLog override for custom handling of log messages.</td></tr>
+  <tr><td>error</td><td>improve error handling.</td></tr>
+  <tr><td>log</td><td>improve log handling.</td></tr>
+</table>
+
+### 9.21.2017 (v2.0.11)
 
 <table>
   <tr><td>help</td><td>flag option optional/required values were not showing in help.</td></tr>

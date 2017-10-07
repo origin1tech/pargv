@@ -2,11 +2,12 @@
 import { ChildProcess } from 'child_process';
 import { IColurs } from 'colurs';
 import { PargvCommand } from './command';
-import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats } from './interfaces';
+import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats, LogHandler } from './interfaces';
 export declare class Pargv {
     private _helpEnabled;
     private _helpHandler;
     private _errorHandler;
+    private _logHandler;
     private _completionsHandler;
     private _completions;
     private _completionsCommand;
@@ -63,6 +64,13 @@ export declare class Pargv {
      * @param err the PargvError instance.
      */
     private errorHandler(message, err);
+    /**
+     * Log Handler
+     * : Handles internal log messages.
+     *
+     * @param message the message to be logged.
+     */
+    private logHandler(message);
     /**
      * Completions Reply
      * Method called form bash profile for compreply.
@@ -257,12 +265,19 @@ export declare class Pargv {
      */
     onError(fn: ErrorHandler): this;
     /**
+     * On Log
+     * Add custom on log handler.
+     *
+     * @param fn the log handler function.
+     */
+    onLog(fn: LogHandler): this;
+    /**
      * Error
      * : Handles error messages.
      *
      * @param args args to be formatted and logged.
      */
-    err(...args: any[]): this;
+    error(...args: any[]): this;
     /**
      * Log
      * Displays log messages after formatting, supports metadata.

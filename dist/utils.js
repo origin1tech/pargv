@@ -1,14 +1,4 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
@@ -295,22 +285,4 @@ function isExecutable(path) {
     }
 }
 exports.isExecutable = isExecutable;
-/**
- * Pargv Error
- */
-var PargvError = /** @class */ (function (_super) {
-    __extends(PargvError, _super);
-    function PargvError(message) {
-        var args = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
-        }
-        var _this = _super.call(this, message) || this;
-        _this.name = "PargvError"; // TODO: add detailed types.
-        PargvError.captureStackTrace(_this, PargvError);
-        return _this;
-    }
-    return PargvError;
-}(Error));
-exports.PargvError = PargvError;
 //# sourceMappingURL=utils.js.map

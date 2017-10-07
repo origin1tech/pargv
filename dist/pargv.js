@@ -74,6 +74,7 @@ var Pargv = /** @class */ (function () {
         this._helpHandler = this.helpHandler; // default help handler.
         this._errorHandler = this.errorHandler; // default error handler.
         this._completionsHandler = this._completions.handler; // default completion handler.
+        this._logHandler = this.logHandler; // default log handler.
         return this;
     };
     /**
@@ -317,6 +318,20 @@ var Pargv = /** @class */ (function () {
         }
         console.log();
         process.exit(1);
+    };
+    /**
+     * Log Handler
+     * : Handles internal log messages.
+     *
+     * @param message the message to be logged.
+     */
+    Pargv.prototype.logHandler = function (message) {
+        var colors = ['bold'].concat(utils.toArray(this.options.colors.primary));
+        var prefix = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
+        prefix = this._colurs.applyAnsi(prefix, colors);
+        console.log();
+        console.log(prefix + ': ' + message);
+        console.log();
     };
     /**
      * Completions Reply
@@ -702,7 +717,7 @@ var Pargv = /** @class */ (function () {
                 prog = process.execPath;
             }
             else if (!utils.isExecutable(prog)) {
-                this.err(self._localize('%s could not be executed, check permissions or run as root.')
+                this.error(self._localize('%s could not be executed, check permissions or run as root.')
                     .args(prog)
                     .styles(colors.accent)
                     .done());
@@ -725,13 +740,13 @@ var Pargv = /** @class */ (function () {
         });
         proc.on('error', function (err) {
             if (err['code'] === 'ENOENT')
-                _this.err(self._localize('%s does not exist, try --%s.')
+                _this.error(self._localize('%s does not exist, try --%s.')
                     .args(prog)
                     .setArg('help')
                     .styles(colors.accent, colors.accent)
                     .done());
             else if (err['code'] === 'EACCES')
-                _this.err(self._localize('%s could not be executed, check permissions or run as root.')
+                _this.error(self._localize('%s could not be executed, check permissions or run as root.')
                     .args(prog)
                     .styles(colors.accent)
                     .done());
@@ -805,11 +820,11 @@ var Pargv = /** @class */ (function () {
         if (this.options.extendStats || cmd._external || isExec)
             result.$stats = stats;
         if (!this.options.allowAnonymous && stats.anonymous.length) {
-            this.err(// no anon in strict mode.
+            this.error(// no anon in strict mode.
             fs_1.lstatSync);
         }
         if (stats.missing.length) {
-            this.err(// no anon in strict mode.
+            this.error(// no anon in strict mode.
             this._localize('missing required arguments %s or have no default value.')
                 .args(stats.missing.join(', '))
                 .styles(colors.accent)
@@ -817,7 +832,7 @@ var Pargv = /** @class */ (function () {
         }
         if (stats.whens.length) {
             var when = stats.whens.shift();
-            this.err(// no anon in strict mode.
+            this.error(// no anon in strict mode.
             this._localize('%s requires %s but is missing.')
                 .args(when[0], when[1])
                 .styles(colors.accent, colors.accent).done());
@@ -827,26 +842,26 @@ var Pargv = /** @class */ (function () {
         var cmdsLen = stats.commands.length;
         var optsLen = stats.options.filter(function (o) { return constants_1.FLAG_EXP.test(o); }).length;
         if (cmd._minCommands > 0 && stats.commands.length < cmd._minCommands) {
-            this.err(// min commands required.
+            this.error(// min commands required.
             this._localize('at least %s %s are required but got %s.')
                 .args(cmd._minCommands, cmdStr, cmdsLen + '')
                 .styles(colors.accent, colors.primary, colors.accent).done());
         }
         if (cmd._minOptions > 0 && optsLen < cmd._minOptions) {
-            this.err(// min options required.
+            this.error(// min options required.
             this._localize('at least %s %s are required but got %s.')
                 .args(cmd._minOptions, optStr, optsLen + '')
                 .styles(colors.accent, colors.primary, colors.accent).done());
         }
         if (cmd._maxCommands > 0 && stats.commands.length > cmd._maxCommands) {
-            this.err(// max commands allowed.
+            this.error(// max commands allowed.
             this._localize('got %s %s but no more than %s are allowed.')
                 .args(cmdsLen, cmdStr, cmd._maxCommands)
                 .styles(colors.accent, colors.primary, colors.accent)
                 .done());
         }
         if (cmd._maxOptions > 0 && optsLen > cmd._maxOptions) {
-            this.err(// max commands allowed.
+            this.error(// max commands allowed.
             this._localize('got %s %s but no more than %s are allowed.')
                 .args(optsLen, optStr, cmd._maxOptions)
                 .styles(colors.accent, colors.primary, colors.accent)
@@ -880,7 +895,7 @@ var Pargv = /** @class */ (function () {
             var isBool = (isFlag && (!next || cmd.isBool(key) || isFlagNext)); // is boolean key.
             var coercion = cmd._coercions[key]; // lookup user coerce function.
             if (isNot && !isBool) {
-                _this.err(_this._localize('cannot set option %s to boolean, a value is expected.')
+                _this.error(_this._localize('cannot set option %s to boolean, a value is expected.')
                     .args(key).styles(colors.accent).done());
             } // Prevent --no option when not bool flag.
             var wrapper = coerceWrapper(key, coercion, isBool); // get coerce wrapper.
@@ -1060,6 +1075,17 @@ var Pargv = /** @class */ (function () {
             this._errorHandler = fn;
         return this;
     };
+    /**
+     * On Log
+     * Add custom on log handler.
+     *
+     * @param fn the log handler function.
+     */
+    Pargv.prototype.onLog = function (fn) {
+        if (fn)
+            this._logHandler = fn;
+        return this;
+    };
     // UTIL METHODS //
     /**
      * Error
@@ -1067,19 +1093,30 @@ var Pargv = /** @class */ (function () {
      *
      * @param args args to be formatted and logged.
      */
-    Pargv.prototype.err = function () {
+    Pargv.prototype.error = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        var formatted = this.formatLogMessage.apply(this, args);
-        var err = new utils.PargvError(formatted);
+        var formatted, err;
+        var prune = 1;
+        if (!(args[0] instanceof Error)) {
+            formatted = this.formatLogMessage.apply(this, args);
+            err = new Error(formatted);
+        }
+        else {
+            err = args[0];
+            formatted = err.message;
+            prune = 0;
+        }
         if (this._name)
             err.name = utils.capitalize(this._name) + 'Error';
         if (err.stack) {
             var stack = err.stack.split(constants_1.EOL);
-            stack = stack.slice(2, stack.length).join(constants_1.EOL); // remove message & error call.
-            err.stack = stack;
+            var stackMsg = stack.shift();
+            stack = stack.slice(prune); // remove message & error call.
+            stack.unshift(stackMsg);
+            err.stack = stack.join(constants_1.EOL);
         }
         this._errorHandler.call(this, formatted, err, this);
         return this;
@@ -1097,10 +1134,7 @@ var Pargv = /** @class */ (function () {
         }
         if (constants_1.MOCHA_TESTING)
             return this;
-        var colors = ['bold'].concat(utils.toArray(this.options.colors.primary));
-        var prefix = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
-        prefix = this._colurs.applyAnsi(prefix, colors);
-        console.log(prefix + ':', this.formatLogMessage.apply(this, args));
+        this._logHandler.call(this, this.formatLogMessage.apply(this, args), this);
         return this;
     };
     /**
@@ -1119,13 +1153,13 @@ var Pargv = /** @class */ (function () {
         if (utils.isArray(args[0]))
             args = args[0];
         if (!args.length) {
-            this.err(this._localize('method %s failed using invalid or undefined arguments.')
+            this.error(this._localize('method %s failed using invalid or undefined arguments.')
                 .args('stats').styles(this.options.colors.accent).done());
         }
         args = this.toNormalized(args); // normalize args to known syntax.
         var cmd = this.get.command(command);
         if (!cmd) {
-            this.err(this._localize('method %s failed using invalid or undefined arguments.')
+            this.error(this._localize('method %s failed using invalid or undefined arguments.')
                 .args('stats').styles(this.options.colors.accent).done());
         }
         return cmd.stats(args);

@@ -342,7 +342,7 @@ var PargvCommand = /** @class */ (function () {
          * @param args args to be formatted and logged.
          */
         get: function () {
-            return this._pargv.err.bind(this._pargv);
+            return this._pargv.error.bind(this._pargv);
         },
         enumerable: true,
         configurable: true

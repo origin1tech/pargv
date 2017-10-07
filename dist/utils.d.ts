@@ -116,9 +116,3 @@ export declare function setBlocking(blocking?: boolean): void;
  * @param path the path to the executable.
  */
 export declare function isExecutable(path: string): boolean;
-/**
- * Pargv Error
- */
-export declare class PargvError extends Error {
-    constructor(message: string, ...args: any[]);
-}

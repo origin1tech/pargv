@@ -382,6 +382,7 @@ Always check [docs](docs/index.html) the below is for conveience and may not rep
     <tr><td>get.env</td><td>gets environment paths and properties.</td><td>n/a</td><td>IPargvEnv</td></tr>
     <tr><td>show.env</td><td>displays environment paths and properties.</td><td>n/a</td><td>Pargv</td></tr>
     <tr><td>onError</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
+    <tr><td>onLog</td><td>overrides default on log handler.</td><td>fn: LogHandler</td><td>Pargv</td></tr>
     <tr><td>reset</td><td>deletes all commands and updates options if provided.</td><td>options?: IPargvOptions</td><td>Pargv</td></tr>
     <tr><td>stats</td><td>compares args to command config returning stats/metadata.</td><td>command: string, ...args: any[]</td><td>Pargv</td></tr>
     <tr><td>logo</td><td>wrapper to output Figlet type logo.</td><td>text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]</td><td>IPargvLogo</td></tr>

@@ -2,7 +2,14 @@
 
 List of changes in descending order.
 
-### 10.6.2017 (v2.0.12-13)
+### 10.8.2017 (v2.0.16)
+
+<table>
+  <tr><td>test.spec.ts</td><td>fix bug in tests after adding default help values.</td></tr>
+  <tr><td>wercker.yml</td><td>add wercker to project.</td></tr>
+</table>
+
+### 10.6.2017 (v2.0.12-15)
 
 <table>
   <tr><td>onLog</td><td>added onLog override for custom handling of log messages.</td></tr>

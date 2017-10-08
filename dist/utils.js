@@ -43,6 +43,7 @@ function environment() {
     if (constants_1.NODE_PATH !== undefined && constants_1.ARGV[1] === constants_1.NODE_PATH)
         exec = constants_1.NODE_PATH.replace(path_1.dirname(constants_1.EXEC_PATH) + '/', '');
     return {
+        CWD: process.cwd(),
         EXEC: exec,
         EXEC_PATH: constants_1.EXEC_PATH || constants_1.ARGV[1],
         NODE_PATH: constants_1.NODE_PATH || constants_1.ARGV[0],

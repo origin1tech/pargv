@@ -6,6 +6,7 @@ export declare function findPackage(filename?: any): any;
  * : Gets paths for the environment including executed path.
  */
 export declare function environment(): {
+    CWD: string;
     EXEC: string;
     EXEC_PATH: string;
     NODE_PATH: string;

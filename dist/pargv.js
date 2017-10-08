@@ -389,6 +389,17 @@ var Pargv = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(Pargv.prototype, "env", {
+        /**
+         * Env
+         * Returns environment variables.
+         */
+        get: function () {
+            return this._env;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Pargv.prototype, "get", {
         /**
          * Gets help, completion script, completions, options...

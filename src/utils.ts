@@ -41,6 +41,7 @@ export function environment() {
   if (NODE_PATH !== undefined && ARGV[1] === NODE_PATH)
     exec = NODE_PATH.replace(dirname(EXEC_PATH) + '/', '');
   return {
+    CWD: process.cwd(),
     EXEC: exec,
     EXEC_PATH: EXEC_PATH || ARGV[1],
     NODE_PATH: NODE_PATH || ARGV[0],

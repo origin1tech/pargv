@@ -503,6 +503,14 @@ export class Pargv {
   }
 
   /**
+   * Env
+   * Returns environment variables.
+   */
+  get env() {
+    return this._env;
+  }
+
+  /**
    * Gets help, completion script, completions, options...
    */
   get get() {

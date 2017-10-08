@@ -94,6 +94,11 @@ export declare class Pargv {
      */
     readonly $: PargvCommand;
     /**
+     * Env
+     * Returns environment variables.
+     */
+    readonly env: IPargvEnv;
+    /**
      * Gets help, completion script, completions, options...
      */
     readonly get: {

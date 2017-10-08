@@ -13,6 +13,25 @@ export declare type FigletLayout = 'default' | 'full' | 'fitted' | 'controlled s
 export interface IMap<T> {
     [key: string]: T;
 }
+export interface IPackage extends IMap<any> {
+    name: string;
+    version: string;
+    description: string;
+    license: string;
+    main: string;
+    bin: IMap<any>;
+    typings: string;
+    keywords: string[];
+    scripts: IMap<any>;
+    author: string | string[] | IMap<any>[];
+    contributors: string | string[] | IMap<any>[];
+    repository: IMap<any>;
+    bugs: IMap<any>;
+    homepage: string;
+    dependencies: IMap<any>;
+    devDependencies: IMap<any>;
+    peerDependencies: IMap<any>;
+}
 export interface IPargvOptions {
     cast?: boolean;
     colorize?: boolean;
@@ -40,6 +59,7 @@ export interface IPargvOptions {
     };
 }
 export interface IPargvEnv {
+    CWD: string;
     EXEC: string;
     EXEC_PATH: string;
     NODE_PATH: string;
@@ -47,7 +67,7 @@ export interface IPargvEnv {
     GLOBAL_PATH: string;
     NODE_ENV: string;
     PLATFORM: string;
-    PKG: any;
+    PKG: IPackage;
 }
 export interface IPargvCompletionPaths {
     appName: string;

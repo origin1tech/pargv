@@ -4,4 +4,5 @@ typedoc.json
 tslint.json
 video/
 dist/test/
-src/test/
+build/
+src/

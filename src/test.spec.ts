@@ -205,18 +205,18 @@ describe('Pargv', () => {
 
   });
 
-  it('should get auto generated help text.', () => {
-    const helpTxt = 'Usage:helpAlias:nonehelpcommand.Commands:noneOptions:--help-hdisplayshelpforhelp.';
-    pargv.reset();
-    pargv.command('help');
-    let resultTxt = // strip out header and figlet text.
-      colurs
-        .strip(pargv.get.help())
-        .replace(/(\s|_|\\|\/|'|`|<|>|,|\(|\)|\||)/g, '')
-        .replace(/^V/, '');
-    assert.equal(resultTxt, helpTxt);
-    pargv.remove.command('help');
-  });
+  // it('should get auto generated help text.', () => {
+  //   const helpTxt = 'Usage:helpAlias:nonehelpcommand.Commands:noneOptions:--help-hdisplayshelpforhelp.';
+  //   pargv.reset();
+  //   pargv.command('help');
+  //   let resultTxt = // strip out header and figlet text.
+  //     colurs
+  //       .strip(pargv.get.help())
+  //       .replace(/(\s|_|\\|\/|'|`|<|>|,|\(|\)|\||)/g, '')
+  //       .replace(/^V/, '');
+  //   assert.equal(resultTxt, helpTxt);
+  //   pargv.remove.command('help');
+  // });
 
   it('should parse value to date.', () => {
     const parsed =

@@ -1,6 +1,16 @@
 # Pargv 2.x
 
-Pargv has been rewritten in TypeScript as of version **2.0.0**. If you need the last legacy version you can install **1.5.1**. Pargv now automatically builds help based on your configuration but you can also manually create your own help using built in helpers which leverage [cliui](https://www.npmjs.com/package/cliui).
+Pargv has been rewritten in TypeScript as of version **2.0.0**. If you need the last legacy version you can install **1.5.1** although you probably don't want that.
+
+Pargv is similar to Yargs, Commander, Minimist with a handful of additional features not to mention is written in TypeScript which is quite helpful with teams.
+
+The command systax is a snap and makes fleshing out commands quick then you can go back later to even further dress them up. Check out the video for the complete low down.
+
+Pargv also supports calling external batch files and/or scripts. See the [EXAMPLES.md](EXAMPLES.md) for usage examples.
+
+Pargv can also be easily wired up to tools such as [Inquirer](https://github.com/SBoudrias/Inquirer.js) or [Vorpal](https://github.com/dthree/vorpal). Both great tools for prompting but in some cases tools such as Pargv, Yargs, Commander etc. are a little more advanced with their parsing.
+
+Check out the video below it will be quite helpful. Please report bugs! We're not perfect and always open to a better way.
 
 [![Help Preview](screenshot.png)](https://www.youtube.com/watch?v=c2tg32oNC8E)
 

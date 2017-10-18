@@ -2,6 +2,23 @@
 
 List of changes in descending order.
 
+## NOTICE
+
+Considering using interface for Pargv and PargvCommand as opposed to exporting typings directly from object. The reason for this is there are several public properties that both the Pargv instance and PargvCommand need access to but are a pain to see in code completion as they are all props that are prefixed with an "_". Hence you don't see the main methods until you scroll, kind of crappy. File issue if you think this should or should NOT happen.
+
+### 10.18.2017 (v2.0.18)
+
+<table>
+  <tr><td>onLog() & onError()</td><td>minor breaking change, Pargv instance no longer passed as this causes issues when handing off to other modules in message formatting.</td></td></tr>
+  <tr><td>Pargv</td><td>set internal props as non-enumerable less cluttered.</td></tr>
+  <tr><td>PargvCommand</td><td>set internal props as non-enumerable less cluttered.</td></tr>
+  <tr><td>completionResult()</td><td>expose completion result method publicly for external use. Also made method more generic to support calling as completer from Node's readline.</td></tr>
+  <tr><td>help text</td><td>Capitalized strings for default help text.</td></tr>
+  <tr><td>exitHelp</td><td>Exit process after showing help, helpful in some cases to disable this when calling help from another module.</td></tr>
+  <tr><td>completions.handler()</td><td>sort completion results before returning.</td></td></tr>
+  <tr><td>tests</td><td>add fix up tests a bit.</td></td></tr>
+</table>
+
 ### 10.8.2017 (v2.0.16-17)
 
 <table>

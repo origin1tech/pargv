@@ -286,4 +286,25 @@ function isExecutable(path) {
     }
 }
 exports.isExecutable = isExecutable;
+/**
+ * Set Enumerable
+ * : Simple helper for defining enumerable prop states.
+ *
+ * @param ctx the context to define properties on.
+ * @param props the properties to set enumerable for.
+ * @param state the state true or false.
+ */
+function setEnumerable(ctx, props, state) {
+    if (state === void 0) { state = false; }
+    props = chek_1.split(props);
+    var obj = {};
+    props.forEach(function (p) {
+        obj[p] = {
+            writable: true,
+            enumerable: false
+        };
+    });
+    Object.defineProperties(ctx, obj);
+}
+exports.setEnumerable = setEnumerable;
 //# sourceMappingURL=utils.js.map

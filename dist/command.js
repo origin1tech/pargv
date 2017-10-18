@@ -24,6 +24,7 @@ var PargvCommand = /** @class */ (function () {
         this._external = null;
         this._cwd = false;
         this._extension = null;
+        utils.setEnumerable(this, '_name, _usage, _describe, _commands, _options, _bools, _aliases, _usages, _defaults, _describes, _coercions, _demands, _whens, _examples, _action, _maxCommands, _maxOptions, _minCommands, _maxOptions, _showHelp, _completions, _external, _cwd, _extension');
         this._describe = describe;
         this._pargv = pargv;
         this.parseCommand(token);
@@ -116,6 +117,7 @@ var PargvCommand = /** @class */ (function () {
         var _this = this;
         var split = utils.split(token.trim(), constants_1.SPLIT_CHARS); // Break out usage command.
         var origExt;
+        var isExternal;
         if (/^@/.test(split[0])) {
             var tmpExt = origExt = split.shift().trim().replace(/^@/, '');
             var splitExt = tmpExt.split(path_1.sep);
@@ -219,7 +221,7 @@ var PargvCommand = /** @class */ (function () {
         helpCmd = helpCmd + ", -" + this._pargv._helpCommand.charAt(0);
         this._showHelp = enabled;
         if (enabled) {
-            var str = this._pargv._localize('displays help for %s.')
+            var str = this._pargv._localize('Displays help for %s.')
                 .args(this._name)
                 .done();
             this.option(helpCmd, str);
@@ -633,7 +635,8 @@ var PargvCommand = /** @class */ (function () {
     };
     /**
      * CWD
-     * : The directory prepended to external commands/programs. Ignored when action is present.
+     * : Sets the working directory prepended to external commands/programs. Ignored when action is present.
+     * TODO: Not sure I like this need to play with it more.
      *
      * @param path the base path when command is external program.
      */

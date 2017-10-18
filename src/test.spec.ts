@@ -92,6 +92,33 @@ describe('Pargv', () => {
 
   });
 
+  it('should parse args for command "generate <template> [name], return completions.', (done) => {
+
+    const args = procArgs.concat(['generate', 'ho']);
+    const comps = ['home', 'about', 'contact'];
+
+    pargv.command('generate <template> [name]')
+      .describe('generate', 'Generates a new template with optional name.')
+      .action((template, name, parsed, cmd) => {
+
+        assert.equal(template, 'component.tpl');
+        assert.equal(name, 'about.html');
+        assert.instanceOf(cmd, PargvCommand);
+        done();
+      })
+      .completionFor('template', comps)
+      .command('install')
+      .command('get');
+
+
+    const parsed = pargv.parse(args);
+    const replies = pargv.completionResult(parsed);
+    assert.deepEqual(replies, comps.sort());
+
+    done();
+
+  });
+
   it('should spread args including anonymous for "generate <template> [name].', (done) => {
 
     const args = procArgs.concat(['generate', 'component.tpl', 'about.html', 'other.jsx']);
@@ -161,8 +188,8 @@ describe('Pargv', () => {
 
   it('should set custom error callback.', (done) => {
 
-    const func = function errorHandler(msg, args, instance) {
-      assert.equal('at least 1 commands are required but got 0.', colurs.strip(msg));
+    const func = function errorHandler(err) {
+      assert.equal('at least 1 commands are required but got 0.', colurs.strip(err.message));
       done();
     };
 
@@ -175,8 +202,8 @@ describe('Pargv', () => {
 
   it('should require property when specified property exists.', (done) => {
 
-    const func = function errorHandler(msg, args, instance) {
-      assert.equal('-x requires -y but is missing.', colurs.strip(msg));
+    const func = function errorHandler(err) {
+      assert.equal('-x requires -y but is missing.', colurs.strip(err.message));
       done();
     };
 
@@ -191,8 +218,8 @@ describe('Pargv', () => {
 
   it('should demand the -x and -y options.', (done) => {
 
-    const func = function errorHandler(msg, args, instance) {
-      assert.equal('missing required arguments -y or have no default value.', colurs.strip(msg));
+    const func = function errorHandler(err) {
+      assert.equal('missing required arguments -y or have no default value.', colurs.strip(err.message));
       done();
     };
 

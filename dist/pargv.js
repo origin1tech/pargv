@@ -23,6 +23,7 @@ var DEFAULTS = {
     localeDir: './locales',
     autoHelp: true,
     defaultHelp: true,
+    exitHelp: true,
     layoutWidth: 80,
     castBeforeCoerce: false,
     extendCommands: false,
@@ -39,7 +40,7 @@ var DEFAULTS = {
         muted: 'gray'
     },
 };
-// CLASSES //
+// CLASS //
 var Pargv = /** @class */ (function () {
     function Pargv(options) {
         this._completionsCommand = 'completions';
@@ -47,6 +48,7 @@ var Pargv = /** @class */ (function () {
         this._name = 'Pargv';
         this._base = false;
         this._commands = {};
+        utils.setEnumerable(this, '_env, _name, _nameFont, _nameStyles, _version, _license, _describe, _base, _epilog, _commands, _helpCommand, _helpEnabled, _helpHandler, _errorHandler, _logHandler, _completionsHandler, _completions, _completionsCommand, _completionsReply, _command, _colorize, _localize');
         this.init(options);
     }
     // PRIVATE //
@@ -309,10 +311,9 @@ var Pargv = /** @class */ (function () {
      * Error Handler
      * The default error handler.
      *
-     * @param message the error message to display.
      * @param err the PargvError instance.
      */
-    Pargv.prototype.errorHandler = function (message, err) {
+    Pargv.prototype.errorHandler = function (err) {
         if (constants_1.MOCHA_TESTING)
             throw err;
         var name = err.name;
@@ -341,29 +342,6 @@ var Pargv = /** @class */ (function () {
         console.log();
         console.log(prefix + ': ' + message);
         console.log();
-    };
-    /**
-     * Completions Reply
-     * Method called form bash profile for compreply.
-     *
-     * @param argv the current argv from tab completions.
-     * @param done the callback on done compiling completions.
-     */
-    Pargv.prototype.completionsReply = function (parsed) {
-        var argv = parsed.$source;
-        var current = argv && argv.length ? utils.last(argv) : ''; // get current arg.
-        var handler = this._completionsHandler;
-        var finish = function (comps) {
-            comps.forEach(function (el) { return console.log(el); });
-            process.exit(0);
-        };
-        utils.setBlocking(true); // set blocking on stream handle.
-        if (handler.length > 2) {
-            handler(current, argv, finish);
-        }
-        else {
-            finish(handler(current, argv)); // handler is synchronous.
-        }
     };
     /**
      * Build Help
@@ -511,7 +489,7 @@ var Pargv = /** @class */ (function () {
     });
     Object.defineProperty(Pargv.prototype, "show", {
         /**
-         * Shows help completion script env.
+         * Shows help, completion script or env.
          */
         get: function () {
             var _this = this;
@@ -526,7 +504,6 @@ var Pargv = /** @class */ (function () {
                     console.log();
                     console.log(_this.buildHelp(command));
                     console.log();
-                    process.exit(0);
                 },
                 /**
                  * Completion
@@ -756,7 +733,7 @@ var Pargv = /** @class */ (function () {
         });
         proc.on('close', function () {
             if (exit !== false)
-                process.exit();
+                process.exit(0);
         });
         proc.on('error', function (err) {
             if (err['code'] === 'ENOENT')
@@ -999,7 +976,7 @@ var Pargv = /** @class */ (function () {
     };
     /**
      * Base
-     * : A base path for all external scripts that contain extentions.
+     * : Sets a base path for all external scripts that contain extentions.
      *
      * @param path a base path for ALL external command scripts.
      */
@@ -1029,7 +1006,7 @@ var Pargv = /** @class */ (function () {
         cmd.option('--force, -f', this._localize('when true allows overwrite or reinstallation.').done());
         cmd.action(function (path, parsed) {
             if (parsed.reply) {
-                return _this.completionsReply(parsed); // reply with completions.
+                return _this.completionResult(parsed, _this._completionsHandler); // reply with completions.
             }
             else if (parsed.install) {
                 var success = _this._completions.install(path || _this._env.EXEC, replyCmd, template, parsed.force);
@@ -1046,6 +1023,36 @@ var Pargv = /** @class */ (function () {
         if (fn)
             this._completionsHandler = fn;
         return this;
+    };
+    /**
+      * Completion Result
+      * Method called maually or by script stored in your bash profile.
+      *
+      * @param line the Pargv parsed result, array of values or string (current line).
+      * @param fn the callback on done compiling completions.
+      */
+    Pargv.prototype.completionResult = function (line, fn) {
+        var argv = utils.isArray(line) ? line : utils.isString(line) ? line.split(' ') : line.$source;
+        var current = argv && argv.length ? utils.last(argv) : ''; // get current arg.
+        var handler = fn;
+        var finish = function (comps) {
+            if (comps)
+                comps.forEach(function (el) { return console.log(el); });
+            process.exit(0);
+        };
+        if (!fn) {
+            // likely being called manually from ext source just build and completions
+            // and return. For example if you wanted to use completionResult() as a
+            // handler for Node's readline completer.
+            return this._completions.handler(current, argv);
+        }
+        utils.setBlocking(true); // set blocking on stream handle.
+        if (handler.length > 2) {
+            handler(current, argv, finish);
+        }
+        else {
+            finish(handler(current, argv)); // handler is synchronous.
+        }
     };
     // ERRORS & RESET //
     /**
@@ -1138,7 +1145,7 @@ var Pargv = /** @class */ (function () {
             stack.unshift(stackMsg);
             err.stack = stack.join(constants_1.EOL);
         }
-        this._errorHandler.call(this, formatted, err, this);
+        this._errorHandler.call(this, err);
         return this;
     };
     /**
@@ -1154,7 +1161,7 @@ var Pargv = /** @class */ (function () {
         }
         if (constants_1.MOCHA_TESTING)
             return this;
-        this._logHandler.call(this, this.formatLogMessage.apply(this, args), this);
+        this._logHandler.call(this, this.formatLogMessage.apply(this, args));
         return this;
     };
     /**

@@ -116,6 +116,7 @@ Pargv options, descriptions and defaults.
     <tr><td>localeDir</td><td>A directory for locales if u wish to roll your own.</td><td>undefined</td></tr>
     <tr><td>autoHelp</td><td>When true help is displayed when exec cannot find matching command.</td><td>True</td></tr>
     <tr><td>defaultHelp</td><td>When true commands automatically to help.</td><td>True</td></tr>
+      <tr><td>exitHelp</td><td>Exit after displaying help.</td><td>True</td></tr>
     <tr><td>extendCommands</td><td>When true known sub commands extended as properties in result.</td><td>False</td></tr>
     <tr><td>extendAliases</td><td>When true option aliases extended to result.</td><td>False</td></tr>
     <tr><td>extendStats</td><td>When true stats object is extended to results.</td><td>False</td></tr>

@@ -11,7 +11,7 @@ import * as utils from './utils';
 import { completions } from './completions';
 import { localize } from './localize';
 import { PargvCommand } from './command';
-import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler } from './interfaces';
+import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, NodeCallback } from './interfaces';
 import { TOKEN_PREFIX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, DOT_EXP, FORMAT_TOKENS_EXP, EXE_EXP, PARGV_ROOT, ARGV, MOCHA_TESTING, EOL } from './constants';
 
 // VARIABLES & CONSTANTS //
@@ -25,6 +25,7 @@ const DEFAULTS: IPargvOptions = {
   localeDir: './locales',
   autoHelp: true,           // on no command && no args show help automatially from exec.
   defaultHelp: true,        // when true new commands are auto added to help.
+  exitHelp: true,           // exit process after showing up.
   layoutWidth: 80,          // layout width for help.
   castBeforeCoerce: false,  // when true parsed values are auto cast before coerce funn.
   extendCommands: false,    // when true known commands extended to result object.
@@ -42,7 +43,7 @@ const DEFAULTS: IPargvOptions = {
   },
 };
 
-// CLASSES //
+// CLASS //
 
 export class Pargv {
 
@@ -77,6 +78,7 @@ export class Pargv {
   options: IPargvOptions;
 
   constructor(options?: IPargvOptions) {
+    utils.setEnumerable(this, '_env, _name, _nameFont, _nameStyles, _version, _license, _describe, _base, _epilog, _commands, _helpCommand, _helpEnabled, _helpHandler, _errorHandler, _logHandler, _completionsHandler, _completions, _completionsCommand, _completionsReply, _command, _colorize, _localize');
     this.init(options);
   }
 
@@ -411,10 +413,9 @@ export class Pargv {
    * Error Handler
    * The default error handler.
    *
-   * @param message the error message to display.
    * @param err the PargvError instance.
    */
-  private errorHandler(message: string, err: Error) {
+  private errorHandler(err: Error) {
 
     if (MOCHA_TESTING) // if we're testing just throw the error.
       throw err;
@@ -448,35 +449,6 @@ export class Pargv {
     console.log();
     console.log(prefix + ': ' + message);
     console.log();
-  }
-
-  /**
-   * Completions Reply
-   * Method called form bash profile for compreply.
-   *
-   * @param argv the current argv from tab completions.
-   * @param done the callback on done compiling completions.
-   */
-  private completionsReply(parsed: IPargvParsedResult) {
-
-    let argv = parsed.$source;
-    const current = argv && argv.length ? utils.last(argv) : ''; // get current arg.
-    let handler = this._completionsHandler;
-
-    const finish = (comps) => { // outputs completions.
-      comps.forEach(el => console.log(el));
-      process.exit(0);
-    };
-
-    utils.setBlocking(true); // set blocking on stream handle.
-
-    if (handler.length > 2) { // handler has callback.
-      handler(current, argv, finish);
-    }
-    else {
-      finish(handler(current, argv)); // handler is synchronous.
-    }
-
   }
 
   /**
@@ -623,7 +595,7 @@ export class Pargv {
   }
 
   /**
-   * Shows help completion script env.
+   * Shows help, completion script or env.
    */
   get show() {
 
@@ -639,7 +611,6 @@ export class Pargv {
         console.log();
         console.log(this.buildHelp(command));
         console.log();
-        process.exit(0);
       },
 
       /**
@@ -869,7 +840,6 @@ export class Pargv {
 
     }
 
-
     proc = spawn(prog, args, { stdio: stdio || 'inherit' });
 
     // Thanks to TJ!
@@ -886,7 +856,7 @@ export class Pargv {
 
     proc.on('close', () => {
       if (exit !== false)
-        process.exit();
+        process.exit(0);
     });
 
     proc.on('error', (err) => {
@@ -1194,7 +1164,7 @@ export class Pargv {
 
   /**
    * Base
-   * : A base path for all external scripts that contain extentions.
+   * : Sets a base path for all external scripts that contain extentions.
    *
    * @param path a base path for ALL external command scripts.
    */
@@ -1245,7 +1215,7 @@ export class Pargv {
     cmd.action((path, parsed) => {
 
       if (parsed.reply) {
-        return this.completionsReply(parsed); // reply with completions.
+        return this.completionResult(parsed, this._completionsHandler); // reply with completions.
       }
 
       else if (parsed.install) {  // install completions.
@@ -1267,6 +1237,46 @@ export class Pargv {
     if (fn)
       this._completionsHandler = fn;
     return this;
+  }
+
+
+  /**
+    * Completion Result
+    * Method called maually or by script stored in your bash profile.
+    *
+    * @param line the Pargv parsed result, array of values or string (current line).
+    * @param fn the callback on done compiling completions.
+    */
+  completionResult(line: string | string[] | IPargvParsedResult, fn?: CompletionHandler): string[] {
+
+    let argv = utils.isArray(line) ? line as string[] : utils.isString(line) ? (line as string).split(' ') : (<IPargvParsedResult>line).$source;
+
+    let current = argv && argv.length ? utils.last(<string[]>argv) : ''; // get current arg.
+
+    let handler = <CompletionHandler>fn;
+
+    const finish = (comps) => { // outputs completions.
+      if (comps)
+        comps.forEach(el => console.log(el));
+      process.exit(0);
+    };
+
+    if (!fn) {
+      // likely being called manually from ext source just build and completions
+      // and return. For example if you wanted to use completionResult() as a
+      // handler for Node's readline completer.
+      return this._completions.handler(current, <string[]>argv);
+    }
+
+    utils.setBlocking(true); // set blocking on stream handle.
+
+    if (handler.length > 2) { // handler has callback.
+      handler(current, <string[]>argv, finish);
+    }
+    else {
+      finish(handler(current, <string[]>argv)); // handler is synchronous.
+    }
+
   }
 
   // ERRORS & RESET //
@@ -1361,7 +1371,7 @@ export class Pargv {
       stack.unshift(stackMsg);
       err.stack = stack.join(EOL);
     }
-    this._errorHandler.call(this, formatted, err, this);
+    this._errorHandler.call(this, err);
     return this;
   }
 
@@ -1374,7 +1384,7 @@ export class Pargv {
   log(...args: any[]) {
     if (MOCHA_TESTING) // when testing don't log anything.
       return this;
-    this._logHandler.call(this, this.formatLogMessage(...args), this);
+    this._logHandler.call(this, this.formatLogMessage(...args));
     return this;
   }
 

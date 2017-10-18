@@ -1,6 +1,6 @@
 
 import { Pargv } from './';
-import { IMap, ActionHandler, CoerceHandler, IPargvCommandOption, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler } from './interfaces';
+import { IMap, ActionHandler, CoerceHandler, IPargvCommandOption, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult } from './interfaces';
 import { TOKEN_PREFIX_EXP, SPLIT_CHARS, FLAG_EXP, COMMAND_VAL_EXP, LIST_EXP, KEYVAL_EXP, SPLIT_PAIRS_EXP, DOT_EXP, SPLIT_KEYVAL_EXP, JSON_EXP, REGEX_EXP } from './constants';
 import { sep, extname, basename, join } from 'path';
 import * as utils from './utils';
@@ -35,6 +35,7 @@ export class PargvCommand {
   _pargv: Pargv;
 
   constructor(token: string, describe?: string, pargv?: Pargv) {
+    utils.setEnumerable(this, '_name, _usage, _describe, _commands, _options, _bools, _aliases, _usages, _defaults, _describes, _coercions, _demands, _whens, _examples, _action, _maxCommands, _maxOptions, _minCommands, _maxOptions, _showHelp, _completions, _external, _cwd, _extension');
     this._describe = describe;
     this._pargv = pargv;
     this.parseCommand(token);
@@ -145,6 +146,7 @@ export class PargvCommand {
 
     let split = utils.split(token.trim(), SPLIT_CHARS);     // Break out usage command.
     let origExt;
+    let isExternal;
 
     if (/^@/.test(split[0])) {      // is external program cmd.
       let tmpExt = origExt = split.shift().trim().replace(/^@/, '');
@@ -277,7 +279,7 @@ export class PargvCommand {
     helpCmd = `${helpCmd}, -${this._pargv._helpCommand.charAt(0)}`;
     this._showHelp = enabled;
     if (enabled) {
-      const str = this._pargv._localize('displays help for %s.')
+      const str = this._pargv._localize('Displays help for %s.')
         .args(this._name)
         .done();
       this.option(helpCmd, str);
@@ -414,7 +416,7 @@ export class PargvCommand {
    *
    * @param argv the process.argv or custom args array.
    */
-  get parse() {
+  get parse(): (...args: any[]) => IPargvParsedResult {
     return this._pargv.parse.bind(this._pargv);
   }
 
@@ -424,7 +426,7 @@ export class PargvCommand {
    *
    * @param argv optional arguments otherwise defaults to process.argv.
    */
-  get exec() {
+  get exec(): (...args: any[]) => IPargvParsedResult {
     return this._pargv.exec.bind(this._pargv);
   }
 
@@ -725,7 +727,8 @@ export class PargvCommand {
 
   /**
    * CWD
-   * : The directory prepended to external commands/programs. Ignored when action is present.
+   * : Sets the working directory prepended to external commands/programs. Ignored when action is present.
+   * TODO: Not sure I like this need to play with it more.
    *
    * @param path the base path when command is external program.
    */

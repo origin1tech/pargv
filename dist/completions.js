@@ -222,7 +222,10 @@ function completions(pargv) {
                 _loop_1(k);
             }
         }
-        return completions;
+        // TODO: clunky redundant need to refactor this.
+        var _options = completions.filter(function (c) { return constants_1.FLAG_EXP.test(c); });
+        var _cmds = completions.filter(function (c) { return !constants_1.FLAG_EXP.test(c); });
+        return _cmds.sort().concat(_options.sort());
     }
     return {
         getPaths: getPaths,

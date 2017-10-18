@@ -60,10 +60,9 @@ export declare class Pargv {
      * Error Handler
      * The default error handler.
      *
-     * @param message the error message to display.
      * @param err the PargvError instance.
      */
-    private errorHandler(message, err);
+    private errorHandler(err);
     /**
      * Log Handler
      * : Handles internal log messages.
@@ -71,14 +70,6 @@ export declare class Pargv {
      * @param message the message to be logged.
      */
     private logHandler(message);
-    /**
-     * Completions Reply
-     * Method called form bash profile for compreply.
-     *
-     * @param argv the current argv from tab completions.
-     * @param done the callback on done compiling completions.
-     */
-    private completionsReply(parsed);
     /**
      * Build Help
      * Common method to get help before show or return.
@@ -116,7 +107,7 @@ export declare class Pargv {
         option: (key: string | IPargvOptions, val?: any) => this;
     };
     /**
-     * Shows help completion script env.
+     * Shows help, completion script or env.
      */
     readonly show: {
         help: (command?: string | PargvCommand) => void;
@@ -229,7 +220,7 @@ export declare class Pargv {
     exec(...argv: any[]): IPargvParsedResult;
     /**
      * Base
-     * : A base path for all external scripts that contain extentions.
+     * : Sets a base path for all external scripts that contain extentions.
      *
      * @param path a base path for ALL external command scripts.
      */
@@ -246,6 +237,14 @@ export declare class Pargv {
     completion(command?: string, fn?: CompletionHandler): Pargv;
     completion(command?: string, describe?: string, fn?: CompletionHandler): Pargv;
     completion(command?: string, describe?: string, template?: string, fn?: CompletionHandler): Pargv;
+    /**
+      * Completion Result
+      * Method called maually or by script stored in your bash profile.
+      *
+      * @param line the Pargv parsed result, array of values or string (current line).
+      * @param fn the callback on done compiling completions.
+      */
+    completionResult(line: string | string[] | IPargvParsedResult, fn?: CompletionHandler): string[];
     /**
       * Reset
       * : Deletes all commands and resets the default command and handlers.

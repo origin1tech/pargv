@@ -1,5 +1,5 @@
 import { Pargv } from './';
-import { IMap, ActionHandler, CoerceHandler, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler } from './interfaces';
+import { IMap, ActionHandler, CoerceHandler, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult } from './interfaces';
 export declare class PargvCommand {
     _name: string;
     _usage: string;
@@ -101,14 +101,14 @@ export declare class PargvCommand {
      *
      * @param argv the process.argv or custom args array.
      */
-    readonly parse: any;
+    readonly parse: (...args: any[]) => IPargvParsedResult;
     /**
      * Exec
      * : Parses arguments then executes command action if any.
      *
      * @param argv optional arguments otherwise defaults to process.argv.
      */
-    readonly exec: any;
+    readonly exec: (...args: any[]) => IPargvParsedResult;
     /**
      * Completion
      * : Adds the completion command for use within your app for generating completion script.
@@ -211,7 +211,8 @@ export declare class PargvCommand {
     action(fn: ActionHandler): this;
     /**
      * CWD
-     * : The directory prepended to external commands/programs. Ignored when action is present.
+     * : Sets the working directory prepended to external commands/programs. Ignored when action is present.
+     * TODO: Not sure I like this need to play with it more.
      *
      * @param path the base path when command is external program.
      */

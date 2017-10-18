@@ -1,10 +1,11 @@
-import { Pargv, PargvCommand } from './';
+import { PargvCommand } from './';
 import { IAnsiStyles } from 'colurs';
-export declare type ErrorHandler = (message: string, err: Error, pargv?: Pargv) => void;
-export declare type LogHandler = (message: string, pargv?: Pargv) => void;
+export declare type ErrorHandler = (err: Error) => void;
+export declare type NodeCallback = (err?: Error, data?: any) => void;
+export declare type LogHandler = (message: string) => void;
 export declare type CoerceHandler = (val: any, command?: PargvCommand) => any;
 export declare type ActionHandler = (...args: any[]) => void;
-export declare type CompletionHandler = (current: string, argv: any[], done?: CompletionHandlerCallback) => any[];
+export declare type CompletionHandler = (current: string, argv: any[] | NodeCallback, done?: CompletionHandlerCallback) => any[];
 export declare type CompletionHandlerCallback = (completions: any[]) => void;
 export declare type HelpHandler = (command: string, commands?: IMap<PargvCommand>) => string;
 export declare type LocalizeInit = (singular: string, plural?: string) => IPargvLocalize;
@@ -42,6 +43,7 @@ export interface IPargvOptions {
     localeDir?: string;
     autoHelp?: boolean;
     defaultHelp?: boolean;
+    exitHelp?: boolean;
     castBeforeCoerce?: boolean;
     extendCommands?: boolean;
     extendAliases?: boolean;

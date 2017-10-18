@@ -117,3 +117,12 @@ export declare function setBlocking(blocking?: boolean): void;
  * @param path the path to the executable.
  */
 export declare function isExecutable(path: string): boolean;
+/**
+ * Set Enumerable
+ * : Simple helper for defining enumerable prop states.
+ *
+ * @param ctx the context to define properties on.
+ * @param props the properties to set enumerable for.
+ * @param state the state true or false.
+ */
+export declare function setEnumerable(ctx: object, props: string | string[], state?: boolean): void;

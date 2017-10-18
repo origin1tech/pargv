@@ -201,7 +201,7 @@ export function completions(pargv: Pargv): IPargvCompletions {
    * @param current the current arg in the terminal
    * @param args the argv array.
    */
-  function handler(current: string, argv: any[]) {
+  function handler(current: string | IPargvParsedResult, argv: any[]) {
 
     let cmds = pargv._commands;
     let completions = [];
@@ -275,7 +275,10 @@ export function completions(pargv: Pargv): IPargvCompletions {
 
     }
 
-    return completions;
+    // TODO: clunky redundant need to refactor this.
+    const _options = completions.filter(c => FLAG_EXP.test(c));
+    const _cmds = completions.filter(c => !FLAG_EXP.test(c));
+    return _cmds.sort().concat(_options.sort());
 
   }
 

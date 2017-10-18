@@ -2,11 +2,12 @@ import { SpawnOptions } from 'child_process';
 import { Pargv, PargvCommand } from './';
 import { IAnsiStyles } from 'colurs';
 
-export type ErrorHandler = (message: string, err: Error, pargv?: Pargv) => void;
-export type LogHandler = (message: string, pargv?: Pargv) => void;
+export type ErrorHandler = (err: Error) => void;
+export type NodeCallback = (err?: Error, data?: any) => void;
+export type LogHandler = (message: string) => void;
 export type CoerceHandler = (val: any, command?: PargvCommand) => any;
 export type ActionHandler = (...args: any[]) => void;
-export type CompletionHandler = (current: string, argv: any[], done?: CompletionHandlerCallback) => any[];
+export type CompletionHandler = (current: string, argv: any[] | NodeCallback, done?: CompletionHandlerCallback) => any[];
 export type CompletionHandlerCallback = (completions: any[]) => void;
 export type HelpHandler = (command: string, commands?: IMap<PargvCommand>) => string;
 export type LocalizeInit = (singular: string, plural?: string) => IPargvLocalize;
@@ -49,6 +50,7 @@ export interface IPargvOptions {
   localeDir?: string;
   autoHelp?: boolean;
   defaultHelp?: boolean;
+  exitHelp?: boolean; // exit after showing help.
   castBeforeCoerce?: boolean;
   extendCommands?: boolean;
   extendAliases?: boolean;

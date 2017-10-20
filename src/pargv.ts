@@ -895,18 +895,17 @@ export class Pargv {
    */
   parse(...argv: any[]) {
 
+    argv = utils.flatten(argv);
+    const isExec = utils.last(argv) === '__exec__' ? argv.pop() : null;
+
     // splits args from string by specified char.
     if (argv.length === 1 && this.options.splitArgs && utils.isString(argv[0]))
       argv = utils.split(argv[0], this.options.splitArgs);
-
-    if (utils.isArray(argv[0]))           // if first is array set as value.
-      argv = argv[0];
 
     let result: IPargvParsedResult;
     const env = this._env;
     const colors = this.options.colors;
     const autoType = this.options.cast ? 'auto' : 'string'; // is auto casting enabled.
-    const isExec = utils.last(argv) === '__exec__' ? argv.pop() : null;
     argv = argv && argv.length ? argv : ARGV;   // process.argv or user args.
     const procArgv = ARGV.slice(0);         // get process.argv.
 
@@ -1104,6 +1103,7 @@ export class Pargv {
     });
 
     if (isExec) { // ensures correct number of cmd args.
+
       if (this.options.spreadCommands) {
         let offset =
           (cmd._commands.length + stats.anonymous.length) - result.$commands.length;

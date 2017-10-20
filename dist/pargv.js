@@ -764,16 +764,15 @@ var Pargv = /** @class */ (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             argv[_i] = arguments[_i];
         }
+        argv = utils.flatten(argv);
+        var isExec = utils.last(argv) === '__exec__' ? argv.pop() : null;
         // splits args from string by specified char.
         if (argv.length === 1 && this.options.splitArgs && utils.isString(argv[0]))
             argv = utils.split(argv[0], this.options.splitArgs);
-        if (utils.isArray(argv[0]))
-            argv = argv[0];
         var result;
         var env = this._env;
         var colors = this.options.colors;
         var autoType = this.options.cast ? 'auto' : 'string'; // is auto casting enabled.
-        var isExec = utils.last(argv) === '__exec__' ? argv.pop() : null;
         argv = argv && argv.length ? argv : constants_1.ARGV; // process.argv or user args.
         var procArgv = constants_1.ARGV.slice(0); // get process.argv.
         var normalized = this.toNormalized(argv.slice(0)); // normalize the args.

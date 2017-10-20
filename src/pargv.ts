@@ -18,6 +18,7 @@ import { TOKEN_PREFIX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EX
 
 const DEFAULTS: IPargvOptions = {
   cast: true,               // when true parsed values auto cast to type if not defined.
+  splitArgs: null,          // splits args on parse/exec by char if only one arg supplied.
   colorize: true,           // wether or not to use colors in help & log messages.
   headingDivider: '><><',   // divider char(s) used in help header/footer.
   commandDivider: '.',      // divider char(s) used in help command sections.
@@ -893,6 +894,10 @@ export class Pargv {
    * @param argv the process.argv or custom args array.
    */
   parse(...argv: any[]) {
+
+    // splits args from string by specified char.
+    if (argv.length === 1 && this.options.splitArgs && utils.isString(argv[0]))
+      argv = utils.split(argv[0], this.options.splitArgs);
 
     if (utils.isArray(argv[0]))           // if first is array set as value.
       argv = argv[0];

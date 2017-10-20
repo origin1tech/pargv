@@ -42,6 +42,7 @@ export interface IPackage extends IMap<any> {
 
 export interface IPargvOptions {
   cast?: boolean;
+  splitArgs?: string | null;
   colorize?: boolean;
   headingDivider?: string;
   commandDivider?: string;

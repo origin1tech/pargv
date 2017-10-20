@@ -1,5 +1,5 @@
-"use strict";
 // IMPORTS //
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
 var fs_1 = require("fs");
@@ -16,6 +16,7 @@ var constants_1 = require("./constants");
 // VARIABLES & CONSTANTS //
 var DEFAULTS = {
     cast: true,
+    splitArgs: null,
     colorize: true,
     headingDivider: '><><',
     commandDivider: '.',
@@ -41,7 +42,7 @@ var DEFAULTS = {
     },
 };
 // CLASS //
-var Pargv = /** @class */ (function () {
+var Pargv = (function () {
     function Pargv(options) {
         this._completionsCommand = 'completions';
         this._completionsReply = '--reply';
@@ -763,6 +764,9 @@ var Pargv = /** @class */ (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             argv[_i] = arguments[_i];
         }
+        // splits args from string by specified char.
+        if (argv.length === 1 && this.options.splitArgs && utils.isString(argv[0]))
+            argv = utils.split(argv[0], this.options.splitArgs);
         if (utils.isArray(argv[0]))
             argv = argv[0];
         var result;

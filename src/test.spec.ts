@@ -42,6 +42,13 @@ describe('Pargv', () => {
     assert.instanceOf(pargv.$, PargvCommand);
   });
 
+  it('should split args from space separated string.', () => {
+    pargv.set.option('splitArgs', ' ');
+    const parsed = pargv.parse('mycommand arg1 arg2');
+    assert.deepEqual(parsed.$commands, ['mycommand', 'arg1', 'arg2']);
+    pargv.set.option('splitArgs', null);
+  });
+
   it('should parse args for command "generate <template> [name]".', () => {
 
     const args = procArgs.concat(['generate', 'component.tpl']);

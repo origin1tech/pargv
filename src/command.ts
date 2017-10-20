@@ -1087,6 +1087,7 @@ export class PargvCommand {
     const mapAnon = [];         // contains anon keys.
     let ctr = 0;
 
+
     // Ensure defaults for missing keys.
     for (const k in this._defaults) {
       const isFlag = FLAG_EXP.test(k);
@@ -1120,7 +1121,7 @@ export class PargvCommand {
       if (!key) {                                 // is anonymous command or option.
         anonymous.push(origEl);
         mapAnon.push(el);
-        if (!isFlagNext && next) {                // add only if not opt or cmd.
+        if (isFlag && !isFlagNext && next) {     // add only if not opt or cmd.
           anonymous.push(next);
           mapAnon.push('$value');            // keeps ordering denotes expects val.
           clone.splice(i + 1, 1);

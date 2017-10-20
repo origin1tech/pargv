@@ -6,7 +6,7 @@ List of changes in descending order.
 
 Considering using interface for Pargv and PargvCommand as opposed to exporting typings directly from object. The reason for this is there are several public properties that both the Pargv instance and PargvCommand need access to but are a pain to see in code completion as they are all props that are prefixed with an "_". Hence you don't see the main methods until you scroll, kind of crappy. File issue if you think this should or should NOT happen.
 
-### 10.20.2017 (v2.0.18)
+### 10.20.2017 (v2.0.20)
 
 <table>
   <tr><td>stats()</td><td>fix bug where all anonymous args might remove args.</td></tr>

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var constants_1 = require("./constants");
 var path_1 = require("path");
 var utils = require("./utils");
-var PargvCommand = (function () {
+var PargvCommand = /** @class */ (function () {
     function PargvCommand(token, describe, pargv) {
         this._commands = [];
         this._options = [];
@@ -148,7 +148,7 @@ var PargvCommand = (function () {
             }
             var next = split[i + 1]; // next value.
             var isFlag = utils.isFlag(el); // if is -o or --opt.
-            next = utils.isFlag(next) ||
+            next = utils.isFlag(next) || // normalize next value.
                 !constants_1.COMMAND_VAL_EXP.test(next || '') ? null : next;
             var parsed = _this.parseToken(el, next); // parse the token.
             var describe;
@@ -165,7 +165,7 @@ var PargvCommand = (function () {
         });
         var cmdStr = this._pargv._localize('command').done();
         this._name = name; // Save the commmand name.
-        this._describe = this._describe ||
+        this._describe = this._describe || // Ensure command description.
             name + " " + cmdStr + ".";
         this._usage = usage.join(' '); // create usage string.
         this.alias.apply(// create usage string.

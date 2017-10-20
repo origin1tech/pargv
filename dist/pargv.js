@@ -1,5 +1,5 @@
-// IMPORTS //
 "use strict";
+// IMPORTS //
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
 var fs_1 = require("fs");
@@ -42,7 +42,7 @@ var DEFAULTS = {
     },
 };
 // CLASS //
-var Pargv = (function () {
+var Pargv = /** @class */ (function () {
     function Pargv(options) {
         this._completionsCommand = 'completions';
         this._completionsReply = '--reply';

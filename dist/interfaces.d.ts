@@ -55,6 +55,7 @@ export interface IPargvOptions {
     locale?: string;
     localeDir?: string;
     autoHelp?: boolean;
+    fallbackHelp?: boolean | string;
     defaultHelp?: boolean;
     exitHelp?: boolean;
     castBeforeCoerce?: boolean;

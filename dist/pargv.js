@@ -22,7 +22,7 @@ var DEFAULTS = {
     commandDivider: '.',
     locale: 'en',
     localeDir: './locales',
-    autoHelp: true,
+    fallbackHelp: true,
     defaultHelp: true,
     exitHelp: true,
     layoutWidth: 80,
@@ -61,7 +61,7 @@ var Pargv = /** @class */ (function () {
      */
     Pargv.prototype.init = function (options) {
         this.options = utils.extend({}, DEFAULTS, options);
-        this.options.commandDivider = this.options.itemDivider || this.options.commandDivider;
+        this.compatibility();
         this._colurs = new colurs_1.Colurs({ enabled: this.options.colorize });
         this._localize = localize_1.localize(this);
         this._env = utils.environment(); // get env paths.
@@ -80,6 +80,15 @@ var Pargv = /** @class */ (function () {
         this._completionsHandler = this._completions.handler; // default completion handler.
         this._logHandler = this.logHandler; // default log handler.
         return this;
+    };
+    /**
+     * Compatibility
+     * : Maps methods/props for legacy compatiblity.
+     */
+    Pargv.prototype.compatibility = function () {
+        var opts = this.options;
+        this.options.commandDivider = opts.itemDivider || opts.commandDivider;
+        this.options.fallbackHelp = utils.isValue(opts.autoHelp) ? opts.autoHelp : this.options.fallbackHelp;
     };
     /**
      * Logger
@@ -252,12 +261,16 @@ var Pargv = /** @class */ (function () {
             else {
                 cmdKeys = utils.keys(_this._commands).sort();
             }
+            var ctr = 0;
             cmdKeys.forEach(function (el, i) {
                 if (el._name)
                     el = el._name;
                 var cmd = _this.get.command(el);
-                if (i > 0)
+                if (!cmd._showHelp)
+                    return;
+                if (ctr > 0)
                     layout.repeat(_this._colurs.applyAnsi(itmDiv, muted), itmDivMulti);
+                ctr++;
                 var aliases = cmd.aliases(cmd._name).join(', '); // get aliases.
                 if (!aliases || !aliases.length)
                     aliases = noneStr;
@@ -969,6 +982,7 @@ var Pargv = /** @class */ (function () {
      * @param argv optional arguments otherwise defaults to process.argv.
      */
     Pargv.prototype.exec = function () {
+        var _this = this;
         var argv = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             argv[_i] = arguments[_i];
@@ -978,12 +992,21 @@ var Pargv = /** @class */ (function () {
             return;
         var cmd = parsed.$command ? this.get.command(parsed.$command) : null;
         var normLen = parsed.$stats && parsed.$stats.normalized.length;
+        var helpFallback = function () {
+            var fallback = _this.options.fallbackHelp;
+            fallback = utils.isString(fallback) ? _this.get.command(fallback) : fallback;
+            if (fallback && fallback._action) {
+                fallback._action.call(_this, parsed, cmd);
+                return;
+            }
+            _this.show.help();
+        };
         if (cmd && cmd._external) {
             this.spawn(parsed, cmd);
             return parsed;
         }
-        if (!parsed.$command && !normLen && this.options.autoHelp) {
-            this.show.help();
+        if (!parsed.$command && !normLen && this.options.fallbackHelp) {
+            helpFallback();
             return;
         }
         if (parsed.$stats && !this.options.extendStats && !(cmd && cmd._external))
@@ -999,8 +1022,8 @@ var Pargv = /** @class */ (function () {
                     cmd._action.call(this, parsed, cmd);
             }
         }
-        if (this.options.autoHelp && !constants_1.MOCHA_TESTING && !cmd)
-            this.show.help();
+        if (this.options.fallbackHelp && !constants_1.MOCHA_TESTING && (!cmd || utils.isString(this.options.fallbackHelp)))
+            helpFallback();
         return parsed;
         var _a;
     };

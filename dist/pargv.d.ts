@@ -36,6 +36,11 @@ export declare class Pargv {
      */
     private init(options?);
     /**
+     * Compatibility
+     * : Maps methods/props for legacy compatiblity.
+     */
+    private compatibility();
+    /**
      * Logger
      * Formats messages for logging.
      *

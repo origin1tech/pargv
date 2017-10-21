@@ -59,12 +59,13 @@ export interface IPargvOptions {
   colorize?: boolean;
   headingDivider?: string;
   commandDivider?: string;
-  itemDivider?: string; // legacy support.
+  itemDivider?: string;
   locale?: string;
   localeDir?: string;
   autoHelp?: boolean;
+  fallbackHelp?: boolean | string;
   defaultHelp?: boolean;
-  exitHelp?: boolean; // exit after showing help.
+  exitHelp?: boolean;
   castBeforeCoerce?: boolean;
   extendCommands?: boolean;
   extendAliases?: boolean;

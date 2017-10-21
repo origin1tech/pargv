@@ -24,7 +24,7 @@ const DEFAULTS: IPargvOptions = {
   commandDivider: '.',      // divider char(s) used in help command sections.
   locale: 'en',             // localization code.
   localeDir: './locales',
-  autoHelp: true,           // on no command && no args show help automatially from exec.
+  fallbackHelp: true,       // true to fallback to help, a command name or false to disable.
   defaultHelp: true,        // when true new commands are auto added to help.
   exitHelp: true,           // exit process after showing up.
   layoutWidth: 80,          // layout width for help.
@@ -94,7 +94,7 @@ export class Pargv {
   private init(options?: IPargvOptions) {
 
     this.options = utils.extend<IPargvOptions>({}, DEFAULTS, options);
-    this.options.commandDivider = this.options.itemDivider || this.options.commandDivider;
+    this.compatibility();
 
     this._colurs = new Colurs({ enabled: this.options.colorize });
     this._localize = localize(this);
@@ -119,6 +119,16 @@ export class Pargv {
 
     return this;
 
+  }
+
+  /**
+   * Compatibility
+   * : Maps methods/props for legacy compatiblity.
+   */
+  private compatibility() {
+    const opts = this.options;
+    this.options.commandDivider = opts.itemDivider || opts.commandDivider;
+    this.options.fallbackHelp = utils.isValue(opts.autoHelp) ? opts.autoHelp : this.options.fallbackHelp;
   }
 
   /**
@@ -331,6 +341,8 @@ export class Pargv {
         cmdKeys = utils.keys(this._commands).sort();
       }
 
+      let ctr = 0;
+
       cmdKeys.forEach((el, i) => {
 
         if (el._name)
@@ -338,8 +350,13 @@ export class Pargv {
 
         const cmd: PargvCommand = this.get.command(el);
 
-        if (i > 0)
+        if (!cmd._showHelp)
+          return;
+
+        if (ctr > 0)
           layout.repeat(<string>this._colurs.applyAnsi(itmDiv, muted), itmDivMulti);
+
+        ctr++;
 
         let aliases = cmd.aliases(cmd._name).join(', '); // get aliases.
 
@@ -1164,13 +1181,23 @@ export class Pargv {
     const cmd = parsed.$command ? this.get.command(parsed.$command) : null;
     const normLen = parsed.$stats && parsed.$stats.normalized.length;
 
+    const helpFallback = () => {
+      let fallback: any = this.options.fallbackHelp;
+      fallback = utils.isString(fallback) ? this.get.command(fallback) : fallback;
+      if (fallback && fallback._action) {
+        fallback._action.call(this, parsed, cmd);
+        return;
+      }
+      this.show.help();
+    };
+
     if (cmd && cmd._external) { // is external command.
       this.spawn(parsed, cmd);
       return parsed;
     }
 
-    if (!parsed.$command && !normLen && this.options.autoHelp) {
-      this.show.help();
+    if (!parsed.$command && !normLen && this.options.fallbackHelp) {
+      helpFallback();
       return;
     }
 
@@ -1192,8 +1219,8 @@ export class Pargv {
 
     }
 
-    if (this.options.autoHelp && !MOCHA_TESTING && !cmd)
-      this.show.help();
+    if (this.options.fallbackHelp && !MOCHA_TESTING && (!cmd || utils.isString(this.options.fallbackHelp)))
+      helpFallback();
 
     return parsed;
 

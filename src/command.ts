@@ -285,16 +285,16 @@ export class PargvCommand {
    * @param enabled whether or not help is enabled.
    */
   private toggleHelp(enabled?: boolean) {
-    if (!utils.isValue(enabled))
+    if (enabled !== false)
       enabled = true;
     let helpCmd = '--' + this._pargv._helpCommand;
-    helpCmd = `${helpCmd}, -${this._pargv._helpCommand.charAt(0)}`;
+    let helpCmdWithAlias = `${helpCmd}, -${this._pargv._helpCommand.charAt(0)}`;
     this._showHelp = enabled;
     if (enabled) {
       const str = this._pargv._localize('Displays help for %s.')
         .args(this._name)
         .done();
-      this.option(helpCmd, str);
+      this.option(helpCmdWithAlias, str);
     }
     else {
       this._options = this._options.filter((el) => {
@@ -781,7 +781,9 @@ export class PargvCommand {
    * @param enabled true or false to toggle help.
    */
   help(enabled?: boolean): PargvCommand {
-    this.toggleHelp(enabled);
+    if (!utils.isValue(enabled))
+      enabled = true;
+    this._showHelp = enabled;
     return this;
   }
 

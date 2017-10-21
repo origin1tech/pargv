@@ -2,7 +2,7 @@
 
 import { parse, resolve, basename, join } from 'path';
 import { appendFileSync, writeFileSync, existsSync, mkdirSync, readFileSync, lstatSync, readlinkSync } from 'fs';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, spawnSync, ChildProcess } from 'child_process';
 import * as util from 'util';
 import * as cliui from 'cliui';
 import * as figlet from 'figlet';
@@ -11,7 +11,7 @@ import * as utils from './utils';
 import { completions } from './completions';
 import { localize } from './localize';
 import { PargvCommand } from './command';
-import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, NodeCallback } from './interfaces';
+import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, NodeCallback, IPargvSpawnConfig } from './interfaces';
 import { TOKEN_PREFIX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, DOT_EXP, FORMAT_TOKENS_EXP, EXE_EXP, PARGV_ROOT, ARGV, MOCHA_TESTING, EOL } from './constants';
 
 // VARIABLES & CONSTANTS //
@@ -800,6 +800,7 @@ export class Pargv {
     * @param parsed the parsed command result.
     * @param cmd a PargvCommand instance.
     * @param stdio optional stdio for child process.
+    * @param exit indicates if should exit after process.
     */
   spawn(parsed: IPargvParsedResult, cmd: PargvCommand, stdio?: any, exit?: boolean) {
 
@@ -841,47 +842,75 @@ export class Pargv {
 
     }
 
-    proc = spawn(prog, args, { stdio: stdio || 'inherit' });
+    let shouldExit = cmd._spawnOptions ? false : exit;
+    const opts = utils.extend({ stdio: stdio || 'inherit' }, cmd._spawnOptions);
 
-    // Thanks to TJ!
-    // see > https://github.com/tj/commander.js/blob/master/index.js#L560
+    const exitProcess = (code) => {
+      if (shouldExit === false)
+        return;
+      process.exit(code || 0);
+    };
 
-    const signals = ['SIGUSR1', 'SIGUSR2', 'SIGTERM', 'SIGINT', 'SIGHUP'];
+    const bindEvents = (proc: ChildProcess) => {
 
-    signals.forEach(function (signal: any) {
-      process.on(signal, function () {
-        if ((proc.killed === false) && (proc['exitCode'] === null))
-          proc.kill(signal);
+      if (!proc || !proc.on) return;
+
+      // Thanks to TJ!
+      // see > https://github.com/tj/commander.js/blob/master/index.js#L560
+
+      const signals = ['SIGUSR1', 'SIGUSR2', 'SIGTERM', 'SIGINT', 'SIGHUP'];
+
+      // Listen for signals to kill process.
+      signals.forEach(function (signal: any) {
+        process.on(signal, function () {
+          if ((proc.killed === false) && (proc['exitCode'] === null))
+            proc.kill(signal);
+        });
       });
-    });
 
-    proc.on('close', () => {
-      if (exit !== false)
-        process.exit(0);
-    });
+      proc.on('close', exitProcess);
 
-    proc.on('error', (err) => {
+      proc.on('error', (err) => {
 
-      if (err['code'] === 'ENOENT')
-        this.error(
-          self._localize('%s does not exist, try --%s.')
-            .args(prog)
-            .setArg('help')
-            .styles(colors.accent, colors.accent)
-            .done()
-        );
+        if (err['code'] === 'ENOENT')
+          this.error(
+            self._localize('%s does not exist, try --%s.')
+              .args(prog)
+              .setArg('help')
+              .styles(colors.accent, colors.accent)
+              .done()
+          );
 
-      else if (err['code'] === 'EACCES')
-        this.error(
-          self._localize('%s could not be executed, check permissions or run as root.')
-            .args(prog)
-            .styles(colors.accent)
-            .done()
-        );
+        else if (err['code'] === 'EACCES')
+          this.error(
+            self._localize('%s could not be executed, check permissions or run as root.')
+              .args(prog)
+              .styles(colors.accent)
+              .done()
+          );
 
-      process.exit(1);
+        else
+          this.error(err);
 
-    });
+        exitProcess(1);
+
+      });
+
+    };
+
+    if (cmd && cmd._spawnAction) { // call user spawn action
+      const spawnWrapper = (command, args?, options?): ChildProcess => {
+        if (utils.isPlainObject(command))
+          return spawn(command.command, command.args || [], command.options);
+        return spawn(command, args, options);
+      };
+      proc = cmd._spawnAction(spawnWrapper, { command: prog, args: args, options: opts }, parsed, cmd) as ChildProcess;
+      bindEvents(proc);
+    }
+    else {
+      proc = spawn(prog, args, opts);
+      bindEvents(proc);
+    }
 
     return proc;
 
@@ -1081,7 +1110,8 @@ export class Pargv {
 
       if (!isFlag) {
         result.$commands.push(val);
-        if (this.options.extendCommands && key) {
+        // if (this.options.extendCommands && key) {
+        if (cmd._extendCommands && key) {
           result[formattedKey] = val;
         }
       }
@@ -1091,7 +1121,8 @@ export class Pargv {
         }
         else {
           result[formattedKey] = val;
-          if (this.options.extendAliases) { // extend each alias to object.
+          // if (this.options.extendAliases) { // extend each alias to object.
+          if (cmd._extendAliases) { // extend each alias to object.
             (cmd.aliases(key) || []).forEach((el) => {
               const frmKey = utils.camelcase(el.replace(FLAG_EXP, ''));
               result[frmKey] = val;
@@ -1104,7 +1135,8 @@ export class Pargv {
 
     if (isExec) { // ensures correct number of cmd args.
 
-      if (this.options.spreadCommands) {
+      // if (this.options.spreadCommands) {
+      if (cmd._spreadCommands) {
         let offset =
           (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
         while (offset > 0 && offset--)

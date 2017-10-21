@@ -202,6 +202,7 @@ export declare class Pargv {
       * @param parsed the parsed command result.
       * @param cmd a PargvCommand instance.
       * @param stdio optional stdio for child process.
+      * @param exit indicates if should exit after process.
       */
     spawn(parsed: IPargvParsedResult, cmd: PargvCommand, stdio?: any, exit?: boolean): ChildProcess;
     /**

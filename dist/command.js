@@ -24,11 +24,15 @@ var PargvCommand = /** @class */ (function () {
         this._external = null;
         this._cwd = false;
         this._extension = null;
-        utils.setEnumerable(this, '_name, _usage, _describe, _commands, _options, _bools, _aliases, _usages, _defaults, _describes, _coercions, _demands, _whens, _examples, _action, _maxCommands, _maxOptions, _minCommands, _maxOptions, _showHelp, _completions, _external, _cwd, _extension');
+        utils.setEnumerable(this, '_name, _usage, _describe, _commands, _options, _bools, _aliases, _usages, _defaults, _describes, _coercions, _demands, _whens, _examples, _action, _maxCommands, _maxOptions, _minCommands, _maxOptions, _showHelp, _completions, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases');
         this._describe = describe;
         this._pargv = pargv;
         this.parseCommand(token);
         this.toggleHelp(pargv.options.defaultHelp);
+        // Set defaults for overrides.
+        this._spreadCommands = pargv.options.spreadCommands;
+        this._extendCommands = pargv.options.extendCommands;
+        this._extendAliases = pargv.options.extendAliases;
     }
     // PRIVATE //
     /**
@@ -76,7 +80,7 @@ var PargvCommand = /** @class */ (function () {
             token = utils.stripToken(token, /(<|>|\[|\])/g);
         }
         else {
-            token = isRequired ?
+            token = isRequired ? // ensure closing char for token.
                 token.replace(/>$/, '') + '>' :
                 token.replace(/\]$/, '') + ']';
         }
@@ -634,6 +638,22 @@ var PargvCommand = /** @class */ (function () {
         return this;
     };
     /**
+     * Spawn Action
+     * : When defined externally spawned commands will call this action.
+     *
+     * @param options the SpawnOptions for child_process spawn.
+     * @param handler external spawn action handler.
+     */
+    PargvCommand.prototype.spawnAction = function (options, handler) {
+        if (utils.isFunction(options)) {
+            handler = options;
+            options = undefined;
+        }
+        this._spawnAction = handler;
+        this._spawnOptions = options;
+        return this;
+    };
+    /**
      * CWD
      * : Sets the working directory prepended to external commands/programs. Ignored when action is present.
      * TODO: Not sure I like this need to play with it more.
@@ -660,6 +680,36 @@ var PargvCommand = /** @class */ (function () {
      */
     PargvCommand.prototype.help = function (enabled) {
         this.toggleHelp(enabled);
+        return this;
+    };
+    /**
+     * Spread Commands
+     * : Allows for spreading commands on command instance only.
+     *
+     * @param spread when true spreads command args in callback action.
+     */
+    PargvCommand.prototype.spreadCommands = function (spread) {
+        this._spreadCommands = spread;
+        return this;
+    };
+    /**
+     * Extend Commands
+     * : Allows for extending commands on command instance only.
+     *
+     * @param extend when true commands are exteneded on Pargv result object.
+     */
+    PargvCommand.prototype.extendCommands = function (extend) {
+        this._extendCommands = extend;
+        return this;
+    };
+    /**
+     * Extend Aliases
+     * : Allows for extending aliases on command instance only.
+     *
+     * @param extend when true aliases are exteneded on Pargv result object.
+     */
+    PargvCommand.prototype.extendAliases = function (extend) {
+        this._extendAliases = extend;
         return this;
     };
     /**
@@ -1097,13 +1147,24 @@ var PargvCommand = /** @class */ (function () {
         return cmd;
     };
     /**
-     * Fail
+     * On Error
      * Add custom on error handler.
      *
      * @param fn the error handler function.
      */
     PargvCommand.prototype.onError = function (fn) {
         this._pargv.onError(fn);
+        return this;
+    };
+    /**
+     * On Log
+     * Add custom on log handler.
+     *
+     * @param fn the log handler function.
+     */
+    PargvCommand.prototype.onLog = function (fn) {
+        if (fn)
+            this._pargv.onLog(fn);
         return this;
     };
     /**

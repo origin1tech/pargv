@@ -1,6 +1,6 @@
 {
   "name": "pargv",
-  "version": "2.0.20",
+  "version": "2.0.22",
   "description": "Minimal utility for parsing node command line arguments.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -9,18 +9,17 @@
     "url": "git+https://github.com/origin1tech/pargv.git"
   },
   "scripts": {
-    "clean": "node ./build/clean",
-    "compile": "node ./node_modules/typescript/bin/tsc -p ./src/tsconfig.json",
-    "watch": "node ./node_modules/typescript/bin/tsc -p ./src/tsconfig.json -w",
-    "bump": "node ./build/bump",
-    "build": "npm run clean && npm run compile && npm run docs",
-    "build-trans": "npm run build && npm run translate",
-    "translate": "node ./build/translate",
-    "docs": "node ./node_modules/typedoc/bin/typedoc --out ./docs ./src --options ./typedoc.json --tsconfig ./src/tsconfig.json",
-    "commit": "git add . && git commit -am 'auto commit' && git push",
-    "test": "mocha --opts ./src/mocha.opts",
-    "release": "npm run build && npm run docs && npm run commit && npm run bump && npm publish",
-    "release-trans": "npm run build-trans && npm run commit && npm run bump && npm publish"
+    "clean": "node ./build clean",
+    "copy": "node ./build copy",
+    "compile": "node ./build compile",
+    "bump": "node ./build bump",
+    "build": "node ./build build",
+    "commit": "node ./build commit",
+    "docs": "node ./build docs",
+    "translate": "node ./build translate",
+    "release": "node ./build release",
+    "watch": "node ./build watch",
+    "test": "node ./build test"
   },
   "keywords": [
     "cli",
@@ -38,6 +37,33 @@
   "bugs": {
     "url": "https://github.com/origin1tech/pargv/issues"
   },
+  "build": {
+    "clean": [
+      "./dist"
+    ]
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "exclude": [
+      "src/**/*.spec.ts"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "require": [
+      "./build/spec"
+    ],
+    "reporter": [
+      "text",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
+  },
   "homepage": "http://origin1tech.github.io/pargv/",
   "dependencies": {
     "chek": "^1.0.11",
@@ -53,9 +79,8 @@
     "@types/mocha": "^2.2.42",
     "@types/node": "^8.0.20",
     "chai": "^3.5.0",
-    "del": "^3.0.0",
-    "fs-extra": "^4.0.2",
     "mocha": "^3.5.0",
+    "stiks": "^1.0.17",
     "ts-node": "^3.3.0",
     "typedoc": "^0.8.0",
     "typescript": "^2.4.2"

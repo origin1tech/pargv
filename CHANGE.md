@@ -6,11 +6,17 @@ List of changes in descending order.
 
 Considering using interface for Pargv and PargvCommand as opposed to exporting typings directly from object. The reason for this is there are several public properties that both the Pargv instance and PargvCommand need access to but are a pain to see in code completion as they are all props that are prefixed with an "_". Hence you don't see the main methods until you scroll, kind of crappy. File issue if you think this should or should NOT happen.
 
-### 10.20.2017 (v2.0.20-21)
+### 10.20.2017 (v2.0.20-22)
 
 <table>
+    <tr><td>EXAMPLES.md</td><td>fixed errors in examples.</td></tr>
+  <tr><td>spawnAction()</td><td>when defined creates process and calls back to this custom action.</td></tr>
+  <tr><td>spreadCommands()</td><td>add override on command to enable/disable spread commands..</td></tr>
+  <tr><td>extendCommands()</td><td>add override method extend commands to result object for this command.</td></tr>
+  <tr><td>extendAliases()</td><td>add override method to extend aliases on result object for this command.</td></tr>
   <tr><td>stats()</td><td>fix bug where all anonymous args might remove args.</td></tr>
   <tr><td>parse()</td><td>handle new option "splitArgs" which allows passing string to parse or exec, Pargv will split to args.</td></tr>
+  <tr><td>command.onLog()</td><td>extend command with onLog callback consistent with existing onError wrapper.</td></tr>
 </table>
 
 ### 10.18.2017 (v2.0.18-19)

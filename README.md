@@ -422,6 +422,10 @@ Always check [docs](docs/index.html) the below is for conveience and may not rep
     <tr><td>completionFor</td><td>adds custom completion for variable.</td><td>key: string, ...vals: any[]</td><td>PargvCommand</td></tr>
     <tr><td>min</td><td>add min requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
     <tr><td>max</td><td>add max requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
+    <tr><td>spawnAction</td><td>allows granular control of spawn actions for external commands.</td><td>options: SpawnOptions | SpawnActionHandler, handler?: SpawnActionHandler</td><td>PargvCommand</td></tr>
+    <tr><td>spreadCommands</td><td>allows for toggling a command's spread behavior for action callback signature arguments.</td><td>spread?: boolean</td><td>PargvCommand</td></tr>
+    <tr><td>extendCommands</td><td>allows for toggling a command's extend behavior for extending commands by name on result object.</td><td>extend?: boolean</td><td>PargvCommand</td></tr>
+    <tr><td>extendAliases</td><td>allows for toggling a command's extend behavior for extending aliases to the result object.</td><td>extend?: boolean</td><td>PargvCommand</td></tr>
     <tr><td>action</td><td>an action to be called when a command is matched on exec.</td><td>fn: ActionCallback</td><td>PargvCommand</td></tr>
     <tr><td>example</td><td>adds an example for the given command.</td><td>example: string, describe?: string</td><td>PargvCommand</td></tr>
     <tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>

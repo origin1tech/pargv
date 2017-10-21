@@ -691,6 +691,7 @@ var Pargv = /** @class */ (function () {
       * @param parsed the parsed command result.
       * @param cmd a PargvCommand instance.
       * @param stdio optional stdio for child process.
+      * @param exit indicates if should exit after process.
       */
     Pargv.prototype.spawn = function (parsed, cmd, stdio, exit) {
         var _this = this;
@@ -722,34 +723,57 @@ var Pargv = /** @class */ (function () {
                 return;
             }
         }
-        proc = child_process_1.spawn(prog, args, { stdio: stdio || 'inherit' });
-        // Thanks to TJ!
-        // see > https://github.com/tj/commander.js/blob/master/index.js#L560
-        var signals = ['SIGUSR1', 'SIGUSR2', 'SIGTERM', 'SIGINT', 'SIGHUP'];
-        signals.forEach(function (signal) {
-            process.on(signal, function () {
-                if ((proc.killed === false) && (proc['exitCode'] === null))
-                    proc.kill(signal);
+        var shouldExit = cmd._spawnOptions ? false : exit;
+        var opts = utils.extend({ stdio: stdio || 'inherit' }, cmd._spawnOptions);
+        var exitProcess = function (code) {
+            if (shouldExit === false)
+                return;
+            process.exit(code || 0);
+        };
+        var bindEvents = function (proc) {
+            if (!proc || !proc.on)
+                return;
+            // Thanks to TJ!
+            // see > https://github.com/tj/commander.js/blob/master/index.js#L560
+            var signals = ['SIGUSR1', 'SIGUSR2', 'SIGTERM', 'SIGINT', 'SIGHUP'];
+            // Listen for signals to kill process.
+            signals.forEach(function (signal) {
+                process.on(signal, function () {
+                    if ((proc.killed === false) && (proc['exitCode'] === null))
+                        proc.kill(signal);
+                });
             });
-        });
-        proc.on('close', function () {
-            if (exit !== false)
-                process.exit(0);
-        });
-        proc.on('error', function (err) {
-            if (err['code'] === 'ENOENT')
-                _this.error(self._localize('%s does not exist, try --%s.')
-                    .args(prog)
-                    .setArg('help')
-                    .styles(colors.accent, colors.accent)
-                    .done());
-            else if (err['code'] === 'EACCES')
-                _this.error(self._localize('%s could not be executed, check permissions or run as root.')
-                    .args(prog)
-                    .styles(colors.accent)
-                    .done());
-            process.exit(1);
-        });
+            proc.on('close', exitProcess);
+            proc.on('error', function (err) {
+                if (err['code'] === 'ENOENT')
+                    _this.error(self._localize('%s does not exist, try --%s.')
+                        .args(prog)
+                        .setArg('help')
+                        .styles(colors.accent, colors.accent)
+                        .done());
+                else if (err['code'] === 'EACCES')
+                    _this.error(self._localize('%s could not be executed, check permissions or run as root.')
+                        .args(prog)
+                        .styles(colors.accent)
+                        .done());
+                else
+                    _this.error(err);
+                exitProcess(1);
+            });
+        };
+        if (cmd && cmd._spawnAction) {
+            var spawnWrapper = function (command, args, options) {
+                if (utils.isPlainObject(command))
+                    return child_process_1.spawn(command.command, command.args || [], command.options);
+                return child_process_1.spawn(command, args, options);
+            };
+            proc = cmd._spawnAction(spawnWrapper, { command: prog, args: args, options: opts }, parsed, cmd);
+            bindEvents(proc);
+        }
+        else {
+            proc = child_process_1.spawn(prog, args, opts);
+            bindEvents(proc);
+        }
         return proc;
     };
     /**
@@ -907,7 +931,8 @@ var Pargv = /** @class */ (function () {
             var formattedKey = utils.camelcase(key.replace(constants_1.FLAG_EXP, ''));
             if (!isFlag) {
                 result.$commands.push(val);
-                if (_this.options.extendCommands && key) {
+                // if (this.options.extendCommands && key) {
+                if (cmd._extendCommands && key) {
                     result[formattedKey] = val;
                 }
             }
@@ -917,7 +942,8 @@ var Pargv = /** @class */ (function () {
                 }
                 else {
                     result[formattedKey] = val;
-                    if (_this.options.extendAliases) {
+                    // if (this.options.extendAliases) { // extend each alias to object.
+                    if (cmd._extendAliases) {
                         (cmd.aliases(key) || []).forEach(function (el) {
                             var frmKey = utils.camelcase(el.replace(constants_1.FLAG_EXP, ''));
                             result[frmKey] = val;
@@ -927,7 +953,8 @@ var Pargv = /** @class */ (function () {
             }
         });
         if (isExec) {
-            if (this.options.spreadCommands) {
+            // if (this.options.spreadCommands) {
+            if (cmd._spreadCommands) {
                 var offset = (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
                 while (offset > 0 && offset--)
                     result.$commands.push(null);

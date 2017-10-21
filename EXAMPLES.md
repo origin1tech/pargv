@@ -310,6 +310,48 @@ This will allow you to pass whatever you wish to the git command now wrapped int
 ```sh
 $ app git ...args
 ```
+
+#### Handle Spawn Manually
+
+If you specify "spawnAction" Pargv will do it's parsing then provide the parsed result as wel as a config that can be handed off to spawn. You may then set any other options you wish then execute the method. If you return from this value Pargv will wire up handlers for catching errors as well as closing.
+
+```ts
+pargv.command('@ls', 'Lists files in directory')
+  .spawnAction((spawn, config, parsed, cmd) => {
+
+    // spawn - a wrapper to Node's spawn which allows passing
+    //    command, args, options or the config object below itself.
+
+    // config - object containing the following
+    //    command: the command to be spawned in this case "ls".
+    //    args: an array of arguments to be passed to command.
+    //    options: the SpawnOptions object for Node's ChildProcess.
+
+    // parsed - the Pargv Parsed Result.
+    // cmd - the Pargv Command.
+
+    const child = spwan(config.command, config.args, config.options);
+
+    // OR
+
+    const child = spawn(config);
+
+    // You could handle close event yourself here
+    // or return the child process below for Pargv
+    // to do so for you.
+    child.on('close', () => {
+      // handle clean up here.
+    });
+
+    // OR
+
+    // returning here allows Pargv to handle errors
+    // for you but is NOT required.
+    return child;
+
+  });
+```
+
 ## Setup completions:
 
 ```ts
@@ -400,7 +442,7 @@ This is what Pargv does internally.
 
 ```ts
 pargv
-  .fail((message, err, instance) => {
+  .onError((message, err, instance) => {
     // message - is the error message thrown.
     // err - is the PargvError object you can access the stack here err.stack.
     // instance - the pargv instance.
@@ -412,7 +454,7 @@ pargv
 
 ```ts
 pargv
-  .help((command, commands) => {
+  .onHelp((command, commands) => {
     // These args are injected for convenience you could just as
     // easily access them from pargv._commands if you wish.
     // command - optional value if help was called with a specific command.
@@ -428,7 +470,7 @@ method "compileHelp" in the Pargv class.
 
 ```ts
 pargv
-  .help((command, commands) => {
+  .onHelp((command, commands) => {
 
     // We'll create a layout that is a 80 wide
     const layout = this.layout(80);

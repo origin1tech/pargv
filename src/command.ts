@@ -1,6 +1,7 @@
 
 import { Pargv } from './';
-import { IMap, ActionHandler, CoerceHandler, IPargvCommandOption, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult } from './interfaces';
+import { SpawnOptions } from 'child_process';
+import { IMap, ActionHandler, CoerceHandler, IPargvCommandOption, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult, LogHandler, SpawnActionHandler } from './interfaces';
 import { TOKEN_PREFIX_EXP, SPLIT_CHARS, FLAG_EXP, COMMAND_VAL_EXP, LIST_EXP, KEYVAL_EXP, SPLIT_PAIRS_EXP, DOT_EXP, SPLIT_KEYVAL_EXP, JSON_EXP, REGEX_EXP } from './constants';
 import { sep, extname, basename, join } from 'path';
 import * as utils from './utils';
@@ -32,14 +33,25 @@ export class PargvCommand {
   _cwd: string | boolean = false;
   _extension: string = null;
 
+  // Overrides.
+  _spawnOptions: SpawnOptions;
+  _spawnAction: SpawnActionHandler;
+  _spreadCommands: boolean;
+  _extendCommands: boolean;
+  _extendAliases: boolean;
+
   _pargv: Pargv;
 
   constructor(token: string, describe?: string, pargv?: Pargv) {
-    utils.setEnumerable(this, '_name, _usage, _describe, _commands, _options, _bools, _aliases, _usages, _defaults, _describes, _coercions, _demands, _whens, _examples, _action, _maxCommands, _maxOptions, _minCommands, _maxOptions, _showHelp, _completions, _external, _cwd, _extension');
+    utils.setEnumerable(this, '_name, _usage, _describe, _commands, _options, _bools, _aliases, _usages, _defaults, _describes, _coercions, _demands, _whens, _examples, _action, _maxCommands, _maxOptions, _minCommands, _maxOptions, _showHelp, _completions, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases');
     this._describe = describe;
     this._pargv = pargv;
     this.parseCommand(token);
     this.toggleHelp(pargv.options.defaultHelp);
+    // Set defaults for overrides.
+    this._spreadCommands = pargv.options.spreadCommands;
+    this._extendCommands = pargv.options.extendCommands;
+    this._extendAliases = pargv.options.extendAliases;
   }
 
   // PRIVATE //
@@ -726,6 +738,23 @@ export class PargvCommand {
   }
 
   /**
+   * Spawn Action
+   * : When defined externally spawned commands will call this action.
+   *
+   * @param options the SpawnOptions for child_process spawn.
+   * @param handler external spawn action handler.
+   */
+  spawnAction(options: SpawnOptions | SpawnActionHandler, handler?: SpawnActionHandler) {
+    if (utils.isFunction(options)) {
+      handler = <SpawnActionHandler>options;
+      options = undefined;
+    }
+    this._spawnAction = handler;
+    this._spawnOptions = <SpawnOptions>options;
+    return this;
+  }
+
+  /**
    * CWD
    * : Sets the working directory prepended to external commands/programs. Ignored when action is present.
    * TODO: Not sure I like this need to play with it more.
@@ -753,6 +782,39 @@ export class PargvCommand {
    */
   help(enabled?: boolean): PargvCommand {
     this.toggleHelp(enabled);
+    return this;
+  }
+
+  /**
+   * Spread Commands
+   * : Allows for spreading commands on command instance only.
+   *
+   * @param spread when true spreads command args in callback action.
+   */
+  spreadCommands(spread?: boolean) {
+    this._spreadCommands = spread;
+    return this;
+  }
+
+  /**
+   * Extend Commands
+   * : Allows for extending commands on command instance only.
+   *
+   * @param extend when true commands are exteneded on Pargv result object.
+   */
+  extendCommands(extend?: boolean) {
+    this._extendCommands = extend;
+    return this;
+  }
+
+  /**
+   * Extend Aliases
+   * : Allows for extending aliases on command instance only.
+   *
+   * @param extend when true aliases are exteneded on Pargv result object.
+   */
+  extendAliases(extend?: boolean) {
+    this._extendAliases = extend;
     return this;
   }
 
@@ -1260,13 +1322,25 @@ export class PargvCommand {
   }
 
   /**
-   * Fail
+   * On Error
    * Add custom on error handler.
    *
    * @param fn the error handler function.
    */
   onError(fn: ErrorHandler) {
     this._pargv.onError(fn);
+    return this;
+  }
+
+  /**
+   * On Log
+   * Add custom on log handler.
+   *
+   * @param fn the log handler function.
+   */
+  onLog(fn: LogHandler) {
+    if (fn)
+      this._pargv.onLog(fn);
     return this;
   }
 

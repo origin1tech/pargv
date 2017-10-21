@@ -1,5 +1,7 @@
+/// <reference types="node" />
 import { Pargv } from './';
-import { IMap, ActionHandler, CoerceHandler, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult } from './interfaces';
+import { SpawnOptions } from 'child_process';
+import { IMap, ActionHandler, CoerceHandler, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult, LogHandler, SpawnActionHandler } from './interfaces';
 export declare class PargvCommand {
     _name: string;
     _usage: string;
@@ -25,6 +27,11 @@ export declare class PargvCommand {
     _external: string;
     _cwd: string | boolean;
     _extension: string;
+    _spawnOptions: SpawnOptions;
+    _spawnAction: SpawnActionHandler;
+    _spreadCommands: boolean;
+    _extendCommands: boolean;
+    _extendAliases: boolean;
     _pargv: Pargv;
     constructor(token: string, describe?: string, pargv?: Pargv);
     /**
@@ -210,6 +217,14 @@ export declare class PargvCommand {
      */
     action(fn: ActionHandler): this;
     /**
+     * Spawn Action
+     * : When defined externally spawned commands will call this action.
+     *
+     * @param options the SpawnOptions for child_process spawn.
+     * @param handler external spawn action handler.
+     */
+    spawnAction(options: SpawnOptions | SpawnActionHandler, handler?: SpawnActionHandler): this;
+    /**
      * CWD
      * : Sets the working directory prepended to external commands/programs. Ignored when action is present.
      * TODO: Not sure I like this need to play with it more.
@@ -224,6 +239,27 @@ export declare class PargvCommand {
      * @param enabled true or false to toggle help.
      */
     help(enabled?: boolean): PargvCommand;
+    /**
+     * Spread Commands
+     * : Allows for spreading commands on command instance only.
+     *
+     * @param spread when true spreads command args in callback action.
+     */
+    spreadCommands(spread?: boolean): this;
+    /**
+     * Extend Commands
+     * : Allows for extending commands on command instance only.
+     *
+     * @param extend when true commands are exteneded on Pargv result object.
+     */
+    extendCommands(extend?: boolean): this;
+    /**
+     * Extend Aliases
+     * : Allows for extending aliases on command instance only.
+     *
+     * @param extend when true aliases are exteneded on Pargv result object.
+     */
+    extendAliases(extend?: boolean): this;
     /**
      * Example
      * Stores and example for the command displayed in help.
@@ -307,12 +343,19 @@ export declare class PargvCommand {
      */
     command(command: string, describe?: string): PargvCommand;
     /**
-     * Fail
+     * On Error
      * Add custom on error handler.
      *
      * @param fn the error handler function.
      */
     onError(fn: ErrorHandler): this;
+    /**
+     * On Log
+     * Add custom on log handler.
+     *
+     * @param fn the log handler function.
+     */
+    onLog(fn: LogHandler): this;
     /**
      * Epilog
      * Displays trailing message.

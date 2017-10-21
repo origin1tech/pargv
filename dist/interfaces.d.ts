@@ -1,3 +1,5 @@
+/// <reference types="node" />
+import { SpawnOptions, ChildProcess, SpawnSyncReturns, SpawnSyncOptions } from 'child_process';
 import { PargvCommand } from './';
 import { IAnsiStyles } from 'colurs';
 export declare type ErrorHandler = (err: Error) => void;
@@ -5,6 +7,10 @@ export declare type NodeCallback = (err?: Error, data?: any) => void;
 export declare type LogHandler = (message: string) => void;
 export declare type CoerceHandler = (val: any, command?: PargvCommand) => any;
 export declare type ActionHandler = (...args: any[]) => void;
+export declare type SpawnAsyncMethod = (command: string | IPargvSpawnConfig, args?: string[], options?: SpawnOptions) => ChildProcess;
+export declare type SpawnSyncMethod = (command: string, args?: string[], options?: SpawnSyncOptions) => SpawnSyncReturns<Buffer | string>;
+export declare type SpawnMethod = SpawnAsyncMethod;
+export declare type SpawnActionHandler = (method: SpawnMethod, config: IPargvSpawnConfig, parsed?: IPargvParsedResult, cmd?: PargvCommand) => void | ChildProcess;
 export declare type CompletionHandler = (current: string, argv: any[] | NodeCallback, done?: CompletionHandlerCallback) => any[];
 export declare type CompletionHandlerCallback = (completions: any[]) => void;
 export declare type HelpHandler = (command: string, commands?: IMap<PargvCommand>) => string;
@@ -13,6 +19,11 @@ export declare type AnsiStyles = keyof IAnsiStyles;
 export declare type FigletLayout = 'default' | 'full' | 'fitted' | 'controlled smushing' | 'universal smushing';
 export interface IMap<T> {
     [key: string]: T;
+}
+export interface IPargvSpawnConfig {
+    command: string;
+    args: any[];
+    options: SpawnOptions;
 }
 export interface IPackage extends IMap<any> {
     name: string;
@@ -32,6 +43,7 @@ export interface IPackage extends IMap<any> {
     dependencies: IMap<any>;
     devDependencies: IMap<any>;
     peerDependencies: IMap<any>;
+    [key: string]: any;
 }
 export interface IPargvOptions {
     cast?: boolean;

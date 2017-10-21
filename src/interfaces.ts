@@ -1,4 +1,4 @@
-import { SpawnOptions } from 'child_process';
+import { SpawnOptions, ChildProcess, SpawnSyncReturns, SpawnSyncOptions } from 'child_process';
 import { Pargv, PargvCommand } from './';
 import { IAnsiStyles } from 'colurs';
 
@@ -7,6 +7,12 @@ export type NodeCallback = (err?: Error, data?: any) => void;
 export type LogHandler = (message: string) => void;
 export type CoerceHandler = (val: any, command?: PargvCommand) => any;
 export type ActionHandler = (...args: any[]) => void;
+
+export type SpawnAsyncMethod = (command: string | IPargvSpawnConfig, args?: string[], options?: SpawnOptions) => ChildProcess;
+export type SpawnSyncMethod = (command: string, args?: string[], options?: SpawnSyncOptions) => SpawnSyncReturns<Buffer | string>;
+export type SpawnMethod = SpawnAsyncMethod; // may allow sync in future | SpawnSyncMethod;
+export type SpawnActionHandler = (method: SpawnMethod, config: IPargvSpawnConfig, parsed?: IPargvParsedResult, cmd?: PargvCommand) => void | ChildProcess;
+
 export type CompletionHandler = (current: string, argv: any[] | NodeCallback, done?: CompletionHandlerCallback) => any[];
 export type CompletionHandlerCallback = (completions: any[]) => void;
 export type HelpHandler = (command: string, commands?: IMap<PargvCommand>) => string;
@@ -17,6 +23,12 @@ export type FigletLayout = 'default' | 'full' | 'fitted' | 'controlled smushing'
 
 export interface IMap<T> {
   [key: string]: T;
+}
+
+export interface IPargvSpawnConfig {
+  command: string;
+  args: any[];
+  options: SpawnOptions;
 }
 
 // Just the most common properties.
@@ -38,6 +50,7 @@ export interface IPackage extends IMap<any> {
   dependencies: IMap<any>;
   devDependencies: IMap<any>;
   peerDependencies: IMap<any>;
+  [key: string]: any;
 }
 
 export interface IPargvOptions {

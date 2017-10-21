@@ -1,6 +1,6 @@
 {
   "name": "pargv",
-  "version": "2.0.23",
+  "version": "2.0.24",
   "description": "Minimal utility for parsing node command line arguments.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -80,9 +80,11 @@
     "@types/node": "^8.0.20",
     "chai": "^3.5.0",
     "mocha": "^3.5.0",
+    "mute-stream": "0.0.7",
     "stiks": "^1.0.17",
     "ts-node": "^3.3.0",
     "typedoc": "^0.8.0",
-    "typescript": "^2.4.2"
+    "typescript": "^2.4.2",
+    "passpipe": "^1.0.1"
   }
 }

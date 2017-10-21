@@ -1176,29 +1176,27 @@ export class Pargv {
     const parsed: IPargvParsedResult = this.parse(...argv, '__exec__');
 
     if (!parsed)
-      return;
+      return {};
 
-    const cmd = parsed.$command ? this.get.command(parsed.$command) : null;
+    const fallbackName =
+      utils.isBoolean(this.options.fallbackHelp) ?
+        null : this.options.fallbackHelp;
+
+    let cmd = parsed.$command ? this.get.command(parsed.$command) : null;
     const normLen = parsed.$stats && parsed.$stats.normalized.length;
 
-    const helpFallback = () => {
-      let fallback: any = this.options.fallbackHelp;
-      fallback = utils.isString(fallback) ? this.get.command(fallback) : fallback;
-      if (fallback && fallback._action) {
-        fallback._action.call(this, parsed, cmd);
-        return;
-      }
-      this.show.help();
-    };
+    // Ensure the command is not the fallback help command.
+    if (cmd && (cmd._name === fallbackName))
+      cmd = null;
 
     if (cmd && cmd._external) { // is external command.
       this.spawn(parsed, cmd);
       return parsed;
     }
 
-    if (!parsed.$command && !normLen && this.options.fallbackHelp) {
-      helpFallback();
-      return;
+    if (!parsed.$command && !normLen && this.options.fallbackHelp === true) {
+      this.show.help();
+      return parsed;
     }
 
     if (parsed.$stats && !this.options.extendStats && !(cmd && cmd._external))
@@ -1219,8 +1217,21 @@ export class Pargv {
 
     }
 
-    if (this.options.fallbackHelp && !MOCHA_TESTING && (!cmd || utils.isString(this.options.fallbackHelp)))
-      helpFallback();
+    if (!cmd && fallbackName) {
+      const fallbackCmd = this.get.command(<string>fallbackName);
+      if (fallbackCmd && fallbackCmd._action) {
+        if (this.options.spreadCommands)
+          fallbackCmd._action.call(this, ...parsed.$commands, parsed, null);
+        else
+          fallbackCmd._action.call(this, parsed, null);
+      }
+      else {
+        this.show.help(); // fallback is defined but something went wrong just show help.
+      }
+    }
+
+    if (this.options.fallbackHelp === true && !MOCHA_TESTING && !cmd)
+      this.show.help();
 
     return parsed;
 

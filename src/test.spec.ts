@@ -7,26 +7,12 @@ const should = chai.should;
 const assert = chai.assert;
 const colurs = Colurs.get();
 
-import { Stream } from 'stream';
 import { Pargv, PargvCommand } from './';
+import * as passpipe from 'passpipe';
 import { isWindows } from 'chek';
+
 const pargv = new Pargv();
-
 const procArgs = process.argv.slice(0, 2);
-
-// Helper for piping spawn test chunks.
-function throughHandler(fn) {
-  const PassThrough = Stream.PassThrough;
-  const pass = new PassThrough;
-  let _chunk = '';
-  pass.on('data', (chunk) => {
-    _chunk += chunk;
-  });
-  pass.on('end', () => {
-    fn(_chunk.trim());
-  });
-  return pass;
-}
 
 describe('Pargv', () => {
 
@@ -239,18 +225,27 @@ describe('Pargv', () => {
 
   });
 
-  // it('should get auto generated help text.', () => {
-  //   const helpTxt = 'Usage:helpAlias:nonehelpcommand.Commands:noneOptions:--help-hdisplayshelpforhelp.';
-  //   pargv.reset();
-  //   pargv.command('help');
-  //   let resultTxt = // strip out header and figlet text.
-  //     colurs
-  //       .strip(pargv.get.help())
-  //       .replace(/(\s|_|\\|\/|'|`|<|>|,|\(|\)|\||)/g, '')
-  //       .replace(/^V/, '');
-  //   assert.equal(resultTxt, helpTxt);
-  //   pargv.remove.command('help');
-  // });
+  it('should get auto generated help text.', () => {
+    pargv.reset();
+    pargv.command('help');
+    let resultTxt = colurs.strip(pargv.get.help());
+    expect(resultTxt.length).gt(0);
+    assert.match(resultTxt, /usage: help/gi);
+    pargv.remove.command('help');
+  });
+
+  it('should fallback to catchall command.', (done) => {
+    pargv.reset()
+      .set.option('fallbackHelp', 'fallback');
+    pargv.command('fallback')
+      .action((parsed) => {
+        assert(parsed.$command, 'unknown');
+        pargv.set.option('fallbackHelp', true);
+        pargv.remove.command('fallback');
+        done();
+      });
+    pargv.exec(['uknown']);
+  });
 
   it('should parse value to date.', () => {
     const parsed =
@@ -313,11 +308,10 @@ describe('Pargv', () => {
     cmd.cwd('src/test');
     const parsed = pargv.parse(['bash.sh']);
     const proc = pargv.spawn(parsed, cmd, [], false);
-    const pass = throughHandler((chunk) => {
+    passpipe.proc(proc, (chunk) => {
       assert.equal(chunk, 'executed bash script.');
       done();
     });
-    proc.stdout.pipe(pass);
   });
 
   it('should spawn and test node script.', (done) => {
@@ -325,12 +319,11 @@ describe('Pargv', () => {
     pargv.base('src/test');
     const parsed = pargv.parse(['node.js']);
     const proc = pargv.spawn(parsed, cmd, [], false);
-    const pass = throughHandler((chunk) => {
+    passpipe.proc(proc, (chunk) => {
       assert.equal(chunk, 'executed node script.');
       pargv.base(null);
       done();
     });
-    proc.stdout.pipe(pass);
   });
 
 });

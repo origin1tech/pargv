@@ -982,32 +982,27 @@ var Pargv = /** @class */ (function () {
      * @param argv optional arguments otherwise defaults to process.argv.
      */
     Pargv.prototype.exec = function () {
-        var _this = this;
         var argv = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             argv[_i] = arguments[_i];
         }
         var parsed = this.parse.apply(this, argv.concat(['__exec__']));
         if (!parsed)
-            return;
+            return {};
+        var fallbackName = utils.isBoolean(this.options.fallbackHelp) ?
+            null : this.options.fallbackHelp;
         var cmd = parsed.$command ? this.get.command(parsed.$command) : null;
         var normLen = parsed.$stats && parsed.$stats.normalized.length;
-        var helpFallback = function () {
-            var fallback = _this.options.fallbackHelp;
-            fallback = utils.isString(fallback) ? _this.get.command(fallback) : fallback;
-            if (fallback && fallback._action) {
-                fallback._action.call(_this, parsed, cmd);
-                return;
-            }
-            _this.show.help();
-        };
+        // Ensure the command is not the fallback help command.
+        if (cmd && (cmd._name === fallbackName))
+            cmd = null;
         if (cmd && cmd._external) {
             this.spawn(parsed, cmd);
             return parsed;
         }
-        if (!parsed.$command && !normLen && this.options.fallbackHelp) {
-            helpFallback();
-            return;
+        if (!parsed.$command && !normLen && this.options.fallbackHelp === true) {
+            this.show.help();
+            return parsed;
         }
         if (parsed.$stats && !this.options.extendStats && !(cmd && cmd._external))
             delete parsed.$stats;
@@ -1022,10 +1017,22 @@ var Pargv = /** @class */ (function () {
                     cmd._action.call(this, parsed, cmd);
             }
         }
-        if (this.options.fallbackHelp && !constants_1.MOCHA_TESTING && (!cmd || utils.isString(this.options.fallbackHelp)))
-            helpFallback();
+        if (!cmd && fallbackName) {
+            var fallbackCmd = this.get.command(fallbackName);
+            if (fallbackCmd && fallbackCmd._action) {
+                if (this.options.spreadCommands)
+                    (_b = fallbackCmd._action).call.apply(_b, [this].concat(parsed.$commands, [parsed, null]));
+                else
+                    fallbackCmd._action.call(this, parsed, null);
+            }
+            else {
+                this.show.help(); // fallback is defined but something went wrong just show help.
+            }
+        }
+        if (this.options.fallbackHelp === true && !constants_1.MOCHA_TESTING && !cmd)
+            this.show.help();
         return parsed;
-        var _a;
+        var _a, _b;
     };
     /**
      * Base

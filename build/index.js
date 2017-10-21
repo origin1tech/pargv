@@ -7,8 +7,6 @@ const exec = stiks.exec;
 const pkg = stiks.pkg();
 const build = pkg && pkg.build;
 
-const translate = require('./translate');
-
 // Ensure build info.
 if (!build)
   log.error('whoops looks like you forgot to configure package.json "build".').exit();
@@ -95,7 +93,7 @@ const actions = {
   },
 
   translate: () => {
-    translate(log);
+    require('./translate')(log);
     return actions;
   },
 

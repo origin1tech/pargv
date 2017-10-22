@@ -6,9 +6,10 @@ List of changes in descending order.
 
 Considering using interface for Pargv and PargvCommand as opposed to exporting typings directly from classes. The reason for this is there are several public properties that both the Pargv instance and PargvCommand need access to but are a pain to see in code completion as they are all props that are prefixed with an "_". Hence you don't see the main methods until you scroll, kind of crappy. File issue if you think this should or should NOT happen.
 
-### 10.21.2017 (v2.0.23-24)
+### 10.21.2017 (v2.0.23-25)
 
 <table>
+  <tr><td>examples</td><td>fix issue where examples were created as tuples.</td></tr>
   <tr><td>tests</td><td>add tests and simplify a couple.</td></tr>
   <tr><td>fallbackHelp</td><td>v2.0.23 had bug where help fallback command was called when it should not have been.</td></tr>
   <tr><td>fallbackHelp</td><td>deprecate "autoHelp" w/ compatibilty fallback allows specifying a command to fallback to or true/false to enable/disable displaying help.</td></tr>

@@ -43,7 +43,7 @@ export class PargvCommand {
   _pargv: Pargv;
 
   constructor(token: string, describe?: string, pargv?: Pargv) {
-    utils.setEnumerable(this, '_name, _usage, _describe, _commands, _options, _bools, _aliases, _usages, _defaults, _describes, _coercions, _demands, _whens, _examples, _action, _maxCommands, _maxOptions, _minCommands, _maxOptions, _showHelp, _completions, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases');
+    utils.setEnumerable(this, '_usages, _showHelp, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases, _pargv');
     this._describe = describe;
     this._pargv = pargv;
     this.parseCommand(token);
@@ -831,7 +831,7 @@ export class PargvCommand {
   example(example: string | [string, string][], describe?: string) {
     let arr: any = example;
     if (utils.isString(example))
-      arr = [example, describe || null];
+      arr = [[example, describe || null]];
     this._examples = this._examples.concat(arr);
     return this;
   }
@@ -901,6 +901,7 @@ export class PargvCommand {
       json: utils.isPlainObject,
       regexp: utils.isRegExp,
       boolean: utils.isBoolean,
+      string: utils.isString,
       list: (v: any) => { return utils.isValue(v); }
     };
 

@@ -24,7 +24,7 @@ var PargvCommand = /** @class */ (function () {
         this._external = null;
         this._cwd = false;
         this._extension = null;
-        utils.setEnumerable(this, '_name, _usage, _describe, _commands, _options, _bools, _aliases, _usages, _defaults, _describes, _coercions, _demands, _whens, _examples, _action, _maxCommands, _maxOptions, _minCommands, _maxOptions, _showHelp, _completions, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases');
+        utils.setEnumerable(this, '_usages, _showHelp, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases, _pargv');
         this._describe = describe;
         this._pargv = pargv;
         this.parseCommand(token);
@@ -725,7 +725,7 @@ var PargvCommand = /** @class */ (function () {
     PargvCommand.prototype.example = function (example, describe) {
         var arr = example;
         if (utils.isString(example))
-            arr = [example, describe || null];
+            arr = [[example, describe || null]];
         this._examples = this._examples.concat(arr);
         return this;
     };
@@ -786,6 +786,7 @@ var PargvCommand = /** @class */ (function () {
             json: utils.isPlainObject,
             regexp: utils.isRegExp,
             boolean: utils.isBoolean,
+            string: utils.isString,
             list: function (v) { return utils.isValue(v); }
         };
         var to = {

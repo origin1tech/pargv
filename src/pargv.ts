@@ -79,7 +79,7 @@ export class Pargv {
   options: IPargvOptions;
 
   constructor(options?: IPargvOptions) {
-    utils.setEnumerable(this, '_env, _name, _nameFont, _nameStyles, _version, _license, _describe, _base, _epilog, _commands, _helpCommand, _helpEnabled, _helpHandler, _errorHandler, _logHandler, _completionsHandler, _completions, _completionsCommand, _completionsReply, _command, _colorize, _localize');
+    utils.setEnumerable(this, '_nameFont, _nameStyles, _helpCommand, _helpHandler, _errorHandler, _logHandler, _completionsHandler, _completions, _completionsCommand, _completionsReply, _colorize, _localize');
     this.init(options);
   }
 

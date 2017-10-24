@@ -969,7 +969,7 @@ export class PargvCommand {
       array: (v) => {
         if (!LIST_EXP.test(v))
           return null;
-        return utils.toArray(v);
+        return utils.split(v, [',', ' ', '|', '.']);
       },
 
       number: (v) => {
@@ -1064,8 +1064,8 @@ export class PargvCommand {
       if (!opts.ignoreTypeErrors) {
         if (!isListType) {
           this.err(
-            this._pargv._localize('expected type %s but got %s instead.')
-              .args(<string>type, utils.getType(result))
+            this._pargv._localize('expected type %s but got %s for %s.')
+              .args(<string>type, utils.getType(result), (key || '').replace(FLAG_EXP, ''))
               .styles(colors.accent, colors.accent)
               .done()
           );

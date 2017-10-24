@@ -849,7 +849,7 @@ var PargvCommand = /** @class */ (function () {
             array: function (v) {
                 if (!constants_1.LIST_EXP.test(v))
                     return null;
-                return utils.toArray(v);
+                return utils.split(v, [',', ' ', '|', '.']);
             },
             number: function (v) {
                 if (!/[0-9]/g.test(v))
@@ -922,8 +922,8 @@ var PargvCommand = /** @class */ (function () {
         if (!utils.isValue(result) || !is[type](result)) {
             if (!opts.ignoreTypeErrors) {
                 if (!isListType) {
-                    this.err(this._pargv._localize('expected type %s but got %s instead.')
-                        .args(type, utils.getType(result))
+                    this.err(this._pargv._localize('expected type %s but got %s for %s.')
+                        .args(type, utils.getType(result), (key || '').replace(constants_1.FLAG_EXP, ''))
                         .styles(colors.accent, colors.accent)
                         .done());
                 }

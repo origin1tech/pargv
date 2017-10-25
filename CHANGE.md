@@ -9,6 +9,7 @@ Considering using interface for Pargv and PargvCommand as opposed to exporting t
 ### 10.24.2017 (v2.0.26-30)
 
 <table>
+   <tr><td>lokales</td><td>update to lokales 1.0.10 bug in 1.0.9.</td></tr>
   <tr><td>test.spec.ts</td><td>disable help text test, throws error in wercker need to look into it.</td></tr>
   <tr><td>formatMessage</td><td>fix log formatting bug for internal method.</td></tr>
   <tr><td>parse</td><td>fixed typo, basically dumbthumb in anonymous arg check preventing errors from being thrown.</td></tr>

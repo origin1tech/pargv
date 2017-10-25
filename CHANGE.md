@@ -6,10 +6,15 @@ List of changes in descending order.
 
 Considering using interface for Pargv and PargvCommand as opposed to exporting typings directly from classes. The reason for this is there are several public properties that both the Pargv instance and PargvCommand need access to but are a pain to see in code completion as they are all props that are prefixed with an "_". Hence you don't see the main methods until you scroll, kind of crappy. File issue if you think this should or should NOT happen.
 
-### 10.24.2017 (v2.0.26)
+### 10.24.2017 (v2.0.26-27)
 
 <table>
+  <tr><td>maxCommands & maxOptions</td><td>allow setting options/commands to 0 instead of ignoring.</td></tr>
+  <tr><td>minCommands & minOptions</td><td>allow setting options/commands to 0 instead of ignoring.</td></tr>
+  <tr><td>commandsCount</td><td>based commands count known & anonymous commands.</td></tr>
+  <tr><td>optionsCount</td><td>based options on.</td></tr>
   <tr><td>update</td><td>update various packages after lokales update.</td></tr>
+  <tr><td>castToType</td><td>allow forcing to type when explicit. For example a single value should be able to be forced/converted to an array.</td></tr>
 </table>
 
 ### 10.21.2017 (v2.0.23-25)

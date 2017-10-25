@@ -23,10 +23,10 @@ export class PargvCommand {
   _whens: IMap<string> = {};
   _examples: [string, string][] = [];
   _action: ActionHandler;
-  _maxCommands: number = 0;
-  _maxOptions: number = 0;
-  _minCommands: number = 0;
-  _minOptions: number = 0;
+  _maxCommands: number;
+  _maxOptions: number;
+  _minCommands: number;
+  _minOptions: number;
   _showHelp: boolean;
   _completions: IMap<any[]> = {};
   _external: string = null;
@@ -961,19 +961,19 @@ export class PargvCommand {
       },
 
       regexp: (v) => {
-        if (!REGEX_EXP.test(v))
+        if (!REGEX_EXP.test(v) && isAuto)
           return null;
         return utils.castType(val, 'regexp');
       },
 
       array: (v) => {
-        if (!LIST_EXP.test(v))
+        if (!LIST_EXP.test(v) && isAuto)
           return null;
         return utils.split(v, [',', ' ', '|', '.']);
       },
 
       number: (v) => {
-        if (!/[0-9]/g.test(v))
+        if (!/[0-9]/g.test(v) && isAuto)
           return null;
         return utils.castType(v, 'number');
       },
@@ -985,13 +985,13 @@ export class PargvCommand {
       },
 
       boolean: (v) => {
-        if (!/^(true|false)$/.test(v))
+        if (!/^(true|false)$/.test(v) && isAuto)
           return null;
         return utils.castType(v, 'boolean');
       },
 
       string: (v) => {
-        return v;
+        return v + '';
       },
 
       // Following NOT called in auto cast.
@@ -1252,6 +1252,9 @@ export class PargvCommand {
           whens.push([k, demand]);
       }
 
+    const commandsCount = normalized.filter(c => !FLAG_EXP.test(c)).length;
+    const optionsCount = normalized.length - commandsCount;
+
     return {
       commands,
       options,
@@ -1259,7 +1262,9 @@ export class PargvCommand {
       missing,
       map,
       normalized,
-      whens
+      whens,
+      commandsCount,
+      optionsCount
     };
 
   }

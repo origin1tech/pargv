@@ -172,6 +172,8 @@ export interface IPargvStats {
     missing?: any[];
     anonymous?: any[];
     whens?: any[];
+    commandsCount?: number;
+    optionsCount?: number;
 }
 export interface IPargvLocalize {
     args(...args: any[]): IPargvLocalize;

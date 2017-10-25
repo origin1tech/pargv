@@ -182,12 +182,12 @@ describe('Pargv', () => {
   it('should set custom error callback.', (done) => {
 
     const func = function errorHandler(err) {
-      assert.equal('at least 1 commands are required but got 0.', colurs.strip(err.message));
+      assert.equal('at least 2 commands are required but got 1.', colurs.strip(err.message));
       done();
     };
 
     pargv.$
-      .min.commands(1)
+      .min.commands(2)
       .onError(func)
       .parse(['test']);
 

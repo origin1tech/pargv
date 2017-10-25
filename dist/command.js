@@ -16,10 +16,6 @@ var PargvCommand = /** @class */ (function () {
         this._demands = [];
         this._whens = {};
         this._examples = [];
-        this._maxCommands = 0;
-        this._maxOptions = 0;
-        this._minCommands = 0;
-        this._minOptions = 0;
         this._completions = {};
         this._external = null;
         this._cwd = false;
@@ -842,17 +838,17 @@ var PargvCommand = /** @class */ (function () {
                 return obj;
             },
             regexp: function (v) {
-                if (!constants_1.REGEX_EXP.test(v))
+                if (!constants_1.REGEX_EXP.test(v) && isAuto)
                     return null;
                 return utils.castType(val, 'regexp');
             },
             array: function (v) {
-                if (!constants_1.LIST_EXP.test(v))
+                if (!constants_1.LIST_EXP.test(v) && isAuto)
                     return null;
                 return utils.split(v, [',', ' ', '|', '.']);
             },
             number: function (v) {
-                if (!/[0-9]/g.test(v))
+                if (!/[0-9]/g.test(v) && isAuto)
                     return null;
                 return utils.castType(v, 'number');
             },
@@ -862,12 +858,12 @@ var PargvCommand = /** @class */ (function () {
                 return utils.castType(v, 'date');
             },
             boolean: function (v) {
-                if (!/^(true|false)$/.test(v))
+                if (!/^(true|false)$/.test(v) && isAuto)
                     return null;
                 return utils.castType(v, 'boolean');
             },
             string: function (v) {
-                return v;
+                return v + '';
             },
             // Following NOT called in auto cast.
             list: function (v) {
@@ -1085,6 +1081,8 @@ var PargvCommand = /** @class */ (function () {
                 if (!utils.contains(map, demand))
                     whens.push([k, demand]);
             }
+        var commandsCount = normalized.filter(function (c) { return !constants_1.FLAG_EXP.test(c); }).length;
+        var optionsCount = normalized.length - commandsCount;
         return {
             commands: commands,
             options: options,
@@ -1092,7 +1090,9 @@ var PargvCommand = /** @class */ (function () {
             missing: missing,
             map: map,
             normalized: normalized,
-            whens: whens
+            whens: whens,
+            commandsCount: commandsCount,
+            optionsCount: optionsCount
         };
     };
     /**

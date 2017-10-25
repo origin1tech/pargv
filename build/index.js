@@ -113,6 +113,7 @@ const actions = {
   },
 
   test: () => {
+    // Bug
     // exec.command('nyc', 'mocha --opts ./src/mocha.opts');
     // TODO setup instanbul/coverage.
     exec.command('mocha', '--opts ./src/mocha.opts');

@@ -1,6 +1,6 @@
 {
   "name": "pargv",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "description": "Minimal utility for parsing node command line arguments.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -19,7 +19,7 @@
     "translate": "node ./build translate",
     "release": "node ./build release",
     "watch": "node ./build watch",
-    "test": "node ./build test"
+    "test": "mocha --opts ./src/mocha.opts"
   },
   "keywords": [
     "cli",
@@ -71,7 +71,7 @@
     "colurs": "^1.0.14",
     "figlet": "^1.2.0",
     "global-prefix": "^0.1.5",
-    "lokales": "^1.0.6"
+    "lokales": "^1.0.9"
   },
   "devDependencies": {
     "@google-cloud/translate": "^1.0.0",

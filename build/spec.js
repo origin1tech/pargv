@@ -1,17 +1,18 @@
-const ts = require('ts-node');
-
 /**
  * TS-Node
  * Helper file to setup ts-node for testing.
  * @see https://github.com/TypeStrong/ts-node#configuration-options
  */
 
+const tsnode = require('ts-node');
+
 // Options
-const options = {
+const opts = {
   project: './src/tsconfig.spec.json',
   ignoreWarnings: true,
   disableWarnings: true,
   fast: true
 };
 
-ts.register(options);
+// Register ts-node.
+tsnode.register(opts);

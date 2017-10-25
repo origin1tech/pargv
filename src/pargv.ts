@@ -1036,38 +1036,35 @@ export class Pargv {
     const cmdStr = this._localize('commands').done();
     const optStr = this._localize('options').done();
 
-    const cmdsLen = stats.commands.length;
-    const optsLen = stats.options.filter(o => FLAG_EXP.test(o)).length;
-
-    if (cmd._minCommands > 0 && stats.commands.length < cmd._minCommands) {
+    if (utils.isValue(cmd._minCommands) && stats.commandsCount < cmd._minCommands) {
       this.error( // min commands required.
         this._localize('at least %s %s are required but got %s.')
-          .args(cmd._minCommands, cmdStr, cmdsLen + '')
+          .args(cmd._minCommands, cmdStr, stats.commandsCount + '')
           .styles(colors.accent, colors.primary, colors.accent).done()
       );
     }
 
-    if (cmd._minOptions > 0 && optsLen < cmd._minOptions) {
+    if (utils.isValue(cmd._minOptions) && stats.optionsCount < cmd._minOptions) {
       this.error( // min options required.
         this._localize('at least %s %s are required but got %s.')
-          .args(cmd._minOptions, optStr, optsLen + '')
+          .args(cmd._minOptions, optStr, stats.optionsCount + '')
           .styles(colors.accent, colors.primary, colors.accent).done()
       );
     }
 
-    if (cmd._maxCommands > 0 && stats.commands.length > cmd._maxCommands) {
+    if (utils.isValue(cmd._maxCommands) && stats.commandsCount > cmd._maxCommands) {
       this.error( // max commands allowed.
         this._localize('got %s %s but no more than %s are allowed.')
-          .args(cmdsLen, cmdStr, cmd._maxCommands)
+          .args(stats.commandsCount, cmdStr, cmd._maxCommands)
           .styles(colors.accent, colors.primary, colors.accent)
           .done()
       );
     }
 
-    if (cmd._maxOptions > 0 && optsLen > cmd._maxOptions) {
+    if (utils.isValue(cmd._maxOptions) && stats.optionsCount > cmd._maxOptions) {
       this.error( // max commands allowed.
         this._localize('got %s %s but no more than %s are allowed.')
-          .args(optsLen, optStr, cmd._maxOptions)
+          .args(stats.optionsCount, optStr, cmd._maxOptions)
           .styles(colors.accent, colors.primary, colors.accent)
           .done()
       );

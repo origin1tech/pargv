@@ -857,8 +857,10 @@ var Pargv = /** @class */ (function () {
         if (this.options.extendStats || cmd._external || isExec)
             result.$stats = stats;
         if (!this.options.allowAnonymous && stats.anonymous.length) {
-            this.error(// no anon in strict mode.
-            fs_1.lstatSync);
+            this.error(this._localize('anonymous arguments %s prohibited in strict mode.')
+                .args(stats.anonymous.join(', '))
+                .styles(colors.accent)
+                .done());
         }
         if (stats.missing.length) {
             this.error(// no anon in strict mode.

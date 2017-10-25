@@ -1009,9 +1009,13 @@ export class Pargv {
     if (this.options.extendStats || cmd._external || isExec)
       result.$stats = stats;
 
+
     if (!this.options.allowAnonymous && stats.anonymous.length) {
-      this.error( // no anon in strict mode.
-        lstatSync
+      this.error(
+        this._localize('anonymous arguments %s prohibited in strict mode.')
+          .args(stats.anonymous.join(', '))
+          .styles(colors.accent)
+          .done()
       );
     }
 

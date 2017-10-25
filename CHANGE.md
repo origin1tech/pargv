@@ -6,9 +6,10 @@ List of changes in descending order.
 
 Considering using interface for Pargv and PargvCommand as opposed to exporting typings directly from classes. The reason for this is there are several public properties that both the Pargv instance and PargvCommand need access to but are a pain to see in code completion as they are all props that are prefixed with an "_". Hence you don't see the main methods until you scroll, kind of crappy. File issue if you think this should or should NOT happen.
 
-### 10.24.2017 (v2.0.26-27)
+### 10.24.2017 (v2.0.26-28)
 
 <table>
+  <tr><td>parse</td><td>fixed typo, basically dumbthumb in anonymous arg check preventing errors from being thrown.</td></tr>
   <tr><td>maxCommands & maxOptions</td><td>allow setting options/commands to 0 instead of ignoring.</td></tr>
   <tr><td>minCommands & minOptions</td><td>allow setting options/commands to 0 instead of ignoring.</td></tr>
   <tr><td>commandsCount</td><td>based commands count known & anonymous commands.</td></tr>

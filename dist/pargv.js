@@ -113,7 +113,7 @@ var Pargv = /** @class */ (function () {
         if (tokens && tokens.length) {
             tokens = args.slice(0, tokens.length);
             args = args.slice(tokens.length);
-            msg = util.format(msg || '', tokens);
+            msg = util.format.apply(util, [msg || ''].concat(tokens));
             args.unshift(msg);
         }
         else if (msg) {

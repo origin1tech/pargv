@@ -150,7 +150,7 @@ export class Pargv {
     if (tokens && tokens.length) {
       tokens = args.slice(0, tokens.length);
       args = args.slice(tokens.length);
-      msg = util.format(msg || '', tokens);
+      msg = util.format(msg || '', ...tokens);
       args.unshift(msg);
     }
     else if (msg) {
@@ -158,6 +158,7 @@ export class Pargv {
     }
     if (meta)
       args.push(meta);
+
     return args.join(' ');
   }
 

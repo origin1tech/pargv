@@ -1010,8 +1010,8 @@ export class PargvCommand {
         return utils.castType(v, 'number');
       },
 
-      date: (v) => {
-        if (!isAuto)
+      date: (v, k) => {
+        if (!isAuto && /^\d+$/.test(v)) // if only number get from epoch.
           return utils.fromEpoch(to.number(v));
         return utils.castType(v, 'date');
       },

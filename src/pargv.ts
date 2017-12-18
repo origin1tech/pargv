@@ -1159,12 +1159,23 @@ export class Pargv {
           utils.set(result, key.replace(FLAG_EXP, ''), val);
         }
         else {
-          result[formattedKey] = val;
-          // if (this.options.extendAliases) { // extend each alias to object.
+          if (result[formattedKey]) { // if existing convert to array push new value.
+            result[formattedKey] = [result[formattedKey]];
+            result[formattedKey].push(val);
+          }
+          else {
+            result[formattedKey] = val;
+          }
           if (cmd._extendAliases) { // extend each alias to object.
             (cmd.aliases(key) || []).forEach((el) => {
               const frmKey = utils.camelcase(el.replace(FLAG_EXP, ''));
-              result[frmKey] = val;
+              if (result[frmKey]) {
+                result[frmKey] = [result[frmKey]];
+                result[frmKey].push(val);
+              }
+              else {
+                result[frmKey] = val;
+              }
             });
           }
         }

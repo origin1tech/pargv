@@ -971,12 +971,23 @@ var Pargv = /** @class */ (function () {
                     utils.set(result, key.replace(constants_1.FLAG_EXP, ''), val);
                 }
                 else {
-                    result[formattedKey] = val;
-                    // if (this.options.extendAliases) { // extend each alias to object.
+                    if (result[formattedKey]) {
+                        result[formattedKey] = [result[formattedKey]];
+                        result[formattedKey].push(val);
+                    }
+                    else {
+                        result[formattedKey] = val;
+                    }
                     if (cmd._extendAliases) {
                         (cmd.aliases(key) || []).forEach(function (el) {
                             var frmKey = utils.camelcase(el.replace(constants_1.FLAG_EXP, ''));
-                            result[frmKey] = val;
+                            if (result[frmKey]) {
+                                result[frmKey] = [result[frmKey]];
+                                result[frmKey].push(val);
+                            }
+                            else {
+                                result[frmKey] = val;
+                            }
                         });
                     }
                 }

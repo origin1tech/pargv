@@ -876,8 +876,8 @@ var PargvCommand = /** @class */ (function () {
                     return null;
                 return utils.castType(v, 'number');
             },
-            date: function (v) {
-                if (!isAuto)
+            date: function (v, k) {
+                if (!isAuto && /^\d+$/.test(v))
                     return utils.fromEpoch(to.number(v));
                 return utils.castType(v, 'date');
             },

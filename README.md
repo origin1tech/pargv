@@ -231,8 +231,9 @@ wrap in **<value>**. See below for more examples.
     <tr><td>generate.gen.g</td><td>results in gen & g as aliases for generate command.</td></tr>
     <tr><td>--extension.ext.e</td><td>results in ext & e as aliases for extension option.</td></tr>
     <tr><td>`[value:float]`</td><td>value should be of type float.</td></tr>
+    <tr><td>`[other...]`</td><td>denotes variadic (must be last command) remaining commands pushed to single array.</td></tr>
     <tr><td>-fsb</td><td>single - breaks out to '-f', '-s', '-b'</td></tr>
-    <tr><td>--ext=.html</td><td>is the same as --ext .html</td></tr>
+    <tr><td>--ext=html</td><td>is the same as --ext html</td></tr>
   </tbody>
 </table>
 

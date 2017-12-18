@@ -86,6 +86,16 @@ export function isFlag(val: string) {
 }
 
 /**
+ * Is Spread
+ * : Tests if command token is spread type.
+ *
+ * @param val the value to test.
+ */
+export function isVariadic(val: string) {
+  return /(\.){3}(\>|\])$/.test(val);
+}
+
+/**
  * Is Dot Notation
  * : Tests if value is dot notated string.
  *

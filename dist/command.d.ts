@@ -9,6 +9,7 @@ export declare class PargvCommand {
     _commands: string[];
     _options: string[];
     _bools: string[];
+    _variadic: string;
     _aliases: IMap<string>;
     _usages: IMap<string[]>;
     _defaults: IMap<any>;
@@ -262,9 +263,7 @@ export declare class PargvCommand {
     extendAliases(extend?: boolean): this;
     /**
      * Example
-     * Stores and example for the command displayed in help.
-     * You can also provide an object where the key is the
-     * example text and the value is the describe text.
+     * : Saves an example string for the command or tuple consisting of example string and description.
      *
      * @param val string or array of strings.
      */

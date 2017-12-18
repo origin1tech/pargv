@@ -139,13 +139,15 @@ export interface IPargvCommandOption {
   flag?: boolean;
   bool?: boolean;
   required?: boolean;
+  isVariadic: boolean;
 }
 
 export interface IPargvParsedResult {
   $exec?: string;
   $command?: string;
   $external?: string;
-  $commands?: string[];
+  $commands?: any[];
+  $variadics?: any[];
   $source?: string[];
   $stats?: IPargvStats;
   [key: string]: any;

@@ -51,5 +51,7 @@
   "when true installs completions.": "When true installs completions.",
   "cannot set completion for using key of undefined.": "cannot set completion for using key of undefined.",
   "%s could not be executed, check permissions or run as root.": "%s could not be executed, check permissions or run as root.",
-  "%s does not exist, try --%s.": "%s does not exist, try --%s."
+  "%s does not exist, try --%s.": "%s does not exist, try --%s.",
+  "flag %s contains ...variadic, only commands can contain variadic values.": "flag %s contains ...variadic, only commands can contain variadic values.",
+  "found %s variadic commands but only one is permitted.": "found %s variadic commands but only one is permitted."
 }

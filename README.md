@@ -46,6 +46,8 @@ pargv.command('generate <template>')
 const parsed = pargv.parse(); // if array of args not passed process.argv will be used.
 ```
 
+More Examples [EXAMPLES.md](EXAMPLES.md)
+
 ### Advanced Example
 
 ```ts
@@ -109,25 +111,24 @@ Pargv options, descriptions and defaults.
   </thead>
   <tbody>
     <tr><td>cast</td><td>When true Pargv tries to auto cast values to type.</td><td>True</td></tr>
-    <tr><td>colorize</td><td>Whether to use colors in help/log messages.</td><td>True</td></tr>
     <tr><td>splitArgs</td><td>when args[0] is ONLY arg and string split to array by specified char. Null to disable.</td><td>null</td></tr>
+    <tr><td>colorize</td><td>Whether to use colors in help/log messages.</td><td>True</td></tr>
     <tr><td>headingDivider</td><td>A string repeated for heading/footing in help.</td><td>=</td></tr>
-    <tr><td>itemDivider</td><td>A string divider repeated between command help.</td><td>=</td></tr>
+    <tr><td>commandDivider</td><td>A string divider repeated between command help.</td><td>=</td></tr>
     <tr><td>locale</td><td>The i18n locale to use for messages/help.</td><td>en</td></tr>
     <tr><td>localeDir</td><td>A directory for locales if u wish to roll your own.</td><td>undefined</td></tr>
-    <tr><td>autoHelp</td><td>When true help is displayed when exec cannot find matching command.</td><td>True</td></tr>
+    <tr><td>fallbackHelp</td><td>True to fallback to help, a command name or false to disable.</td><td>True</td></tr>
     <tr><td>defaultHelp</td><td>When true commands automatically to help.</td><td>True</td></tr>
       <tr><td>exitHelp</td><td>Exit after displaying help.</td><td>True</td></tr>
+    <tr><td>layoutWidth</td><td>The width of help text layout.</td><td>80</td></tr>
+    <tr><td>castBeforeCoerce</td><td>When true will attempt to cast to type before coerce is called.</td><td>True</td></tr>
     <tr><td>extendCommands</td><td>When true known sub commands extended as properties in result.</td><td>False</td></tr>
     <tr><td>extendAliases</td><td>When true option aliases extended to result.</td><td>False</td></tr>
     <tr><td>extendStats</td><td>When true stats object is extended to results.</td><td>False</td></tr>
     <tr><td>spreadCommands</td><td>When true commands are spread in action callback.</td><td>True</td></tr>
     <tr><td>allowAnonymous</td><td>When true anonymous sub commands and options are allowed.</td><td>True</td></tr>
     <tr><td>ignoreTypeErrors</td><td>When true type checking is ignored.</td><td>False</td></tr>
-    <tr><td>castBeforeCoerce</td><td>When true will attempt to cast to type before coerce is called.</td><td>True</td></tr>
     <tr><td>displayStackTrace</td><td>When true stack trace is displayed for errors.</td><td>True</td></tr>
-    <tr><td>exitOnError</td><td>When true Pargv exists after errors.</td><td>True</td></tr>
-    <tr><td>layoutWidth</td><td>The width of help text layout.</td><td>80</td></tr>
     <tr><td>colors</td>
     <td colspan="2">
       <table width="100%">

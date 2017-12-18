@@ -33,7 +33,7 @@ const DEFAULTS: IPargvOptions = {
   extendAliases: false,     // when true aliases for options extended to result object.
   extendStats: false,       // when true stats are extended to result object.
   spreadCommands: true,     // when true action callbacks spread commands.
-  allowAnonymous: true,     // when true anonymous commands options allowed.
+  allowAnonymous: true,    // when true anonymous commands options allowed.
   ignoreTypeErrors: false,  // when true type check errors are ignored.
   displayStackTrace: false, // when true stacktrace is displayed on errors.
   colors: {                 // colors used in help.
@@ -176,8 +176,8 @@ export class Pargv {
     const layout = this.layout(layoutWidth);
     const obj: any = {};
 
-    const col1w = Math.floor(layoutWidth * .30);
-    const col2w = Math.floor(layoutWidth * .55);
+    const col1w = Math.floor(layoutWidth * .35);
+    const col2w = Math.floor(layoutWidth * .50);
     const col3w = layoutWidth - (col1w + col2w);
 
     // Define color vars.
@@ -228,14 +228,14 @@ export class Pargv {
         const aliases = cmd.aliases(el).sort();
         // const names = [el].concat(aliases).join(', ');
         let usages: any = cmd._usages[el]; // get without first key.
-        let usageVal;
+        let usageVal = '';
         if (/^(\[|<)/.test(utils.last(usages)))
-          usageVal = usages.pop();
+          usageVal = ' ' + usages.pop();
         let describe = this._colurs.applyAnsi(cmd._describes[el] || '', muted);
-        if (usageVal)
-          describe = usageVal + ': ' + describe;
+        // if (usageVal)
+        //   describe = usageVal + ': ' + describe;
         const arr: any = [
-          { text: usages.join(', '), padding: [0, 1, 0, 2], width: col1w },
+          { text: usages.join(', ') + usageVal, padding: [0, 1, 0, 2], width: col1w },
           { text: describe, width: col2w }
         ];
         const lastCol = isRequired ? { text: this._colurs.applyAnsi(`${reqStr}`, alert), align: 'right', width: col3w } : { text: '', width: col3w };
@@ -256,8 +256,11 @@ export class Pargv {
             desc = this._colurs.applyAnsi(desc, muted) as string;
           if (!/^.*\$\s/.test(ex))
             ex = '$ ' + ex;
-          ex = this._colurs.applyAnsi(ex, muted) as string;
-          layout.div({ text: ex, padding: [0, 0, 0, 2] }, desc || '');
+          // ex = this._colurs.applyAnsi(ex, muted) as string;
+          layout.div(
+            { text: ex, padding: [0, 0, 0, 2] },
+            { text: (desc || ''), padding: [0, 0, 0, 1] }
+          );
 
         });
 
@@ -302,10 +305,6 @@ export class Pargv {
         if (nameFont)
           layout.div();
 
-        // Add description to layout.
-        if (this._describe)
-          layout.div(`${this._colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(this._colurs.applyAnsi(this._describe, muted) as string, 3)}`);
-
         // Add version to layout.
         if (this._version)
           layout.div(`${this._colurs.applyAnsi(`${verStr}:`, accent)} ${utils.padLeft(this._colurs.applyAnsi(this._version, muted) as string, 7)}`);
@@ -313,6 +312,12 @@ export class Pargv {
         if (this._license)
           layout.div(`${this._colurs.applyAnsi(`${licStr}:`, accent)} ${utils.padLeft(this._colurs.applyAnsi(this._license, muted) as string, 7)}`);
 
+        // Add description to layout.
+        if (this._describe) {
+          layout.div();
+          layout.div(this._colurs.applyAnsi(this._describe, muted));
+          // layout.div(`${this._colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(this._colurs.applyAnsi(this._describe, muted) as string, 3)}`);
+        }
 
         // Add break in layout.
         if (div)
@@ -1004,6 +1009,7 @@ export class Pargv {
       $command: name,
       $external: cmd._external,
       $commands: [],
+      $variadics: [],
       $source: source
     };
 
@@ -1011,7 +1017,7 @@ export class Pargv {
       result.$stats = stats;
 
 
-    if (!this.options.allowAnonymous && stats.anonymous.length) {
+    if (!this.options.allowAnonymous && stats.anonymous.length && !cmd._variadic) {
       this.error(
         this._localize('anonymous arguments %s prohibited in strict mode.')
           .args(stats.anonymous.join(', '))
@@ -1102,7 +1108,8 @@ export class Pargv {
       let next = normalized[i + 1];                   // next arg.
       const isFlag = FLAG_EXP.test(el);               // is a flag/option key.
       const isFlagNext = FLAG_EXP.test(next || '');   // next is a flag/option key.
-      const def = cmd._defaults[key];                 // check if has default value.
+      let def = cmd._defaults[key];                 // check if has default value.
+      const isVariadic = cmd._variadic === key;     // is a variadic key.
 
       const isBool =
         (isFlag && (!next || cmd.isBool(key) || isFlagNext)); // is boolean key.
@@ -1123,15 +1130,28 @@ export class Pargv {
       if (utils.isBoolean(def) && def === true && val === false)
         val = true;
 
+      // Don't coerce with default value
+      // will set after all values are pushed to array.
+      if (isVariadic)
+        def = undefined;
+
       val = wrapper(val, def);
 
       const formattedKey = utils.camelcase(key.replace(FLAG_EXP, ''));
 
       if (!isFlag) {
-        result.$commands.push(val);
-        // if (this.options.extendCommands && key) {
+        if (isVariadic)
+          result.$variadics.push(val);
+        else
+          result.$commands.push(val);
         if (cmd._extendCommands && key) {
-          result[formattedKey] = val;
+          if (isVariadic) {
+            result[formattedKey] = result[formattedKey] || [];
+            result[formattedKey].push(val);
+          }
+          else {
+            result[formattedKey] = val;
+          }
         }
       }
       else {
@@ -1152,15 +1172,28 @@ export class Pargv {
 
     });
 
+    // Ensure variadic default if exists.
+    if (cmd._variadic && !result.$variadics.length && cmd._defaults[cmd._variadic])
+      result.$variadics = utils.toArray(cmd._defaults[cmd._variadic], []);
+
+    // Push variadics array to commands.
+    if (result.$variadics.length)
+      result.$commands.push(result.$variadics);
+
     if (isExec) { // ensures correct number of cmd args.
 
-      // if (this.options.spreadCommands) {
       if (cmd._spreadCommands) {
+
         let offset =
           (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
+
+        if (cmd._variadic)
+          offset = cmd._commands.length - result.$commands.length;
+
         while (offset > 0 && offset--)
           result.$commands.push(null);
       }
+
     }
 
     return result;

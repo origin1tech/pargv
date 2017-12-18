@@ -6,6 +6,15 @@ List of changes in descending order.
 
 Considering using interface for Pargv and PargvCommand as opposed to exporting typings directly from classes. The reason for this is there are several public properties that both the Pargv instance and PargvCommand need access to but are a pain to see in code completion as they are all props that are prefixed with an "_". Hence you don't see the main methods until you scroll, kind of crappy. File issue if you think this should or should NOT happen.
 
+### 12.17.2017 (v2.0.32)
+
+<table>
+  <tr><td>variadic</td><td>improve variadic [var...] argument handling for commands.</td></tr>
+  <tr><td>README (options)</td><td>update readme to correct missing or deprecated options.</td></tr>
+  <tr><td>test.spect.ts</td><td>add tests for variadic arguments.</td></tr>
+</table>
+
+
 ### 10.24.2017 (v2.0.26-30)
 
 <table>

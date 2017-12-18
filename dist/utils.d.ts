@@ -32,6 +32,13 @@ export declare function clearScreen(reset?: boolean): void;
  */
 export declare function isFlag(val: string): boolean;
 /**
+ * Is Spread
+ * : Tests if command token is spread type.
+ *
+ * @param val the value to test.
+ */
+export declare function isVariadic(val: string): boolean;
+/**
  * Is Dot Notation
  * : Tests if value is dot notated string.
  *

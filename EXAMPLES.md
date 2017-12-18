@@ -254,6 +254,21 @@ pargv.command('download <url>')
   .max.options(1); // would allow only --force or --other.
 ```
 
+## Variadic Command Args
+
+**Default:** When setting a default for variadic args these values are not merged meaning the default is triggered ONLY when the variadic arg contains no values.
+
+**Coerce:** Unlike above default, the coerce method will be run against EACH value in the array of variadic values.
+
+```ts
+pargv.command('download <url> [others...]')
+  .default('others', ['url1', 'url2'])
+  .action((url, others, parsed, cmd) => {
+    // others will be array of values.
+  });
+```
+
+
 ## External Commands:
 
 Pargv supports executing any external command. To define a command as external the command must be prefixed with an **@**. This tells Pargv that **@some_program** should be executed externally as opposed to calling a callback action.

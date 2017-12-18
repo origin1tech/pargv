@@ -40,7 +40,10 @@ var PargvCommand = /** @class */ (function () {
      */
     PargvCommand.prototype.parseToken = function (token, next) {
         token = token.replace(/\s/g, '');
-        token = token.replace(/(\>|])$/, '');
+        var isVariadic = utils.isVariadic(token); // denotes variadic arg.
+        token = token.replace(/(\>|])$/, ''); // removes trailing > or ].
+        if (isVariadic)
+            token = token.replace('...', '');
         var tokens = token.split(':'); // <age:number> to ['<age', 'number>'];
         var key = tokens[0]; // first element is command/option key.
         var type = tokens[1]; // optional type.
@@ -72,17 +75,20 @@ var PargvCommand = /** @class */ (function () {
             aliases = []; // only flags support aliases.
             next = null;
         }
+        var tmpUsage;
         if (isFlag) {
-            token = utils.stripToken(token, /(<|>|\[|\])/g);
+            tmpUsage = utils.stripToken(token, /(<|>|\[|\])/g);
         }
         else {
-            token = isRequired ? // ensure closing char for token.
+            tmpUsage = isRequired ? // ensure closing char for token.
                 token.replace(/>$/, '') + '>' :
                 token.replace(/\]$/, '') + ']';
+            if (isVariadic)
+                tmpUsage = tmpUsage.charAt(0) + '...' + tmpUsage.slice(1);
         }
         if (def)
             def = this.castToType(key, 'auto', def);
-        var usage = [[token].concat(aliases).join(', ')];
+        var usage = [[tmpUsage].concat(aliases).join(', ')];
         if (!next)
             return {
                 key: key,
@@ -92,7 +98,8 @@ var PargvCommand = /** @class */ (function () {
                 bool: isBool,
                 type: type,
                 default: def,
-                required: isRequired
+                required: isRequired,
+                isVariadic: isVariadic
             };
         next = this.parseToken(next, null);
         return {
@@ -104,7 +111,8 @@ var PargvCommand = /** @class */ (function () {
             type: next.type,
             as: next.key,
             required: next.required,
-            default: next.default
+            default: next.default,
+            isVariadic: next.isRange
         };
     };
     /**
@@ -141,11 +149,18 @@ var PargvCommand = /** @class */ (function () {
         }
         var usage = []; // Usage command values.
         usage.push(name); // Add command key.
+        // Ensure only one spread command.
+        var variadics = split.filter(function (el) { return utils.isVariadic(el); });
+        if (variadics.length > 1)
+            this.err(this._pargv
+                ._localize('found %s variadic commands but only one is permitted.')
+                .args(variadics.length)
+                .styles(this._pargv.options.colors.accent)
+                .done());
+        // if (variadics.length)                            // if variadic cmd must allow anon.
+        //   this._pargv.options.allowAnonymous = true;
         // Iterate the tokens.
         split.forEach(function (el, i) {
-            if (el === '--tries') {
-                var x = true;
-            }
             var next = split[i + 1]; // next value.
             var isFlag = utils.isFlag(el); // if is -o or --opt.
             next = utils.isFlag(next) || // normalize next value.
@@ -153,8 +168,15 @@ var PargvCommand = /** @class */ (function () {
             var parsed = _this.parseToken(el, next); // parse the token.
             var describe;
             if (parsed.flag) {
-                if (!parsed.bool)
+                if (!parsed.bool) {
                     split.splice(i + 1, 1);
+                    if (parsed.isVariadic)
+                        _this.err(_this._pargv
+                            ._localize('flag %s contains ...variadic, only commands can contain variadic values.')
+                            .args(parsed.as)
+                            .styles(_this._pargv.options.colors.accent)
+                            .done());
+                }
             }
             else {
                 parsed.index = ctr; // the index of the command.
@@ -206,6 +228,8 @@ var PargvCommand = /** @class */ (function () {
             this.demand(option.key);
         if (option.default)
             this._defaults[option.key] = option.default;
+        if (option.isVariadic)
+            this._variadic = option.key;
         this._usages[option.key] = option.usage; // Add usage.
         this.coerce(option.key, option.type, option.default); // Add default coerce method.
     };
@@ -712,13 +736,13 @@ var PargvCommand = /** @class */ (function () {
     };
     /**
      * Example
-     * Stores and example for the command displayed in help.
-     * You can also provide an object where the key is the
-     * example text and the value is the describe text.
+     * : Saves an example string for the command or tuple consisting of example string and description.
      *
      * @param val string or array of strings.
      */
     PargvCommand.prototype.example = function (example, describe) {
+        if (!example)
+            return this;
         var arr = example;
         if (utils.isString(example))
             arr = [[example, describe || null]];
@@ -996,6 +1020,8 @@ var PargvCommand = /** @class */ (function () {
         var ctr = 0;
         // Ensure defaults for missing keys.
         for (var k in this._defaults) {
+            if (k === this._variadic)
+                continue;
             var isFlag = constants_1.FLAG_EXP.test(k);
             var def = this._defaults[k];
             var isBool = this.isBool(k);
@@ -1023,7 +1049,8 @@ var PargvCommand = /** @class */ (function () {
             var key = isFlag || ctr > lastIdx ? _this.aliasToKey(el) : _this.aliasToKey(ctr);
             if (!key) {
                 anonymous.push(origEl);
-                mapAnon.push(el);
+                var anonKey = _this._variadic && !isFlag ? _this._variadic : el;
+                mapAnon.push(anonKey);
                 if (isFlag && !isFlagNext && next) {
                     anonymous.push(next);
                     mapAnon.push('$value'); // keeps ordering denotes expects val.

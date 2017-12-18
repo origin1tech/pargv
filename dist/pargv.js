@@ -135,8 +135,8 @@ var Pargv = /** @class */ (function () {
         var layoutWidth = this.options.layoutWidth;
         var layout = this.layout(layoutWidth);
         var obj = {};
-        var col1w = Math.floor(layoutWidth * .30);
-        var col2w = Math.floor(layoutWidth * .55);
+        var col1w = Math.floor(layoutWidth * .35);
+        var col2w = Math.floor(layoutWidth * .50);
         var col3w = layoutWidth - (col1w + col2w);
         // Define color vars.
         var primary = this.options.colors.primary;
@@ -176,14 +176,14 @@ var Pargv = /** @class */ (function () {
                 var aliases = cmd.aliases(el).sort();
                 // const names = [el].concat(aliases).join(', ');
                 var usages = cmd._usages[el]; // get without first key.
-                var usageVal;
+                var usageVal = '';
                 if (/^(\[|<)/.test(utils.last(usages)))
-                    usageVal = usages.pop();
+                    usageVal = ' ' + usages.pop();
                 var describe = _this._colurs.applyAnsi(cmd._describes[el] || '', muted);
-                if (usageVal)
-                    describe = usageVal + ': ' + describe;
+                // if (usageVal)
+                //   describe = usageVal + ': ' + describe;
                 var arr = [
-                    { text: usages.join(', '), padding: [0, 1, 0, 2], width: col1w },
+                    { text: usages.join(', ') + usageVal, padding: [0, 1, 0, 2], width: col1w },
                     { text: describe, width: col2w }
                 ];
                 var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
@@ -201,8 +201,8 @@ var Pargv = /** @class */ (function () {
                         desc = _this._colurs.applyAnsi(desc, muted);
                     if (!/^.*\$\s/.test(ex))
                         ex = '$ ' + ex;
-                    ex = _this._colurs.applyAnsi(ex, muted);
-                    layout.div({ text: ex, padding: [0, 0, 0, 2] }, desc || '');
+                    // ex = this._colurs.applyAnsi(ex, muted) as string;
+                    layout.div({ text: ex, padding: [0, 0, 0, 2] }, { text: (desc || ''), padding: [0, 0, 0, 1] });
                 });
             }
         };
@@ -231,14 +231,17 @@ var Pargv = /** @class */ (function () {
                 layout.div(tmpName);
                 if (nameFont)
                     layout.div();
-                // Add description to layout.
-                if (_this._describe)
-                    layout.div(_this._colurs.applyAnsi(descStr + ":", accent) + " " + utils.padLeft(_this._colurs.applyAnsi(_this._describe, muted), 3));
                 // Add version to layout.
                 if (_this._version)
                     layout.div(_this._colurs.applyAnsi(verStr + ":", accent) + " " + utils.padLeft(_this._colurs.applyAnsi(_this._version, muted), 7));
                 if (_this._license)
                     layout.div(_this._colurs.applyAnsi(licStr + ":", accent) + " " + utils.padLeft(_this._colurs.applyAnsi(_this._license, muted), 7));
+                // Add description to layout.
+                if (_this._describe) {
+                    layout.div();
+                    layout.div(_this._colurs.applyAnsi(_this._describe, muted));
+                    // layout.div(`${this._colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(this._colurs.applyAnsi(this._describe, muted) as string, 3)}`);
+                }
                 // Add break in layout.
                 if (div)
                     layout.repeat(_this._colurs.applyAnsi(div, muted));
@@ -852,11 +855,12 @@ var Pargv = /** @class */ (function () {
             $command: name,
             $external: cmd._external,
             $commands: [],
+            $variadics: [],
             $source: source
         };
         if (this.options.extendStats || cmd._external || isExec)
             result.$stats = stats;
-        if (!this.options.allowAnonymous && stats.anonymous.length) {
+        if (!this.options.allowAnonymous && stats.anonymous.length && !cmd._variadic) {
             this.error(this._localize('anonymous arguments %s prohibited in strict mode.')
                 .args(stats.anonymous.join(', '))
                 .styles(colors.accent)
@@ -929,6 +933,7 @@ var Pargv = /** @class */ (function () {
             var isFlag = constants_1.FLAG_EXP.test(el); // is a flag/option key.
             var isFlagNext = constants_1.FLAG_EXP.test(next || ''); // next is a flag/option key.
             var def = cmd._defaults[key]; // check if has default value.
+            var isVariadic = cmd._variadic === key; // is a variadic key.
             var isBool = (isFlag && (!next || cmd.isBool(key) || isFlagNext)); // is boolean key.
             var coercion = cmd._coercions[key]; // lookup user coerce function.
             if (isNot && !isBool) {
@@ -940,13 +945,25 @@ var Pargv = /** @class */ (function () {
             val = isFlag && isBool && isNot ? false : val;
             if (utils.isBoolean(def) && def === true && val === false)
                 val = true;
+            // Don't coerce with default value
+            // will set after all values are pushed to array.
+            if (isVariadic)
+                def = undefined;
             val = wrapper(val, def);
             var formattedKey = utils.camelcase(key.replace(constants_1.FLAG_EXP, ''));
             if (!isFlag) {
-                result.$commands.push(val);
-                // if (this.options.extendCommands && key) {
+                if (isVariadic)
+                    result.$variadics.push(val);
+                else
+                    result.$commands.push(val);
                 if (cmd._extendCommands && key) {
-                    result[formattedKey] = val;
+                    if (isVariadic) {
+                        result[formattedKey] = result[formattedKey] || [];
+                        result[formattedKey].push(val);
+                    }
+                    else {
+                        result[formattedKey] = val;
+                    }
                 }
             }
             else {
@@ -965,10 +982,17 @@ var Pargv = /** @class */ (function () {
                 }
             }
         });
+        // Ensure variadic default if exists.
+        if (cmd._variadic && !result.$variadics.length && cmd._defaults[cmd._variadic])
+            result.$variadics = utils.toArray(cmd._defaults[cmd._variadic], []);
+        // Push variadics array to commands.
+        if (result.$variadics.length)
+            result.$commands.push(result.$variadics);
         if (isExec) {
-            // if (this.options.spreadCommands) {
             if (cmd._spreadCommands) {
                 var offset = (cmd._commands.length + stats.anonymous.length) - result.$commands.length;
+                if (cmd._variadic)
+                    offset = cmd._commands.length - result.$commands.length;
                 while (offset > 0 && offset--)
                     result.$commands.push(null);
             }

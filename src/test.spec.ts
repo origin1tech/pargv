@@ -50,6 +50,7 @@ describe('Pargv', () => {
       '$exec': 'node_modules/mocha/bin/_mocha',
       '$command': 'generate',
       '$external': null,
+      '$variadics': [],
       '$commands': ['component.tpl', 'aboutus.html'],
       '$source': ['generate', 'component.tpl'],
       force: true
@@ -141,6 +142,23 @@ describe('Pargv', () => {
         pargv.set.option('spreadCommands', true);
         done();
       }).exec(args);
+
+  });
+
+  it('should parse additional commands as variadic', (done) => {
+
+    const args = procArgs.concat(['download', 'http://domain.com/file.zip']);
+
+    pargv.set.option('extendCommands', false);
+
+    pargv.command('download <url> [others...]')
+      .default('others', ['other1', 'other2'])
+      .action((url, others, parsed) => {
+        assert.deepEqual(others, ['other1', 'other2']);
+        done();
+      })
+      .exec(args);
+
 
   });
 

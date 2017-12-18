@@ -14,6 +14,7 @@ export class PargvCommand {
   _commands: string[] = [];
   _options: string[] = [];
   _bools: string[] = [];
+  _variadic: string;
   _aliases: IMap<string> = {};
   _usages: IMap<string[]> = {};
   _defaults: IMap<any> = {};
@@ -66,7 +67,11 @@ export class PargvCommand {
   private parseToken(token: string, next?: any): IPargvCommandOption {
 
     token = token.replace(/\s/g, '');
-    token = token.replace(/(\>|])$/, '');
+    const isVariadic = utils.isVariadic(token); // denotes variadic arg.
+    token = token.replace(/(\>|])$/, '');         // removes trailing > or ].
+    if (isVariadic)
+      token = token.replace('...', '');
+
     let tokens = token.split(':');                // <age:number> to ['<age', 'number>'];
     let key = tokens[0];                          // first element is command/option key.
     let type = tokens[1];                         // optional type.
@@ -106,19 +111,23 @@ export class PargvCommand {
       next = null;
     }
 
+    let tmpUsage;
+
     if (isFlag) {
-      token = utils.stripToken(token, /(<|>|\[|\])/g);
+      tmpUsage = utils.stripToken(token, /(<|>|\[|\])/g);
     }
     else {
-      token = isRequired ?                            // ensure closing char for token.
+      tmpUsage = isRequired ?                            // ensure closing char for token.
         token.replace(/>$/, '') + '>' :
         token.replace(/\]$/, '') + ']';
+      if (isVariadic)
+        tmpUsage = tmpUsage.charAt(0) + '...' + tmpUsage.slice(1);
     }
 
     if (def) // try to parse default val.
       def = this.castToType(key, 'auto', def);
 
-    let usage: string[] = [[token].concat(aliases).join(', ')];
+    let usage: string[] = [[tmpUsage].concat(aliases).join(', ')];
 
     if (!next)
       return {
@@ -129,7 +138,8 @@ export class PargvCommand {
         bool: isBool,
         type: type,
         default: def,
-        required: isRequired
+        required: isRequired,
+        isVariadic: isVariadic
       };
 
     next = this.parseToken(next, null);
@@ -143,7 +153,8 @@ export class PargvCommand {
       type: next.type,
       as: next.key,
       required: next.required,
-      default: next.default
+      default: next.default,
+      isVariadic: next.isRange
     };
 
   }
@@ -188,12 +199,22 @@ export class PargvCommand {
     const usage = [];                                       // Usage command values.
     usage.push(name);                                       // Add command key.
 
+    // Ensure only one spread command.
+    const variadics = split.filter(el => utils.isVariadic(el));
+    if (variadics.length > 1)
+      this.err(
+        this._pargv
+          ._localize('found %s variadic commands but only one is permitted.')
+          .args(variadics.length)
+          .styles(this._pargv.options.colors.accent)
+          .done()
+      );
+
+    // if (variadics.length)                            // if variadic cmd must allow anon.
+    //   this._pargv.options.allowAnonymous = true;
+
     // Iterate the tokens.
     split.forEach((el, i) => {
-
-      if (el === '--tries') {
-        const x = true;
-      }
 
       let next = split[i + 1];                              // next value.
       const isFlag = utils.isFlag(el);                       // if is -o or --opt.
@@ -203,8 +224,17 @@ export class PargvCommand {
       let describe;
 
       if (parsed.flag) {
-        if (!parsed.bool)                                    // remove next if not bool.
+        if (!parsed.bool) {                             // remove next if not bool.
           split.splice(i + 1, 1);
+          if (parsed.isVariadic)
+            this.err(
+              this._pargv
+                ._localize('flag %s contains ...variadic, only commands can contain variadic values.')
+                .args(parsed.as)
+                .styles(this._pargv.options.colors.accent)
+                .done()
+            );
+        }
       }
 
       else {
@@ -274,6 +304,8 @@ export class PargvCommand {
       this.demand(option.key);
     if (option.default)
       this._defaults[option.key] = option.default;
+    if (option.isVariadic)
+      this._variadic = option.key;
     this._usages[option.key] = option.usage;               // Add usage.
     this.coerce(option.key, option.type, option.default);  // Add default coerce method.
 
@@ -822,13 +854,13 @@ export class PargvCommand {
 
   /**
    * Example
-   * Stores and example for the command displayed in help.
-   * You can also provide an object where the key is the
-   * example text and the value is the describe text.
+   * : Saves an example string for the command or tuple consisting of example string and description.
    *
    * @param val string or array of strings.
    */
   example(example: string | [string, string][], describe?: string) {
+    if (!example)
+      return this;
     let arr: any = example;
     if (utils.isString(example))
       arr = [[example, describe || null]];
@@ -1152,9 +1184,10 @@ export class PargvCommand {
     const mapAnon = [];         // contains anon keys.
     let ctr = 0;
 
-
     // Ensure defaults for missing keys.
     for (const k in this._defaults) {
+      if (k === this._variadic) // don't set default for variadic.
+        continue;
       const isFlag = FLAG_EXP.test(k);
       const def = this._defaults[k];
       const isBool = this.isBool(k);
@@ -1183,9 +1216,10 @@ export class PargvCommand {
       el = el.replace(/^--no/, '');                   // strip --no;
       let key = isFlag || ctr > lastIdx ? this.aliasToKey(el) : this.aliasToKey(ctr);
 
-      if (!key) {                                 // is anonymous command or option.
+      if (!key) {              // is anonymous command or option.
         anonymous.push(origEl);
-        mapAnon.push(el);
+        const anonKey = this._variadic && !isFlag ? this._variadic : el;
+        mapAnon.push(anonKey);
         if (isFlag && !isFlagNext && next) {     // add only if not opt or cmd.
           anonymous.push(next);
           mapAnon.push('$value');            // keeps ordering denotes expects val.

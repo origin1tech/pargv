@@ -60,7 +60,7 @@ export declare function stripToken(val: string, exp?: RegExp): string;
  * @param val the single value or array of values.
  * @param args rest param of args.
  */
-export declare function mergeArgs(val: any | any[], ...args: any[]): any[];
+export declare function mergeArgs(val: any | any[], ...args: any[]): {}[];
 /**
  * Split To List
  * : Takes a list 'small, medium, large' and

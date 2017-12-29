@@ -19,7 +19,7 @@
     "translate": "node ./build translate",
     "release": "node ./build release",
     "watch": "node ./build watch",
-    "test": "mocha --opts ./src/mocha.opts"
+    "test": "node ./build test"
   },
   "keywords": [
     "cli",
@@ -40,7 +40,8 @@
   "build": {
     "clean": [
       "./dist"
-    ]
+    ],
+    "copy": {}
   },
   "nyc": {
     "include": [
@@ -71,7 +72,8 @@
     "colurs": "^1.0.14",
     "figlet": "^1.2.0",
     "global-prefix": "^0.1.5",
-    "lokales": "^1.0.10"
+    "lokales": "^1.0.10",
+    "stiks": "^1.1.4"
   },
   "devDependencies": {
     "@google-cloud/translate": "^1.0.0",

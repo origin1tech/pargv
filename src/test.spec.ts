@@ -67,7 +67,7 @@ describe('Pargv', () => {
     pargv.reset({ extendCommands: true });
     const len = Object.keys(pargv._commands).length; // should be zero now.
     assert.isTrue(pargv.options.extendCommands);
-    assert.equal(len, 0);
+    assert.equal(len, 1); // should contain only the default command.
   });
 
   it('should parse args for command "generate <template> [name] and execute action.', (done) => {

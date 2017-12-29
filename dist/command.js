@@ -20,7 +20,7 @@ var PargvCommand = /** @class */ (function () {
         this._external = null;
         this._cwd = false;
         this._extension = null;
-        utils.setEnumerable(this, '_usages, _showHelp, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases, _pargv');
+        utils.setEnumerable(this, '_usages, _showHelp, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases, _pargv', false);
         this._describe = describe;
         this._pargv = pargv;
         this.parseCommand(token);
@@ -49,9 +49,8 @@ var PargvCommand = /** @class */ (function () {
         var type = tokens[1]; // optional type.
         var def = tokens[2]; // optional default value.
         if (!constants_1.TOKEN_PREFIX_EXP.test(key)) {
-            this.err(this._pargv._localize('the token %s is missing, invalid or has unwanted space.')
+            this.err(this._pargv._localize('the token "%s" is missing -, [, < or has unwanted space.')
                 .args(key)
-                .styles(['bgRed', 'white'])
                 .done());
         } // ensure valid token.
         var isRequired = /^</.test(key); // starts with <.
@@ -430,11 +429,28 @@ var PargvCommand = /** @class */ (function () {
     });
     // METHODS //
     /**
-      * Option
-      * Adds option to command.
+      * Arg
+      * Adds argument to command. If argument is not wrapped with [arg] or <arg> it will be wrapped with [arg].
+      *
       * Supported to type strings: string, date, array,
       * number, integer, float, json, regexp, boolean
-      * @example
+      *
+      * @param token the option token to parse as option.
+      * @param describe the description for the option.
+      * @param def an optional default value.
+      * @param type a string type, RegExp to match or Coerce method.
+      */
+    PargvCommand.prototype.arg = function (token, describe, def, type) {
+        if (!/^(\[|\<)/.test(token))
+            token = "[" + token + "]";
+        return this.option(token, describe, def, type);
+    };
+    /**
+      * Option
+      * Adds option to command.
+      *
+      * Supported types: string, date, array,
+      * number, integer, float, json, regexp, boolean
       *
       * @param token the option token to parse as option.
       * @param describe the description for the option.

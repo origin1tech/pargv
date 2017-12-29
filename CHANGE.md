@@ -2,9 +2,16 @@
 
 List of changes in descending order.
 
-## NOTICE
+### 12.28.2017 (v2.0.34)
 
-Considering using interface for Pargv and PargvCommand as opposed to exporting typings directly from classes. The reason for this is there are several public properties that both the Pargv instance and PargvCommand need access to but are a pain to see in code completion as they are all props that are prefixed with an "_". Hence you don't see the main methods until you scroll, kind of crappy. File issue if you think this should or should NOT happen.
+<table>
+  <tr><td>command.arg</td><td>Add alias to .option() where tokens are auto wrapped with [arg] if [] or <> are not present.</td></tr>
+  <tr><td>command</td><td>deprecate pargv.$() in favor of calling pargv.command() without command name to return default command.</td></tr>
+  <tr><td>log</td><td>remove app name prefix allow user to define, favor process.stderr.write instead of console.</td></tr>
+  <tr><td>error</td><td>remove app name prefix allow user to define, favor process.stderr.write instead of console.</td></tr>
+  <tr><td>options.colors</td><td>interface updated to NOT require all properties in options.</td></tr>
+  <tr><td>README (options)</td><td>update various readme options to reflect correct properties and defaults.</td></tr>
+</table>
 
 ### 12.17.2017 (v2.0.32-33)
 

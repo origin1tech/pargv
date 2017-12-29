@@ -57,6 +57,8 @@ export interface IPargvOptions {
   cast?: boolean;
   splitArgs?: string | null;
   colorize?: boolean;
+  displayHeader?: boolean;
+  displayFooter?: boolean;
   headingDivider?: string;
   commandDivider?: string;
   itemDivider?: string;
@@ -76,10 +78,10 @@ export interface IPargvOptions {
   displayStackTrace?: boolean;
   layoutWidth?: number;
   colors?: {
-    primary: AnsiStyles | AnsiStyles[];
-    accent: AnsiStyles | AnsiStyles[];
-    alert: AnsiStyles | AnsiStyles[];
-    muted: AnsiStyles | AnsiStyles[];
+    primary?: AnsiStyles | AnsiStyles[];
+    accent?: AnsiStyles | AnsiStyles[];
+    alert?: AnsiStyles | AnsiStyles[];
+    muted?: AnsiStyles | AnsiStyles[];
   };
 }
 

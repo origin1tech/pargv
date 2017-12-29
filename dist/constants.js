@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
+exports.DEFAULT_COMMAND = '__default__';
 exports.KEYVAL_EXP = /^(([.'"a-z0-9_-]+):\s?(['"a-z0-9_-\s]+)[+|]?){1,}$/i;
 exports.CSV_EXP = /^(.+,.+){1,}$/;
 exports.LIST_EXP = /^(.+(,|\|).+){1,}$/;

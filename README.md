@@ -113,8 +113,10 @@ Pargv options, descriptions and defaults.
     <tr><td>cast</td><td>When true Pargv tries to auto cast values to type.</td><td>True</td></tr>
     <tr><td>splitArgs</td><td>when args[0] is ONLY arg and string split to array by specified char. Null to disable.</td><td>null</td></tr>
     <tr><td>colorize</td><td>Whether to use colors in help/log messages.</td><td>True</td></tr>
-    <tr><td>headingDivider</td><td>A string repeated for heading/footing in help.</td><td>=</td></tr>
-    <tr><td>commandDivider</td><td>A string divider repeated between command help.</td><td>=</td></tr>
+    <tr><td>displayHeader</td><td>When true help header is displayed.</td><td>True</td></tr>
+    <tr><td>displayFooter</td><td>When true help footer is displayed.</td><td>True</td></tr>
+    <tr><td>headingDivider</td><td>A string repeated for heading/footing in help.</td><td>><><</td></tr>
+    <tr><td>commandDivider</td><td>A string divider repeated between command help.</td><td>.</td></tr>
     <tr><td>locale</td><td>The i18n locale to use for messages/help.</td><td>en</td></tr>
     <tr><td>localeDir</td><td>A directory for locales if u wish to roll your own.</td><td>undefined</td></tr>
     <tr><td>fallbackHelp</td><td>True to fallback to help, a command name or false to disable.</td><td>True</td></tr>

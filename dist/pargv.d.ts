@@ -2,7 +2,7 @@
 import { ChildProcess } from 'child_process';
 import { IColurs } from 'colurs';
 import { PargvCommand } from './command';
-import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats, LogHandler } from './interfaces';
+import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats, LogHandler } from './interfaces';
 export declare class Pargv {
     private _helpEnabled;
     private _helpHandler;
@@ -12,7 +12,6 @@ export declare class Pargv {
     private _completions;
     private _completionsCommand;
     private _completionsReply;
-    private _command;
     _colurs: IColurs;
     _localize: LocalizeInit;
     _env: IPargvEnv;
@@ -199,7 +198,7 @@ export declare class Pargv {
      * @param command the command token string to parse.
      * @param describe a description describing the command.
      */
-    command(command: string, describe?: string): PargvCommand;
+    command(command?: string, describe?: string): PargvCommand;
     /**
       * Spawn
       * : Spawns and executes and external command.
@@ -318,18 +317,13 @@ export declare class Pargv {
      *
      * @param text the text to be displayed.
      * @param font the figlet font to be used.
-     * @param color the optional color to be used.
-     * @param horizontalLayout the horizontal layout mode.
-     * @param verticalLayout the vertical layout mode.
+     * @param styles the optional styles to be used.
      */
-    logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): IPargvLogo;
+    logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): string;
     /**
       * Layout
       * Creates a CLI layout much like creating divs in the terminal.
-      * Supports strings with \t \s \n or IUIOptions object.
       * @see https://www.npmjs.com/package/cliui
-      *
-      *
       *
       * @param width the width of the layout.
       * @param wrap if the layout should wrap.

@@ -1,5 +1,7 @@
 import { join } from 'path';
 
+export const DEFAULT_COMMAND = '__default__';
+
 export const KEYVAL_EXP = /^(([.'"a-z0-9_-]+):\s?(['"a-z0-9_-\s]+)[+|]?){1,}$/i;
 export const CSV_EXP = /^(.+,.+){1,}$/;
 export const LIST_EXP = /^(.+(,|\|).+){1,}$/;

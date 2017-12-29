@@ -12,7 +12,8 @@ import { completions } from './completions';
 import { localize } from './localize';
 import { PargvCommand } from './command';
 import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, NodeCallback, IPargvSpawnConfig } from './interfaces';
-import { TOKEN_PREFIX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, DOT_EXP, FORMAT_TOKENS_EXP, EXE_EXP, PARGV_ROOT, ARGV, MOCHA_TESTING, EOL } from './constants';
+import { TOKEN_PREFIX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, DOT_EXP, FORMAT_TOKENS_EXP, EXE_EXP, PARGV_ROOT, ARGV, MOCHA_TESTING, EOL, DEFAULT_COMMAND } from './constants';
+import { isString } from './utils';
 
 // VARIABLES & CONSTANTS //
 
@@ -20,6 +21,8 @@ const DEFAULTS: IPargvOptions = {
   cast: true,               // when true parsed values auto cast to type if not defined.
   splitArgs: null,          // splits args on parse/exec by char if only one arg supplied.
   colorize: true,           // wether or not to use colors in help & log messages.
+  displayHeader: true,      // when true displays the help header.
+  displayFooter: true,      // when true displays help footer.
   headingDivider: '><><',   // divider char(s) used in help header/footer.
   commandDivider: '.',      // divider char(s) used in help command sections.
   locale: 'en',             // localization code.
@@ -58,7 +61,7 @@ export class Pargv {
   private _completionsCommand: string = 'completions';
   private _completionsReply: string = '--reply';
 
-  private _command: PargvCommand;
+  // private _command: PargvCommand;
 
   _colurs: IColurs;
   _localize: LocalizeInit;
@@ -79,7 +82,7 @@ export class Pargv {
   options: IPargvOptions;
 
   constructor(options?: IPargvOptions) {
-    utils.setEnumerable(this, '_nameFont, _nameStyles, _helpCommand, _helpHandler, _errorHandler, _logHandler, _completionsHandler, _completions, _completionsCommand, _completionsReply, _colorize, _localize');
+    utils.setEnumerable(this, '_nameFont, _nameStyles, _helpCommand, _helpHandler, _errorHandler, _logHandler, _completionsHandler, _completions, _completionsCommand, _completionsReply, _colorize, _localize', false);
     this.init(options);
   }
 
@@ -102,7 +105,7 @@ export class Pargv {
     this._completions = completions(this); // helper for generating completions.sh.
     this._helpCommand = this._localize('help').done(); // localized name for help.
 
-    this.command('__default__');                 // Default Command.
+    const cmd = this.command(DEFAULT_COMMAND, 'Default command.'); // Default Command.
 
     // DEPRECATED: just use --help by default.
     // user can create help command if desired.
@@ -197,13 +200,16 @@ export class Pargv {
     const buildOptions = (cmd: PargvCommand) => {
 
       let cmdsStr, optsStr, exStr, reqStr;
+
+      if (!cmd._commands.length && !cmd._options.length)
+        return;
+
       cmdsStr = this._localize('Commands').done();
       optsStr = this._localize('Options').done();
       exStr = this._localize('Examples').done();
       reqStr = this._localize('required').done();
 
-      if (!cmd._commands.length && !cmd._options.length)
-        return;
+      // if (cmd._name !== DEFAULT_COMMAND) {
 
       layout.section(<string>this._colurs.applyAnsi(`${cmdsStr}:`, accent), [1, 0, 0, 1]);
 
@@ -220,6 +226,8 @@ export class Pargv {
 
       if (!cmd._commands.length) // no commands set "none".
         layout.div({ text: this._colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
+
+      //  }
 
       layout.section(<string>this._colurs.applyAnsi(`${optsStr}:`, accent), [1, 0, 0, 1]);
 
@@ -295,7 +303,7 @@ export class Pargv {
         // nameStyles = this._nameStyles && this._nameStyles.length ? this._nameStyles : null;
 
         if (nameFont)
-          tmpName = this.logo(tmpName, nameFont, nameStyles).get();
+          tmpName = this.logo(tmpName, nameFont, nameStyles);
 
         if (!nameFont && nameStyles)
           tmpName = <string>this._colurs.applyAnsi(tmpName, nameStyles);
@@ -341,7 +349,7 @@ export class Pargv {
 
       if (command) {
         cmdKeys = [command];
-        console.log(); // only displaying one command add spacing.
+        // console.log(); // only displaying one command add spacing.
       }
       else {
         cmdKeys = utils.keys(this._commands).sort();
@@ -411,9 +419,11 @@ export class Pargv {
 
     // Build help for all commands.
     else {
-      buildHeader();
+      if (this.options.displayHeader)
+        buildHeader();
       buildBody();
-      buildFooter();
+      if (this.options.displayFooter)
+        buildFooter();
     }
 
     // return the resulting layout.
@@ -441,22 +451,28 @@ export class Pargv {
    */
   private errorHandler(err: Error) {
 
-    if (MOCHA_TESTING) // if we're testing just throw the error.
-      throw err;
+    // if (MOCHA_TESTING) // if we're testing just throw the error.
+    //   throw err;
 
-    let name = err.name;
-    let msg = err.message;
-    let stack = err.stack;
-    msg = this._colurs.bold.red(name) + ': ' + msg;
+    // let name = err.name;
+    // let msg = err.message;
+    // let stack = err.stack;
+    // msg = this._colurs.bold.red(name) + ': ' + msg;
 
-    console.log();
-    console.log(msg);
-    if (this.options.displayStackTrace && stack) {
-      console.log();
-      console.log(stack);
-    }
-    console.log();
-    process.exit(1);
+    // Wrap errors with \n to make them stand out a bit better.
+    // process.stderr.write(`\n${msg}`);
+    // if (this.options.displayStackTrace && stack)
+    //   process.stderr.write(`${stack}`);
+    // process.stderr.write('\n\n');
+    // process.exit(1);
+
+    err.stack = err.stack.split('\n').map((s, i) => {
+      if (i === 0)
+        return this._colurs.bold.red(s);
+      return this._colurs.gray(s);
+    }).join('\n') + '\n';
+
+    throw err;
 
   }
 
@@ -467,12 +483,14 @@ export class Pargv {
    * @param message the message to be logged.
    */
   private logHandler(message: string) {
-    const colors = ['bold'].concat(utils.toArray<string>(this.options.colors.primary));
-    let prefix: any = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
-    prefix = this._colurs.applyAnsi(prefix, colors);
-    console.log();
-    console.log(prefix + ': ' + message);
-    console.log();
+    // const colors = ['bold'].concat(utils.toArray<string>(this.options.colors.primary));
+    // let prefix: any = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
+    // prefix = this._colurs.applyAnsi(prefix, colors);
+    // DEPRECATED - don't prefix with name user can insert in message if needed.
+    // console.log();
+    // console.log(prefix + ': ' + message);
+    // console.log();
+    process.stderr.write(message + '\n');
   }
 
   /**
@@ -495,7 +513,8 @@ export class Pargv {
    * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
    */
   get $(): PargvCommand {
-    return this._command;
+    this.log(`${this._colurs.applyAnsi('DEPRECATED:', 'magenta')} pargv.$ is deprecated, call pargv.command() with no args to return the default command.`);
+    return this.get.command(DEFAULT_COMMAND);
   }
 
   /**
@@ -632,9 +651,10 @@ export class Pargv {
        * @param command optional command to show help for.
        */
       help: (command?: string | PargvCommand) => {
-        console.log();
-        console.log(this.buildHelp(command));
-        console.log();
+        // console.log();
+        // console.log(this.buildHelp(command));
+        // console.log();
+        process.stdout.write('\n' + this.buildHelp(command) + '\n\n');
       },
 
       /**
@@ -645,9 +665,10 @@ export class Pargv {
        * @param template the template string.
        */
       completion: (path?: string, template?: string) => {
-        console.log();
-        console.log(this._completions.generate(path, template).script);
-        console.log();
+        // console.log();
+        // console.log(this._completions.generate(path, template).script);
+        // console.log();
+        process.stdout.write('\n' + this._completions.generate(path, template).script + '\n\n');
       },
 
       /**
@@ -807,12 +828,23 @@ export class Pargv {
    * @param command the command token string to parse.
    * @param describe a description describing the command.
    */
-  command(command: string, describe?: string): PargvCommand {
+  command(command?: string, describe?: string): PargvCommand {
+
+    if (!command) { // if no command name return the default.
+      const cmd = this.get.command(DEFAULT_COMMAND);
+      if (describe)
+        cmd.describe(describe);
+      return cmd;
+    }
+
     const cmd = new PargvCommand(command, describe, this);
-    if (command !== '__default__')
-      this._commands[cmd._name] = cmd;
-    else
-      this._command = cmd;
+    this._commands[cmd._name] = cmd;
+
+    // if (command !== DEFAULT_COMMAND)
+    //   this._commands[cmd._name] = cmd;
+    // else
+    //   this._command = cmd;
+
     return cmd;
   }
 
@@ -963,19 +995,25 @@ export class Pargv {
 
     let normalized = this.toNormalized(argv.slice(0));   // normalize the args.
     const source = normalized.slice(0);               // store source args.
-    let name = utils.first(normalized);                 // get first arg.
+    let name = utils.first<string>(normalized);                 // get first arg.
+
     if (FLAG_EXP.test(name))                    // name cmd can't be flag.
       name = undefined;
 
-    let cmd = this.get.command(name);              // lookup the command.
+    // lookup the command.
+    let cmd = this.get.command(name);
 
-    if (isExec || cmd)
+    // if (isExec || cmd)
+    if ((isExec || cmd) && name !== undefined)
       normalized.shift(); // shift first arg.
 
-    if (cmd)
-      name = cmd._name;
-    else
-      cmd = this._command;                          // use the default command.
+    if (!cmd) // if no command here fallback to the default.
+      cmd = this.get.command(DEFAULT_COMMAND);
+
+    // if (cmd)
+    //   name = cmd._name;
+    // else
+    //   cmd = this._command;                          // use the default command.
 
     if (name === this._completionsCommand && ~source.indexOf(this._completionsReply)) { // hijack parse this is a call for tab completion.
       result = {
@@ -1015,7 +1053,6 @@ export class Pargv {
 
     if (this.options.extendStats || cmd._external || isExec)
       result.$stats = stats;
-
 
     if (!this.options.allowAnonymous && stats.anonymous.length && !cmd._variadic) {
       this.error(
@@ -1228,8 +1265,14 @@ export class Pargv {
       utils.isBoolean(this.options.fallbackHelp) ?
         null : this.options.fallbackHelp;
 
-    let cmd = parsed.$command ? this.get.command(parsed.$command) : null;
     const normLen = parsed.$stats && parsed.$stats.normalized.length;
+    const optsLen = parsed.$stats && parsed.$stats.optionsCount;
+
+    let cmdName = parsed.$command;
+    if (!cmdName && (normLen || optsLen))
+      cmdName = DEFAULT_COMMAND;
+
+    let cmd = this.get.command(cmdName) || null;
 
     // Ensure the command is not the fallback help command.
     if (cmd && (cmd._name === fallbackName))
@@ -1240,7 +1283,8 @@ export class Pargv {
       return parsed;
     }
 
-    if (!parsed.$command && !normLen && this.options.fallbackHelp === true) {
+    // if (!parsed.$command && !normLen && !optsLen && this.options.fallbackHelp === true) {
+    if (!cmd && this.options.fallbackHelp === true) {
       this.show.help();
       return parsed;
     }
@@ -1323,11 +1367,11 @@ export class Pargv {
     const getFlag = this._completionsReply;
     const replyCmd = `${command} ${getFlag}`; // the reply command for completions.sh.
     command = `${command} [path]`; // our PargvCommand for completions.
-    describe = describe || this._localize('tab completions command.').done();
+    describe = describe || this._localize('Installs and/or outputs script for tab completions.').done();
 
     const cmd = this.command(command, <string>describe);
 
-    cmd.option('--install, -i', this._localize('when true installs completions.').done());
+    cmd.option('--install, -i [path]', this._localize('when true installs completions.').done());
 
     cmd.option('--reply', this._localize('when true returns tab completions.').done());
 
@@ -1340,13 +1384,18 @@ export class Pargv {
       }
 
       else if (parsed.install) {  // install completions.
+        if (isString(parsed.install)) // Allow path to be provided w/ --install flag.
+          path = parsed.install;
         const success = this._completions.install(path || this._env.EXEC, replyCmd, <string>template, parsed.force);
         if (success) {
-          console.log();
+          // console.log();
+          // this.log(
+          //   this._localize('successfully installed tab completions, quit and reopen terminal.').done()
+          // );
+          // console.log();
           this.log(
-            this._localize('successfully installed tab completions, quit and reopen terminal.').done()
+            '\n' + this._localize('successfully installed tab completions, quit and reopen terminal.\n\n').done()
           );
-          console.log();
         }
       }
 
@@ -1372,7 +1421,7 @@ export class Pargv {
 
     let argv = utils.isArray(line) ? line as string[] : utils.isString(line) ? (line as string).split(' ') : (<IPargvParsedResult>line).$source;
 
-    let current = argv && argv.length ? utils.last(<string[]>argv) : ''; // get current arg.
+    let current = argv && argv.length ? utils.last<string>(<string[]>argv) : ''; // get current arg.
 
     let handler = <CompletionHandler>fn;
 
@@ -1483,8 +1532,8 @@ export class Pargv {
       formatted = err.message;
       prune = 0;
     }
-    if (this._name)
-      err.name = utils.capitalize(this._name) + 'Error';
+    // if (this._name)
+    //   err.name = utils.capitalize(this._name) + 'Error';
     if (err.stack) {
       let stack: any = err.stack.split(EOL);
       let stackMsg = stack.shift();
@@ -1503,6 +1552,7 @@ export class Pargv {
    * @param args the arguments to log.
    */
   log(...args: any[]) {
+    // NOTE: Need to change this to just intercept the stream/hide.
     if (MOCHA_TESTING) // when testing don't log anything.
       return this;
     this._logHandler.call(this, this.formatLogMessage(...args));
@@ -1575,14 +1625,12 @@ export class Pargv {
    *
    * @param text the text to be displayed.
    * @param font the figlet font to be used.
-   * @param color the optional color to be used.
-   * @param horizontalLayout the horizontal layout mode.
-   * @param verticalLayout the vertical layout mode.
+   * @param styles the optional styles to be used.
    */
-  logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): IPargvLogo {
+  logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]) {
 
     let result: string;
-    let methods: IPargvLogo;
+    // let methods: IPargvLogo;
 
     let defaults: IFigletOptions = {
       text: 'App',
@@ -1606,50 +1654,51 @@ export class Pargv {
     if (styles)
       result = this._colurs.applyAnsi(result, styles) as string;
 
+    return result;
+
+    // DEPRECATE: methods no real need.
+
     /**
      * Render
      * Renders out the Figlet font logo.
      */
-    function show() {
-      console.log(result);
-      return this;
-    }
+    // function show() {
+    //   console.log(result);
+    //   return this;
+    // }
 
     /**
      * Fonts
      * Lists Figlet Fonts.
      */
-    function fonts() {
-      return figlet.fontsSync();
-    }
+    // function fonts() {
+    //   return figlet.fontsSync();
+    // }
 
     /**
      * Get
      * Returns the Figlet font without rendering.
      */
-    function get() {
-      return result;
-    }
+    // function get() {
+    //   return result;
+    // }
 
-    methods = {
+    // methods = {
 
-      fonts,
-      show,
-      get
+    //   fonts,
+    //   show,
+    //   get
 
-    };
+    // };
 
-    return methods;
+    // return methods;
 
   }
 
   /**
     * Layout
     * Creates a CLI layout much like creating divs in the terminal.
-    * Supports strings with \t \s \n or IUIOptions object.
     * @see https://www.npmjs.com/package/cliui
-    *
-    *
     *
     * @param width the width of the layout.
     * @param wrap if the layout should wrap.
@@ -1769,7 +1818,8 @@ export class Pargv {
     function show(...elements: any[]) {
       if (elements.length)
         add('div', ...elements);
-      console.log(get());
+      // console.log(get());
+      process.stdout.write(get() + '\n');
     }
 
     const methods: IPargvLayout = {

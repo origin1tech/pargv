@@ -135,11 +135,24 @@ export declare class PargvCommand {
      */
     readonly listen: any;
     /**
-      * Option
-      * Adds option to command.
+      * Arg
+      * Adds argument to command. If argument is not wrapped with [arg] or <arg> it will be wrapped with [arg].
+      *
       * Supported to type strings: string, date, array,
       * number, integer, float, json, regexp, boolean
-      * @example
+      *
+      * @param token the option token to parse as option.
+      * @param describe the description for the option.
+      * @param def an optional default value.
+      * @param type a string type, RegExp to match or Coerce method.
+      */
+    arg(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand;
+    /**
+      * Option
+      * Adds option to command.
+      *
+      * Supported types: string, date, array,
+      * number, integer, float, json, regexp, boolean
       *
       * @param token the option token to parse as option.
       * @param describe the description for the option.

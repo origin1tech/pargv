@@ -20,7 +20,6 @@
     ]
   },
   "exclude": [
-    "**/*.spec.ts",
-    "**/*.bak.ts"
+    "**/*.spec.ts"
   ]
 }

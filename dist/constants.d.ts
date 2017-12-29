@@ -1,3 +1,4 @@
+export declare const DEFAULT_COMMAND = "__default__";
 export declare const KEYVAL_EXP: RegExp;
 export declare const CSV_EXP: RegExp;
 export declare const LIST_EXP: RegExp;

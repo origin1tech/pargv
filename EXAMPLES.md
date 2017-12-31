@@ -49,23 +49,25 @@ instance and then you can define your config and simply use
 Pargv as a straight parser leveraging all it's good ness.
 
 ```ts
-const parsed = argv.$
-  .option('-x')
-  .option('-y')
-  .option('-z')
-  .when('-x', '-y')
-  .demand('-z')
-  .parse();
+const parsed =
+  pargv.command()
+    .option('-x')
+    .option('-y')
+    .option('-z')
+    .when('-x', '-y')
+    .demand('-z')
+    .parse();
 ```
 
 ## Adding some meta data for help text:
 
 ```ts
-const parsed = argv.$
-  .name('My App')
-  .description('My awesome CLI app.')
-  .version('1.0.0')
-  .license('ISC');
+const parsed =
+  pargv.command()
+    .name('My App')
+    .description('My awesome CLI app.')
+    .version('1.0.0')
+    .license('ISC');
 ```
 
 You can also create fancy text for your program name by way of Figlet fonts.
@@ -73,8 +75,9 @@ Below we're adding some color and a custom font. The below will now
 display in help as blue text using the Doom font. Cool right?
 
 ```ts
-const parsed = argv.$
-  .name('My App', 'blue', 'Doom');
+const parsed =
+  pargv.command()
+    .name('My App', 'blue', 'Doom');
 ```
 
 ## Multiple args spread in callback:

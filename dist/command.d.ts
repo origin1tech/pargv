@@ -73,6 +73,13 @@ export declare class PargvCommand {
      */
     private clean(key);
     /**
+     * Error
+     * : Handles error messages.
+     *
+     * @param args args to be formatted and logged.
+     */
+    private readonly error;
+    /**
      * Min
      * : Gets methods for adding min commands or options.
      */
@@ -94,49 +101,13 @@ export declare class PargvCommand {
      */
     readonly if: {
         (config: IMap<IPargvWhenConfig>): PargvCommand;
+        (key: string, converse?: string): PargvCommand;
         (key: string, demand?: string, converse?: boolean): PargvCommand;
+        (key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): PargvCommand;
     };
     /**
-     * Error
-     * : Handles error messages.
-     *
-     * @param args args to be formatted and logged.
-     */
-    private readonly err;
-    /**
-     * Parse
-     * : Parses the provided arguments inspecting for commands and options.
-     *
-     * @param argv the process.argv or custom args array.
-     */
-    readonly parse: (...args: any[]) => IPargvParsedResult;
-    /**
-     * Exec
-     * : Parses arguments then executes command action if any.
-     *
-     * @param argv optional arguments otherwise defaults to process.argv.
-     */
-    readonly exec: (...args: any[]) => IPargvParsedResult;
-    /**
-     * Completion
-     * : Adds the completion command for use within your app for generating completion script.
-     *
-     * @param command the name of the commpletion install command.
-     * @param describe the description of the command or complete handler.
-     * @param template optional template for generating completions or complete handler.
-     * @param fn the optional completion handler.
-     */
-    readonly completion: any;
-    /**
-     * Listen
-     * : Parses arguments then executes command action if any.
-     *
-     * @param argv optional arguments otherwise defaults to process.argv.
-     */
-    readonly listen: any;
-    /**
-      * Arg
-      * Adds argument to command. If argument is not wrapped with [arg] or <arg> it will be wrapped with [arg].
+      * Sub Command
+      * Adds sub command to command. If token is not wrapped with [arg] or <arg> it will be wrapped with [arg].
       *
       * Supported to type strings: string, date, array,
       * number, integer, float, json, regexp, boolean
@@ -146,7 +117,7 @@ export declare class PargvCommand {
       * @param def an optional default value.
       * @param type a string type, RegExp to match or Coerce method.
       */
-    arg(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand;
+    subcommand(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand;
     /**
       * Option
       * Adds option to command.
@@ -164,11 +135,25 @@ export declare class PargvCommand {
      * Alias
      * Maps alias keys to primary flag/command key.
      *
+     * @param config object map containing aliases.
+     */
+    alias(config: IMap<string[]>): PargvCommand;
+    /**
+     * Alias
+     * Maps alias keys to primary flag/command key.
+     *
      * @param key the key to map alias keys to.
      * @param alias keys to map as aliases.
      */
-    alias(config: IMap<string[]>): PargvCommand;
     alias(key: string, ...alias: string[]): PargvCommand;
+    alias(key: string | IMap<string[]>, ...alias: string[]): PargvCommand;
+    /**
+     * Describe
+     * Adds description for an option.
+     *
+     * @param config object containing describes by property.
+     */
+    describe(config: IMap<string>): PargvCommand;
     /**
      * Describe
      * Adds description for an option.
@@ -176,18 +161,24 @@ export declare class PargvCommand {
      * @param key the option key to add description to.
      * @param describe the associated description.
      */
-    describe(config: IMap<string>): PargvCommand;
     describe(key: string, describe?: string): PargvCommand;
+    describe(key: string | IMap<string>, describe?: string): PargvCommand;
+    /**
+     * Coerce
+     * Coerce or transform the defined option when matched.
+     *
+     * @param config object containing coerce configurations.
+     */
+    coerce(config: IMap<IPargvCoerceConfig>): PargvCommand;
     /**
      * Coerce
      * Coerce or transform the defined option when matched.
      *
      * @param key the option key to be coerced.
-     * @param fn the string type, RegExp or coerce callback.
+     * @param type the string type, RegExp or coerce callback function.
      * @param def an optional value when coercion fails.
      */
-    coerce(key: string | IMap<IPargvCoerceConfig>): PargvCommand;
-    coerce(key: string, type?: string | RegExp | CoerceHandler, def?: any): PargvCommand;
+    coerce(key: string | IMap<IPargvCoerceConfig>, type?: string | RegExp | CoerceHandler, def?: any): PargvCommand;
     /**
      * Demand
      * The commands or flag/option keys to demand.
@@ -200,20 +191,43 @@ export declare class PargvCommand {
      * When
      * When a specified key demand dependent key.
      *
+     * @param config an object containing when configurations.
+     */
+    when(config: IMap<IPargvWhenConfig>): PargvCommand;
+    /**
+     * When
+     * When a specified key demand dependent key.
+     *
+     * @param key require this key.
+     * @param converse when true the coverse when is also created.
+     */
+    when(key: string, converse?: string): PargvCommand;
+    /**
+     * When
+     * When a specified key demand dependent key.
+     *
      * @param key require this key.
      * @param demand this key is present.
      * @param converse when true the coverse when is also created.
      */
-    when(config: IMap<IPargvWhenConfig>): PargvCommand;
     when(key: string, demand?: string, converse?: boolean): PargvCommand;
+    when(key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): PargvCommand;
     /**
      * Default
      * Sets a default value for a command or option.
      *
-     * @param key the key to set the default for or an object of key/val.
+     * @param config an object containing configs for property defaults.
+     */
+    default(config: IMap<any>): PargvCommand;
+    /**
+     * Default
+     * Sets a default value for a command or option.
+     *
+     * @param key the key to set default value for.
      * @param val the value to set for the provided key.
      */
-    default(key: string | IMap<any>, val: any): this;
+    default(key: string, val: any): PargvCommand;
+    default(key: string | IMap<any>, val?: any): PargvCommand;
     /**
      * Completion At
      * : Injects custom completion value for specified key.
@@ -255,21 +269,21 @@ export declare class PargvCommand {
     help(enabled?: boolean): PargvCommand;
     /**
      * Spread Commands
-     * : Allows for spreading commands on command instance only.
+     * When true found commands are spread in .action(cmd1, cmd2, ...).
      *
      * @param spread when true spreads command args in callback action.
      */
     spreadCommands(spread?: boolean): this;
     /**
      * Extend Commands
-     * : Allows for extending commands on command instance only.
+     * When true known commands are extended to result object { some_command: value }.
      *
      * @param extend when true commands are exteneded on Pargv result object.
      */
     extendCommands(extend?: boolean): this;
     /**
      * Extend Aliases
-     * : Allows for extending aliases on command instance only.
+     * When true option aliases are extended on result object --option, -o results in { option: value, o: value }.
      *
      * @param extend when true aliases are exteneded on Pargv result object.
      */
@@ -278,7 +292,8 @@ export declare class PargvCommand {
      * Example
      * : Saves an example string for the command or tuple consisting of example string and description.
      *
-     * @param val string or array of strings.
+     * @param example string or an array of tuples [example, description].
+     * @param describe the description for the example.
      */
     example(example: string | [string, string][], describe?: string): this;
     /**
@@ -375,4 +390,35 @@ export declare class PargvCommand {
      * @param val the trailing epilogue to be displayed.
      */
     epilog(val: string): this;
+    /**
+     * Parse
+     * : Parses the provided arguments inspecting for commands and options.
+     *
+     * @param argv the process.argv or custom args array.
+     */
+    readonly parse: (...args: any[]) => IPargvParsedResult;
+    /**
+     * Exec
+     * : Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
+     */
+    readonly exec: (...args: any[]) => IPargvParsedResult;
+    /**
+     * Completion
+     * : Adds the completion command for use within your app for generating completion script.
+     *
+     * @param command the name of the commpletion install command.
+     * @param describe the description of the command or complete handler.
+     * @param template optional template for generating completions or complete handler.
+     * @param fn the optional completion handler.
+     */
+    readonly completion: any;
+    /**
+     * Listen
+     * : Parses arguments then executes command action if any.
+     *
+     * @param argv optional arguments otherwise defaults to process.argv.
+     */
+    readonly listen: any;
 }

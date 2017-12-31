@@ -49,7 +49,7 @@ var PargvCommand = /** @class */ (function () {
         var type = tokens[1]; // optional type.
         var def = tokens[2]; // optional default value.
         if (!constants_1.TOKEN_PREFIX_EXP.test(key)) {
-            this.err(this._pargv._localize('the token "%s" is missing -, [, < or has unwanted space.')
+            this.error(this._pargv._localize('the token "%s" is missing -, [, < or has unwanted space.')
                 .args(key)
                 .done());
         } // ensure valid token.
@@ -151,7 +151,7 @@ var PargvCommand = /** @class */ (function () {
         // Ensure only one spread command.
         var variadics = split.filter(function (el) { return utils.isVariadic(el); });
         if (variadics.length > 1)
-            this.err(this._pargv
+            this.error(this._pargv
                 ._localize('found %s variadic commands but only one is permitted.')
                 .args(variadics.length)
                 .styles(this._pargv.options.colors.accent)
@@ -170,7 +170,7 @@ var PargvCommand = /** @class */ (function () {
                 if (!parsed.bool) {
                     split.splice(i + 1, 1);
                     if (parsed.isVariadic)
-                        _this.err(_this._pargv
+                        _this.error(_this._pargv
                             ._localize('flag %s contains ...variadic, only commands can contain variadic values.')
                             .args(parsed.as)
                             .styles(_this._pargv.options.colors.accent)
@@ -254,6 +254,7 @@ var PargvCommand = /** @class */ (function () {
                 return el !== helpCmd;
             });
         }
+        return enabled;
     };
     /**
      * Clean
@@ -281,6 +282,19 @@ var PargvCommand = /** @class */ (function () {
             this._options = this._options.filter(function (k) { return k !== key; });
         }
     };
+    Object.defineProperty(PargvCommand.prototype, "error", {
+        /**
+         * Error
+         * : Handles error messages.
+         *
+         * @param args args to be formatted and logged.
+         */
+        get: function () {
+            return this._pargv.error.bind(this._pargv);
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(PargvCommand.prototype, "min", {
         // GETTERS //
         /**
@@ -359,78 +373,10 @@ var PargvCommand = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(PargvCommand.prototype, "err", {
-        /**
-         * Error
-         * : Handles error messages.
-         *
-         * @param args args to be formatted and logged.
-         */
-        get: function () {
-            return this._pargv.error.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(PargvCommand.prototype, "parse", {
-        /**
-         * Parse
-         * : Parses the provided arguments inspecting for commands and options.
-         *
-         * @param argv the process.argv or custom args array.
-         */
-        get: function () {
-            return this._pargv.parse.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(PargvCommand.prototype, "exec", {
-        /**
-         * Exec
-         * : Parses arguments then executes command action if any.
-         *
-         * @param argv optional arguments otherwise defaults to process.argv.
-         */
-        get: function () {
-            return this._pargv.exec.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(PargvCommand.prototype, "completion", {
-        /**
-         * Completion
-         * : Adds the completion command for use within your app for generating completion script.
-         *
-         * @param command the name of the commpletion install command.
-         * @param describe the description of the command or complete handler.
-         * @param template optional template for generating completions or complete handler.
-         * @param fn the optional completion handler.
-         */
-        get: function () {
-            return this._pargv.completion.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(PargvCommand.prototype, "listen", {
-        /**
-         * Listen
-         * : Parses arguments then executes command action if any.
-         *
-         * @param argv optional arguments otherwise defaults to process.argv.
-         */
-        get: function () {
-            return this._pargv.exec.bind(this._pargv);
-        },
-        enumerable: true,
-        configurable: true
-    });
     // METHODS //
     /**
-      * Arg
-      * Adds argument to command. If argument is not wrapped with [arg] or <arg> it will be wrapped with [arg].
+      * Sub Command
+      * Adds sub command to command. If token is not wrapped with [arg] or <arg> it will be wrapped with [arg].
       *
       * Supported to type strings: string, date, array,
       * number, integer, float, json, regexp, boolean
@@ -440,7 +386,7 @@ var PargvCommand = /** @class */ (function () {
       * @param def an optional default value.
       * @param type a string type, RegExp to match or Coerce method.
       */
-    PargvCommand.prototype.arg = function (token, describe, def, type) {
+    PargvCommand.prototype.subcommand = function (token, describe, def, type) {
         if (!/^(\[|\<)/.test(token))
             token = "[" + token + "]";
         return this.option(token, describe, def, type);
@@ -459,6 +405,8 @@ var PargvCommand = /** @class */ (function () {
       */
     PargvCommand.prototype.option = function (token, describe, def, type) {
         var _this = this;
+        if (!/^-/.test(token) && this._name === constants_1.DEFAULT_COMMAND)
+            this.error('Command arg "%s" invalid, options should start with - or -- for Default command.', token);
         token = utils.toOptionToken(token);
         var tokens = utils.split(token.trim(), constants_1.SPLIT_CHARS);
         tokens.forEach(function (el, i) {
@@ -494,7 +442,7 @@ var PargvCommand = /** @class */ (function () {
             var v = obj[k];
             if (!utils.isValue(v) || !utils.isArray(v)) {
                 var aliasStr = this_1._pargv._localize('alias').done();
-                this_1.err(this_1._pargv._localize('cannot set %s for %s using value of undefined.')
+                this_1.error(this_1._pargv._localize('cannot set %s for %s using value of undefined.')
                     .setArg('alias')
                     .setArg(k)
                     .styles(colors.accent, colors.accent)
@@ -523,7 +471,7 @@ var PargvCommand = /** @class */ (function () {
             k = this.stripToAlias(k);
             var v = obj[k];
             if (!utils.isValue(v))
-                this.err(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
                     .setArg('describe')
                     .setArg(k)
                     .styles(colors.accent, colors.accent)
@@ -532,14 +480,14 @@ var PargvCommand = /** @class */ (function () {
         }
         return this;
     };
-    PargvCommand.prototype.coerce = function (key, fn, def) {
+    PargvCommand.prototype.coerce = function (key, type, def) {
         var obj = key;
         var colors = this._pargv.options.colors;
         if (utils.isString(key)) {
             key = this.stripToAlias(key);
             obj = {};
             obj[key] = {
-                fn: fn,
+                fn: type,
                 def: def
             };
         }
@@ -547,7 +495,7 @@ var PargvCommand = /** @class */ (function () {
             k = this.stripToAlias(k);
             var v = obj[k];
             if (!utils.isValue(v))
-                this.err(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
                     .setArg('coerce')
                     .setArg(k)
                     .styles(colors.accent, colors.accent)
@@ -594,7 +542,7 @@ var PargvCommand = /** @class */ (function () {
             var v = obj[k];
             v.demand = this.stripToAlias(v.demand);
             if (!utils.isValue(v.demand))
-                this.err(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
                     .setArg('when')
                     .setArg(k)
                     .styles(colors.accent, colors.accent)
@@ -605,13 +553,6 @@ var PargvCommand = /** @class */ (function () {
         }
         return this;
     };
-    /**
-     * Default
-     * Sets a default value for a command or option.
-     *
-     * @param key the key to set the default for or an object of key/val.
-     * @param val the value to set for the provided key.
-     */
     PargvCommand.prototype.default = function (key, val) {
         var obj = key;
         var colors = this._pargv.options.colors;
@@ -624,7 +565,7 @@ var PargvCommand = /** @class */ (function () {
             k = this.stripToAlias(k);
             var v = obj[k];
             if (!utils.isValue(v))
-                this.err(this._pargv._localize('cannot set %s for %s using value of undefined.')
+                this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
                     .setArg('default')
                     .setArg(k)
                     .styles(colors.accent, colors.accent)
@@ -651,7 +592,7 @@ var PargvCommand = /** @class */ (function () {
             vals = vals[0];
         var colors = this._pargv.options.colors;
         if (!key)
-            this.err(this._pargv._localize('cannot set completion for using key of undefined.')
+            this.error(this._pargv._localize('cannot set completion for using key of undefined.')
                 .done());
         this._completions[key] = vals;
         return this;
@@ -665,7 +606,7 @@ var PargvCommand = /** @class */ (function () {
     PargvCommand.prototype.action = function (fn) {
         var colors = this._pargv.options.colors;
         if (!fn)
-            this.err(this._pargv._localize('cannot set %s for %s using value of undefined.')
+            this.error(this._pargv._localize('cannot set %s for %s using value of undefined.')
                 .setArg('action')
                 .setArg(this._name)
                 .styles(colors.accent, colors.accent)
@@ -698,7 +639,7 @@ var PargvCommand = /** @class */ (function () {
      */
     PargvCommand.prototype.cwd = function (path) {
         if (this._action || !this._external)
-            return;
+            return this;
         this._cwd = path;
         if (this._external !== this._name || utils.isBoolean(path))
             return;
@@ -722,7 +663,7 @@ var PargvCommand = /** @class */ (function () {
     };
     /**
      * Spread Commands
-     * : Allows for spreading commands on command instance only.
+     * When true found commands are spread in .action(cmd1, cmd2, ...).
      *
      * @param spread when true spreads command args in callback action.
      */
@@ -732,7 +673,7 @@ var PargvCommand = /** @class */ (function () {
     };
     /**
      * Extend Commands
-     * : Allows for extending commands on command instance only.
+     * When true known commands are extended to result object { some_command: value }.
      *
      * @param extend when true commands are exteneded on Pargv result object.
      */
@@ -742,7 +683,7 @@ var PargvCommand = /** @class */ (function () {
     };
     /**
      * Extend Aliases
-     * : Allows for extending aliases on command instance only.
+     * When true option aliases are extended on result object --option, -o results in { option: value, o: value }.
      *
      * @param extend when true aliases are exteneded on Pargv result object.
      */
@@ -754,7 +695,8 @@ var PargvCommand = /** @class */ (function () {
      * Example
      * : Saves an example string for the command or tuple consisting of example string and description.
      *
-     * @param val string or array of strings.
+     * @param example string or an array of tuples [example, description].
+     * @param describe the description for the example.
      */
     PargvCommand.prototype.example = function (example, describe) {
         if (!example)
@@ -958,13 +900,13 @@ var PargvCommand = /** @class */ (function () {
         if (!utils.isValue(result) || !is[type](result)) {
             if (!opts.ignoreTypeErrors) {
                 if (!isListType) {
-                    this.err(this._pargv._localize('expected type %s but got %s for %s.')
+                    this.error(this._pargv._localize('expected type %s but got %s for %s.')
                         .args(type, utils.getType(result), (key || '').replace(constants_1.FLAG_EXP, ''))
                         .styles(colors.accent, colors.accent)
                         .done());
                 }
                 else {
-                    this.err(this._pargv._localize('expected list or expression %s to contain %s.')
+                    this.error(this._pargv._localize('expected list or expression %s to contain %s.')
                         .args(listexp, origVal)
                         .styles(colors.accent, colors.accent)
                         .done());
@@ -1179,7 +1121,21 @@ var PargvCommand = /** @class */ (function () {
         key = this.aliasToKey(key);
         return utils.contains(this._bools, key);
     };
+    /////////////////////
     // PARGV WRAPPERS //
+    ///////////////////
+    // These are here so you don't have to step
+    // back into the pargv.eplilog() chain.
+    //
+    // Instead of this:
+    // pargv.command('somecommand');
+    // pargv.epilog('some epi.').exec();
+    //
+    // Allows you to:
+    // pargv.command('somecommand').epilog('some epi.').exec()
+    //
+    // This is because methods like exec(), parse(), epilog()
+    // are on the Pargv instance and not the PargvCommand instance.
     /**
      * Command
      * A string containing Parv tokens to be parsed.
@@ -1223,6 +1179,61 @@ var PargvCommand = /** @class */ (function () {
         this._pargv.epilog(val);
         return this;
     };
+    Object.defineProperty(PargvCommand.prototype, "parse", {
+        /**
+         * Parse
+         * : Parses the provided arguments inspecting for commands and options.
+         *
+         * @param argv the process.argv or custom args array.
+         */
+        get: function () {
+            return this._pargv.parse.bind(this._pargv);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PargvCommand.prototype, "exec", {
+        /**
+         * Exec
+         * : Parses arguments then executes command action if any.
+         *
+         * @param argv optional arguments otherwise defaults to process.argv.
+         */
+        get: function () {
+            return this._pargv.exec.bind(this._pargv);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PargvCommand.prototype, "completion", {
+        /**
+         * Completion
+         * : Adds the completion command for use within your app for generating completion script.
+         *
+         * @param command the name of the commpletion install command.
+         * @param describe the description of the command or complete handler.
+         * @param template optional template for generating completions or complete handler.
+         * @param fn the optional completion handler.
+         */
+        get: function () {
+            return this._pargv.completion.bind(this._pargv);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PargvCommand.prototype, "listen", {
+        /**
+         * Listen
+         * : Parses arguments then executes command action if any.
+         *
+         * @param argv optional arguments otherwise defaults to process.argv.
+         */
+        get: function () {
+            return this._pargv.exec.bind(this._pargv);
+        },
+        enumerable: true,
+        configurable: true
+    });
     return PargvCommand;
 }());
 exports.PargvCommand = PargvCommand;

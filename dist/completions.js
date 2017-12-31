@@ -8,10 +8,10 @@ var os_1 = require("os");
 var srcTpl = "" + os_1.EOL + os_1.EOL + "###-begin-{{app_name}}-completions-###" + os_1.EOL +
     ("source {{app_completions_path}}" + os_1.EOL) +
     ("###-end-{{app_name}}-completions-###" + os_1.EOL);
-function completions(pargv) {
+function completions(pargv, colurs) {
     var env = pargv._env;
     var colors = pargv.options.colors;
-    var colurs = pargv._colurs;
+    // const colurs = pargv._colurs;
     /**
      * Get Completion Paths
      * : Gets paths used for saving completions.

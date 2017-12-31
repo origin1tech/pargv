@@ -1,11 +1,17 @@
 import * as chai from 'chai';
 import * as mocha from 'mocha';
 import * as Colurs from 'colurs';
+import * as MuteStream from 'mute-stream';
 
 const expect = chai.expect;
 const should = chai.should;
 const assert = chai.assert;
 const colurs = Colurs.get();
+
+
+const ms = new MuteStream();
+ms.pipe(process.stderr);
+ms.mute();
 
 import { Pargv, PargvCommand } from './';
 import * as passpipe from 'passpipe';
@@ -25,7 +31,7 @@ describe('Pargv', () => {
   });
 
   it('should ensure is instance of PargvCommand.', () => {
-    assert.instanceOf(pargv.$, PargvCommand);
+    assert.instanceOf(pargv.command(), PargvCommand);
   });
 
   it('should split args from space separated string.', () => {
@@ -204,7 +210,7 @@ describe('Pargv', () => {
       done();
     };
 
-    pargv.$
+    pargv.command()
       .min.commands(2)
       .onError(func)
       .parse(['test']);
@@ -220,7 +226,7 @@ describe('Pargv', () => {
 
     pargv.reset();
 
-    pargv.$
+    pargv.command()
       .when('-x', '-y')
       .onError(func)
       .parse(['-x']);
@@ -236,35 +242,40 @@ describe('Pargv', () => {
 
     pargv.reset();
 
-    pargv.$
+    pargv.command()
       .demand('-x', '-y')
       .onError(func)
       .parse(['-x']);
 
   });
 
-  // Wercker throws error due to figlet fonts
-  // need to dig into why, disable for now.
-
-  // it('should get auto generated help text.', () => {
-  //   pargv.reset();
-  //   pargv.command('help');
-  //   let resultTxt = colurs.strip(pargv.get.help());
-  //   expect(resultTxt.length).gt(0);
-  //   assert.match(resultTxt, /usage: help/gi);
-  //   pargv.remove.command('help');
-  // });
+  // Skip if Wercker, complains about figlet fonts.
+  if (!process.env.WERCKER)
+    it('should get auto generated help text.', () => {
+      pargv.reset();
+      pargv.command('help');
+      let resultTxt = colurs.strip(pargv.get.help());
+      expect(resultTxt.length).gt(0);
+      assert.match(resultTxt, /usage: help/gi);
+      pargv.remove.command('help');
+    });
 
   it('should fallback to catchall command.', (done) => {
     pargv.reset()
-      .set.option('fallbackHelp', 'fallback');
-    pargv.command('fallback')
-      .action((parsed) => {
-        assert(parsed.$command, 'unknown');
+      .set.option('fallbackHelp', (command, commands) => {
+        assert.isUndefined(command);
+        assert.deepProperty(commands.__default__, '_name');
         pargv.set.option('fallbackHelp', true);
-        pargv.remove.command('fallback');
         done();
       });
+
+    // pargv.command('fallback')
+    //   .action((parsed) => {
+    //     assert(parsed.$command, 'unknown');
+    //     pargv.set.option('fallbackHelp', true);
+    //     pargv.remove.command('fallback');
+    //     done();
+    //   });
     pargv.exec(['uknown']);
   });
 

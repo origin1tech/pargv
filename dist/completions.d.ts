@@ -1,3 +1,4 @@
 import { Pargv } from './';
 import { IPargvCompletions } from './interfaces';
-export declare function completions(pargv: Pargv): IPargvCompletions;
+import { IColurs } from 'colurs';
+export declare function completions(pargv: Pargv, colurs: IColurs): IPargvCompletions;

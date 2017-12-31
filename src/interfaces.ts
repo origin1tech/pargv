@@ -65,14 +65,14 @@ export interface IPargvOptions {
   locale?: string;
   localeDir?: string;
   autoHelp?: boolean;
-  fallbackHelp?: boolean | string;
+  fallbackHelp?: boolean | HelpHandler;
   defaultHelp?: boolean;
-  exitHelp?: boolean;
+  // exitHelp?: boolean;
   castBeforeCoerce?: boolean;
   extendCommands?: boolean;
+  spreadCommands?: boolean;
   extendAliases?: boolean;
   extendStats?: boolean;
-  spreadCommands?: boolean;
   allowAnonymous?: boolean;
   ignoreTypeErrors?: boolean;
   displayStackTrace?: boolean;

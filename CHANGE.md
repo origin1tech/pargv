@@ -2,9 +2,12 @@
 
 List of changes in descending order.
 
-### 12.28.2017 (v2.0.34)
+### 12.28.2017 (v2.1.0)
+
+Note minor version change. Configs from 2.0.30 or greater should still be compatible but moving to 2.1.x due to refactor of help and a couple additional methods.
 
 <table>
+  <tr><td>onHelp</td>Simplify how help is called was unnecessarily complex.</tr>
   <tr><td>command.arg</td><td>Add alias to .option() where tokens are auto wrapped with [arg] if [] or <> are not present.</td></tr>
   <tr><td>command</td><td>deprecate pargv.$() in favor of calling pargv.command() without command name to return default command.</td></tr>
   <tr><td>log</td><td>remove app name prefix allow user to define, favor process.stderr.write instead of console.</td></tr>

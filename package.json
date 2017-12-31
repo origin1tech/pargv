@@ -67,13 +67,12 @@
   },
   "homepage": "http://origin1tech.github.io/pargv/",
   "dependencies": {
-    "chek": "^1.0.11",
+    "chek": "^1.1.5",
     "cliui": "^3.2.0",
-    "colurs": "^1.0.14",
+    "colurs": "^1.0.18",
     "figlet": "^1.2.0",
     "global-prefix": "^0.1.5",
-    "lokales": "^1.0.10",
-    "stiks": "^1.1.4"
+    "lokales": "^1.0.10"
   },
   "devDependencies": {
     "@google-cloud/translate": "^1.0.0",
@@ -83,10 +82,10 @@
     "chai": "^3.5.0",
     "mocha": "^3.5.0",
     "mute-stream": "0.0.7",
-    "stiks": "^1.0.17",
+    "passpipe": "^1.0.1",
+    "stiks": "^1.1.4",
     "ts-node": "^3.3.0",
     "typedoc": "^0.8.0",
-    "typescript": "^2.4.2",
-    "passpipe": "^1.0.1"
+    "typescript": "^2.4.2"
   }
 }

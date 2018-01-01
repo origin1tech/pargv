@@ -91,7 +91,6 @@ export interface IPargvEnv {
   EXEC_PATH: string;
   NODE_PATH: string;
   HOME_PATH: string;
-  GLOBAL_PATH: string;
   NODE_ENV: string;
   PLATFORM: string;
   PKG: IPackage;
@@ -122,11 +121,13 @@ export interface IPargvCompletions {
 }
 
 export interface IPargvMetadata {
-  name?: string | [string, AnsiStyles | AnsiStyles[], string];
+  // name?: string | [string, AnsiStyles | AnsiStyles[], string];
+  name?: string;
   description?: string;
   version?: string;
   license?: string;
   epilog?: string;
+  [key: string]: any;
 }
 
 export interface IPargvCommandOption {

@@ -7,7 +7,6 @@ var path_1 = require("path");
 var fs_1 = require("fs");
 var chek_1 = require("chek");
 var constants_1 = require("./constants");
-var prefix = require("global-prefix");
 var constants_2 = require("./constants");
 __export(require("chek"));
 var ctr = 5; // limit recursion.
@@ -47,7 +46,6 @@ function environment() {
         EXEC: exec,
         EXEC_PATH: constants_1.EXEC_PATH || constants_1.ARGV[1],
         NODE_PATH: constants_1.NODE_PATH || constants_1.ARGV[0],
-        GLOBAL_PATH: prefix,
         NODE_ENV: process.env.NODE_ENV,
         HOME_PATH: process.env.HOME,
         PLATFORM: process.platform,

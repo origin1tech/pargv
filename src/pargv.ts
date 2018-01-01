@@ -11,7 +11,7 @@ import * as utils from './utils';
 import { completions } from './completions';
 import { localize } from './localize';
 import { PargvCommand } from './command';
-import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, NodeCallback, IPargvSpawnConfig, IPargvCoerceConfig, IPargvWhenConfig, ActionHandler, HelpCallback } from './interfaces';
+import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, NodeCallback, IPargvSpawnConfig, IPargvCoerceConfig, IPargvWhenConfig, ActionHandler } from './interfaces';
 import { TOKEN_PREFIX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, DOT_EXP, FORMAT_TOKENS_EXP, EXE_EXP, PARGV_ROOT, ARGV, MOCHA_TESTING, EOL, DEFAULT_COMMAND } from './constants';
 import { isString } from './utils';
 
@@ -64,18 +64,22 @@ export class Pargv {
   private _completionsCommand: string = 'completions';
   private _completionsReply: string = '--reply';
 
-  private _name: string = 'Pargv';
-  private _command: PargvCommand;
-  private _nameFont: string;
-  private _nameStyles: AnsiStyles[];
-  private _version: string;
-  private _license: string;
-  private _describe: string;
+  // private _nameFont: string;
+  // private _nameStyles: AnsiStyles[];
+
   private _base: string | boolean = false;
-  private _epilog: string;
+  private _meta: IPargvMetadata = {};
+  private _command: PargvCommand;
+
+  // private _name: string = 'Pargv';
+  // private _version: string;
+  // private _license: string;
+  // private _describe: string;
+  // private _epilog: string;
+
+  // _colurs: IColurs;
 
   _env: IPargvEnv;
-  // _colurs: IColurs;
   _localize: LocalizeInit;
   _commands: IMap<PargvCommand> = {};
   _helpCommand: string;
@@ -202,8 +206,9 @@ export class Pargv {
       utils.keys(this._commands).length <= 1 &&
       (defCmd._commands.length + defCmd._options.length) === 0;
 
-    const div = this.options.headingDivider;
+    const hdrDiv = this.options.headingDivider;
     const itmDiv = this.options.commandDivider;
+
     let itmDivMulti = Math.round(((layoutWidth / itmDiv.length) / 3) * 2);
 
     let noneStr = this._localize('none').done();
@@ -216,55 +221,56 @@ export class Pargv {
       verStr = this._localize('Version').done();
       licStr = this._localize('License').done();
 
-      let nameFont = this._nameFont;
-      let nameStyles: any = this._nameStyles;
+      // let nameFont = this._nameFont;
+      // let nameStyles: any = this._nameStyles;
 
-      if (this._name === 'Pargv') { // Is default name.
-        nameFont = 'standard';
-        nameStyles = primary;
-      }
+      // if (this._name === 'Pargv') { // Is default name.
+      //   nameFont = 'standard';
+      //   nameStyles = primary;
+      // }
 
       // Add the name to the layout.
-      if (this._name) {
+      // if (this._name) {
 
-        if (!nameFont)
-          layout.repeat(<string>colurs.applyAnsi(div, muted));
+      // if (!nameFont)
+      //   layout.repeat(<string>colurs.applyAnsi(div, muted));
 
-        let tmpName = this._name;
+      // let tmpName = this._name;
 
-        // nameStyles = this._nameStyles && this._nameStyles.length ? this._nameStyles : null;
+      // nameStyles = this._nameStyles && this._nameStyles.length ? this._nameStyles : null;
 
-        if (nameFont)
-          tmpName = this.logo(tmpName, nameFont, nameStyles);
+      // if (nameFont)
+      //   tmpName = this.logo(tmpName, nameFont, nameStyles);
 
-        if (!nameFont && nameStyles)
-          tmpName = <string>colurs.applyAnsi(tmpName, nameStyles);
+      // if (!nameFont && nameStyles)
+      //   tmpName = <string>colurs.applyAnsi(tmpName, nameStyles);
 
-        layout.div(tmpName);
+      // Add name to layout.
+      if (this._meta.name)
+        layout.div(this._meta.name);
 
-        if (nameFont)
+      // Add version to layout.
+      if (this._meta.version)
+        layout.div(`${colurs.applyAnsi(`${verStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._meta.version, muted) as string, 7)}`);
 
-          // Add version to layout.
-          if (this._version)
-            layout.div(`${colurs.applyAnsi(`${verStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._version, muted) as string, 7)}`);
+      // Add license to layout.
+      if (this._meta.license)
+        layout.div(`${colurs.applyAnsi(`${licStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._meta.license, muted) as string, 7)}`);
 
-        if (this._license)
-          layout.div(`${colurs.applyAnsi(`${licStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._license, muted) as string, 7)}`);
-
-        // Add description to layout.
-        if (this._describe) {
-          layout.div();
-          layout.div(colurs.applyAnsi(this._describe, muted));
-          // layout.div(`${colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._describe, muted) as string, 3)}`);
-        }
-
-        // Add break in layout.
-        if (div)
-          layout.repeat(<string>colurs.applyAnsi(div, muted));
-        else
-          layout.div();
-
+      // Add description to layout.
+      if (this._meta.describe) {
+        layout.div();
+        layout.div(colurs.applyAnsi(this._meta.describe, muted));
+        // layout.div(`${colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._describe, muted) as string, 3)}`);
       }
+
+      // Add break in layout.
+      if (hdrDiv)
+        layout.repeat(<string>colurs.applyAnsi(hdrDiv, muted));
+      else
+        layout.div();
+
+      // }
 
     };
 
@@ -420,12 +426,12 @@ export class Pargv {
     const buildFooter = () => {
 
       // Add epilog if any.
-      if (this._epilog) {
-        if (div)
-          layout.repeat(<string>colurs.applyAnsi(div, muted));
+      if (this._meta.epilog) {
+        if (hdrDiv)
+          layout.repeat(<string>colurs.applyAnsi(hdrDiv, muted));
         else
           layout.div();
-        layout.div(colurs.applyAnsi(this._epilog, muted));
+        layout.div(colurs.applyAnsi(this._meta.epilog, muted));
       }
 
     };
@@ -812,20 +818,17 @@ export class Pargv {
   /**
    * App
    * Just adds a string to use as title of app, used in help.
-   * If invoked without value package.json name is used.
-   *
-   * @see http://flamingtext.com/tools/figlet/fontlist.html
-   * Simple Font examples
-   * standard, doom, ogre, slant, rounded, big, banner
    *
    * @param val the value to use as app name.
-   * @param font a Figlet font.
-   * @param styles an ansi color/style or array of styles.
+   * @param font a Figlet font. (DEPRECATED)
+   * @param styles an ansi color/style or array of styles. (DEPRECATED)
    */
   name(val: string, styles?: AnsiStyles | AnsiStyles[], font?: string) {
-    this._name = val || utils.capitalize(this._env.PKG.name || '');
-    this._nameStyles = utils.toArray<AnsiStyles>(styles, null);
-    this._nameFont = font;
+    if (styles || font)
+      this.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} Figlet fonts deprecated in favor of user passing pre-stylized string.`);
+    this._meta.name = val || utils.capitalize(this._env.PKG.name || '');
+    // this._nameStyles = utils.toArray<AnsiStyles>(styles, null);
+    // this._nameFont = font;
     return this;
   }
 
@@ -837,7 +840,7 @@ export class Pargv {
    * @param val the value to use as version name.
    */
   version(val?: string) {
-    this._version = val || this._env.PKG.version;
+    this._meta.version = val || this._env.PKG.version;
     return this;
   }
 
@@ -848,7 +851,7 @@ export class Pargv {
    * @param val the description string.
    */
   description(val: string) {
-    this._describe = val;
+    this._meta.describe = val || this._env.PKG.description;
     return this;
   }
 
@@ -859,7 +862,7 @@ export class Pargv {
    * @param val the license type.
    */
   license(val: string) {
-    this._license = val;
+    this._meta.license = val || this._env.PKG.license;
     return this;
   }
 
@@ -870,7 +873,7 @@ export class Pargv {
    * @param val the trailing epilogue to be displayed.
    */
   epilog(val: string) {
-    this._epilog = val;
+    this._meta.epilog = val;
     return this;
   }
 
@@ -1520,21 +1523,23 @@ export class Pargv {
     * set "all" to true.
     *
     * @param options Pargv options to reset with.
+    * @param all when true resets metadata, base, help handler if set.
     */
   reset(options?: IPargvOptions, all?: boolean) {
     this._commands = {};
     if (!all)
       return this.init(options);
     // this._helpEnabled = undefined;
-    this._helpHandler = undefined;
-    this._name = undefined;
-    this._nameFont = undefined;
-    this._nameStyles = undefined;
-    this._version = undefined;
-    this._license = undefined;
-    this._describe = undefined;
-    this._epilog = undefined;
     this._base = false;
+    this._meta = {};
+    this._helpHandler = undefined;
+    // this._name = undefined;
+    // this._nameFont = undefined;
+    // this._nameStyles = undefined;
+    // this._version = undefined;
+    // this._license = undefined;
+    // this._describe = undefined;
+    // this._epilog = undefined;
     return this.init(options);
   }
 
@@ -1556,7 +1561,7 @@ export class Pargv {
       if (fn === true) // use internal handler.
         return this.helpHandler(command);
       // use custom user handler.
-      return (fn as HelpCallback)(command, this._commands);
+      return (fn as HelpHandler)(command, this._commands);
     };
 
     return this;
@@ -1676,73 +1681,73 @@ export class Pargv {
    * @param font the figlet font to be used.
    * @param styles the optional styles to be used.
    */
-  logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]) {
+  // logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]) {
 
-    let result: string;
-    // let methods: IPargvLogo;
+  //   let result: string;
+  //   // let methods: IPargvLogo;
 
-    let defaults: IFigletOptions = {
-      text: 'Pargv',
-      font: 'standard',
-      horizontalLayout: 'default',
-      verticalLayout: 'default'
-    };
+  //   let defaults: IFigletOptions = {
+  //     text: 'Pargv',
+  //     font: 'standard',
+  //     horizontalLayout: 'default',
+  //     verticalLayout: 'default'
+  //   };
 
-    let options = utils.isPlainObject(text) ? <IFigletOptions>text : {
-      text: text,
-      font: font
-    };
+  //   let options = utils.isPlainObject(text) ? <IFigletOptions>text : {
+  //     text: text,
+  //     font: font
+  //   };
 
-    // Merge the options.
-    options = utils.extend({}, defaults, options);
+  //   // Merge the options.
+  //   options = utils.extend({}, defaults, options);
 
-    // Process the text.
-    result = figlet.textSync(options.text, options);
+  //   // Process the text.
+  //   result = figlet.textSync(options.text, options);
 
-    // Apply ansi styles if any.
-    if (styles)
-      result = colurs.applyAnsi(result, styles) as string;
+  //   // Apply ansi styles if any.
+  //   if (styles)
+  //     result = colurs.applyAnsi(result, styles) as string;
 
-    return result;
+  //   return result;
 
-    // DEPRECATE: methods no real need.
+  //   // DEPRECATE: methods no real need.
 
-    /**
-     * Render
-     * Renders out the Figlet font logo.
-     */
-    // function show() {
-    //   console.log(result);
-    //   return this;
-    // }
+  //   /**
+  //    * Render
+  //    * Renders out the Figlet font logo.
+  //    */
+  //   // function show() {
+  //   //   console.log(result);
+  //   //   return this;
+  //   // }
 
-    /**
-     * Fonts
-     * Lists Figlet Fonts.
-     */
-    // function fonts() {
-    //   return figlet.fontsSync();
-    // }
+  //   /**
+  //    * Fonts
+  //    * Lists Figlet Fonts.
+  //    */
+  //   // function fonts() {
+  //   //   return figlet.fontsSync();
+  //   // }
 
-    /**
-     * Get
-     * Returns the Figlet font without rendering.
-     */
-    // function get() {
-    //   return result;
-    // }
+  //   /**
+  //    * Get
+  //    * Returns the Figlet font without rendering.
+  //    */
+  //   // function get() {
+  //   //   return result;
+  //   // }
 
-    // methods = {
+  //   // methods = {
 
-    //   fonts,
-    //   show,
-    //   get
+  //   //   fonts,
+  //   //   show,
+  //   //   get
 
-    // };
+  //   // };
 
-    // return methods;
+  //   // return methods;
 
-  }
+  // }
 
   /**
     * Layout

@@ -268,14 +268,6 @@ describe('Pargv', () => {
         pargv.set.option('fallbackHelp', true);
         done();
       });
-
-    // pargv.command('fallback')
-    //   .action((parsed) => {
-    //     assert(parsed.$command, 'unknown');
-    //     pargv.set.option('fallbackHelp', true);
-    //     pargv.remove.command('fallback');
-    //     done();
-    //   });
     pargv.exec(['uknown']);
   });
 

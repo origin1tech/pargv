@@ -2,9 +2,10 @@
 import { Pargv } from './';
 import { SpawnOptions } from 'child_process';
 import { IMap, ActionHandler, CoerceHandler, IPargvCommandOption, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult, LogHandler, SpawnActionHandler } from './interfaces';
-import { TOKEN_PREFIX_EXP, SPLIT_CHARS, FLAG_EXP, COMMAND_VAL_EXP, LIST_EXP, KEYVAL_EXP, SPLIT_PAIRS_EXP, DOT_EXP, SPLIT_KEYVAL_EXP, JSON_EXP, REGEX_EXP } from './constants';
+import { TOKEN_PREFIX_EXP, SPLIT_CHARS, FLAG_EXP, COMMAND_VAL_EXP, LIST_EXP, KEYVAL_EXP, SPLIT_PAIRS_EXP, DOT_EXP, SPLIT_KEYVAL_EXP, JSON_EXP, REGEX_EXP, DEFAULT_COMMAND } from './constants';
 import { sep, extname, basename, join } from 'path';
 import * as utils from './utils';
+import { isValue } from './utils';
 
 export class PargvCommand {
 
@@ -78,7 +79,7 @@ export class PargvCommand {
     let def = tokens[2];                          // optional default value.
 
     if (!TOKEN_PREFIX_EXP.test(key)) {
-      this.err(
+      this.error(
         this._pargv._localize('the token "%s" is missing -, [, < or has unwanted space.')
           .args(key)
           .done()
@@ -201,7 +202,7 @@ export class PargvCommand {
     // Ensure only one spread command.
     const variadics = split.filter(el => utils.isVariadic(el));
     if (variadics.length > 1)
-      this.err(
+      this.error(
         this._pargv
           ._localize('found %s variadic commands but only one is permitted.')
           .args(variadics.length)
@@ -226,7 +227,7 @@ export class PargvCommand {
         if (!parsed.bool) {                             // remove next if not bool.
           split.splice(i + 1, 1);
           if (parsed.isVariadic)
-            this.err(
+            this.error(
               this._pargv
                 ._localize('flag %s contains ...variadic, only commands can contain variadic values.')
                 .args(parsed.as)
@@ -332,6 +333,7 @@ export class PargvCommand {
         return el !== helpCmd;
       });
     }
+    return enabled;
   }
 
   /**
@@ -363,6 +365,16 @@ export class PargvCommand {
       this._options = this._options.filter(k => k !== key);
     }
 
+  }
+
+  /**
+   * Error
+   * : Handles error messages.
+   *
+   * @param args args to be formatted and logged.
+   */
+  private get error() {
+    return this._pargv.error.bind(this._pargv);
   }
 
   // GETTERS //
@@ -443,64 +455,11 @@ export class PargvCommand {
     return this.when;
   }
 
-  /**
-   * Error
-   * : Handles error messages.
-   *
-   * @param args args to be formatted and logged.
-   */
-  private get err() {
-    return this._pargv.error.bind(this._pargv);
-  }
-
-  /**
-   * Parse
-   * : Parses the provided arguments inspecting for commands and options.
-   *
-   * @param argv the process.argv or custom args array.
-   */
-  get parse(): (...args: any[]) => IPargvParsedResult {
-    return this._pargv.parse.bind(this._pargv);
-  }
-
-  /**
-   * Exec
-   * : Parses arguments then executes command action if any.
-   *
-   * @param argv optional arguments otherwise defaults to process.argv.
-   */
-  get exec(): (...args: any[]) => IPargvParsedResult {
-    return this._pargv.exec.bind(this._pargv);
-  }
-
-  /**
-   * Completion
-   * : Adds the completion command for use within your app for generating completion script.
-   *
-   * @param command the name of the commpletion install command.
-   * @param describe the description of the command or complete handler.
-   * @param template optional template for generating completions or complete handler.
-   * @param fn the optional completion handler.
-   */
-  get completion() {
-    return this._pargv.completion.bind(this._pargv);
-  }
-
-  /**
-   * Listen
-   * : Parses arguments then executes command action if any.
-   *
-   * @param argv optional arguments otherwise defaults to process.argv.
-   */
-  get listen() {
-    return this._pargv.exec.bind(this._pargv);
-  }
-
   // METHODS //
 
   /**
-    * Arg
-    * Adds argument to command. If argument is not wrapped with [arg] or <arg> it will be wrapped with [arg].
+    * Sub Command
+    * Adds sub command to command. If token is not wrapped with [arg] or <arg> it will be wrapped with [arg].
     *
     * Supported to type strings: string, date, array,
     * number, integer, float, json, regexp, boolean
@@ -510,7 +469,7 @@ export class PargvCommand {
     * @param def an optional default value.
     * @param type a string type, RegExp to match or Coerce method.
     */
-  arg(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler) {
+  subcommand(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler) {
     if (!/^(\[|\<)/.test(token))
       token = `[${token}]`;
     return this.option(token, describe, def, type);
@@ -529,6 +488,8 @@ export class PargvCommand {
     * @param type a string type, RegExp to match or Coerce method.
     */
   option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand {
+    if (!/^-/.test(token) && this._name === DEFAULT_COMMAND)
+      this.error('Command arg "%s" invalid, options should start with - or -- for Default command.', token);
     token = utils.toOptionToken(token);
     const tokens = utils.split(token.trim(), SPLIT_CHARS);
     tokens.forEach((el, i) => {
@@ -551,11 +512,19 @@ export class PargvCommand {
    * Alias
    * Maps alias keys to primary flag/command key.
    *
+   * @param config object map containing aliases.
+   */
+  alias(config: IMap<string[]>): PargvCommand;
+
+  /**
+   * Alias
+   * Maps alias keys to primary flag/command key.
+   *
    * @param key the key to map alias keys to.
    * @param alias keys to map as aliases.
    */
-  alias(config: IMap<string[]>): PargvCommand;
   alias(key: string, ...alias: string[]): PargvCommand;
+  alias(key: string | IMap<string[]>, ...alias: string[]): PargvCommand;
   alias(key: string | IMap<string[]>, ...alias: string[]): PargvCommand {
     let obj: any = key;
     const colors = this._pargv.options.colors;
@@ -569,7 +538,7 @@ export class PargvCommand {
       const v = obj[k];
       if (!utils.isValue(v) || !utils.isArray(v)) {
         const aliasStr = this._pargv._localize('alias').done();
-        this.err(
+        this.error(
           this._pargv._localize('cannot set %s for %s using value of undefined.')
             .setArg('alias')
             .setArg(k)
@@ -589,11 +558,20 @@ export class PargvCommand {
    * Describe
    * Adds description for an option.
    *
+   * @param config object containing describes by property.
+   */
+  describe(config: IMap<string>): PargvCommand;
+
+  /**
+   * Describe
+   * Adds description for an option.
+   *
    * @param key the option key to add description to.
    * @param describe the associated description.
    */
-  describe(config: IMap<string>): PargvCommand;
   describe(key: string, describe?: string): PargvCommand;
+
+  describe(key: string | IMap<string>, describe?: string): PargvCommand;
   describe(key: string | IMap<string>, describe?: string): PargvCommand {
     let obj: any = key;
     const colors = this._pargv.options.colors;
@@ -606,7 +584,7 @@ export class PargvCommand {
       k = this.stripToAlias(<string>k);
       const v = obj[k];
       if (!utils.isValue(v))
-        this.err(
+        this.error(
           this._pargv._localize('cannot set %s for %s using value of undefined.')
             .setArg('describe')
             .setArg(k)
@@ -622,13 +600,20 @@ export class PargvCommand {
    * Coerce
    * Coerce or transform the defined option when matched.
    *
+   * @param config object containing coerce configurations.
+   */
+  coerce(config: IMap<IPargvCoerceConfig>): PargvCommand;
+
+  /**
+   * Coerce
+   * Coerce or transform the defined option when matched.
+   *
    * @param key the option key to be coerced.
-   * @param fn the string type, RegExp or coerce callback.
+   * @param type the string type, RegExp or coerce callback function.
    * @param def an optional value when coercion fails.
    */
-  coerce(key: string | IMap<IPargvCoerceConfig>): PargvCommand;
-  coerce(key: string, type?: string | RegExp | CoerceHandler, def?: any): PargvCommand;
-  coerce(key: string | IMap<IPargvCoerceConfig>, fn?: string | RegExp | CoerceHandler, def?: any): PargvCommand {
+  coerce(key: string | IMap<IPargvCoerceConfig>, type?: string | RegExp | CoerceHandler, def?: any): PargvCommand;
+  coerce(key: string | IMap<IPargvCoerceConfig>, type?: string | RegExp | CoerceHandler, def?: any): PargvCommand {
 
     let obj: any = key;
     const colors = this._pargv.options.colors;
@@ -636,7 +621,7 @@ export class PargvCommand {
       key = this.stripToAlias(<string>key);
       obj = {};
       obj[<string>key] = {
-        fn: fn,
+        fn: type,
         def: def
       };
     }
@@ -644,7 +629,7 @@ export class PargvCommand {
       k = this.stripToAlias(<string>k);
       const v = obj[k];
       if (!utils.isValue(v))
-        this.err(
+        this.error(
           this._pargv._localize('cannot set %s for %s using value of undefined.')
             .setArg('coerce')
             .setArg(k)
@@ -676,12 +661,30 @@ export class PargvCommand {
    * When
    * When a specified key demand dependent key.
    *
+   * @param config an object containing when configurations.
+   */
+  when(config: IMap<IPargvWhenConfig>): PargvCommand;
+
+  /**
+   * When
+   * When a specified key demand dependent key.
+   *
+   * @param key require this key.
+   * @param converse when true the coverse when is also created.
+   */
+  when(key: string, converse?: string): PargvCommand;
+
+  /**
+   * When
+   * When a specified key demand dependent key.
+   *
    * @param key require this key.
    * @param demand this key is present.
    * @param converse when true the coverse when is also created.
    */
-  when(config: IMap<IPargvWhenConfig>): PargvCommand;
   when(key: string, demand?: string, converse?: boolean): PargvCommand;
+
+  when(key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): PargvCommand;
   when(key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): PargvCommand {
     let obj: any = key;
     const colors = this._pargv.options.colors;
@@ -699,7 +702,7 @@ export class PargvCommand {
       let v = obj[k];
       v.demand = this.stripToAlias(v.demand);
       if (!utils.isValue(v.demand))
-        this.err(
+        this.error(
           this._pargv._localize('cannot set %s for %s using value of undefined.')
             .setArg('when')
             .setArg(k)
@@ -717,10 +720,20 @@ export class PargvCommand {
    * Default
    * Sets a default value for a command or option.
    *
-   * @param key the key to set the default for or an object of key/val.
+   * @param config an object containing configs for property defaults.
+   */
+  default(config: IMap<any>): PargvCommand;
+
+  /**
+   * Default
+   * Sets a default value for a command or option.
+   *
+   * @param key the key to set default value for.
    * @param val the value to set for the provided key.
    */
-  default(key: string | IMap<any>, val: any) {
+  default(key: string, val: any): PargvCommand;
+  default(key: string | IMap<any>, val?: any): PargvCommand;
+  default(key: string | IMap<any>, val?: any): PargvCommand {
     let obj: any = key;
     const colors = this._pargv.options.colors;
     if (utils.isString(key)) {
@@ -732,7 +745,7 @@ export class PargvCommand {
       k = this.stripToAlias(<string>k);
       const v = obj[k];
       if (!utils.isValue(v))
-        this.err(
+        this.error(
           this._pargv._localize('cannot set %s for %s using value of undefined.')
             .setArg('default')
             .setArg(k)
@@ -758,7 +771,7 @@ export class PargvCommand {
       vals = vals[0];
     const colors = this._pargv.options.colors;
     if (!key)
-      this.err(
+      this.error(
         this._pargv._localize('cannot set completion for using key of undefined.')
           .done()
       );
@@ -775,7 +788,7 @@ export class PargvCommand {
   action(fn: ActionHandler) {
     const colors = this._pargv.options.colors;
     if (!fn)
-      this.err(
+      this.error(
         this._pargv._localize('cannot set %s for %s using value of undefined.')
           .setArg('action')
           .setArg(this._name)
@@ -812,7 +825,7 @@ export class PargvCommand {
    */
   cwd(path: string | boolean) {
     if (this._action || !this._external) // not needed if action defined.
-      return;
+      return this;
     this._cwd = path;
     if (this._external !== this._name || utils.isBoolean(path)) // external prog is not cmd just return.
       return;
@@ -838,7 +851,7 @@ export class PargvCommand {
 
   /**
    * Spread Commands
-   * : Allows for spreading commands on command instance only.
+   * When true found commands are spread in .action(cmd1, cmd2, ...).
    *
    * @param spread when true spreads command args in callback action.
    */
@@ -849,7 +862,7 @@ export class PargvCommand {
 
   /**
    * Extend Commands
-   * : Allows for extending commands on command instance only.
+   * When true known commands are extended to result object { some_command: value }.
    *
    * @param extend when true commands are exteneded on Pargv result object.
    */
@@ -860,7 +873,7 @@ export class PargvCommand {
 
   /**
    * Extend Aliases
-   * : Allows for extending aliases on command instance only.
+   * When true option aliases are extended on result object --option, -o results in { option: value, o: value }.
    *
    * @param extend when true aliases are exteneded on Pargv result object.
    */
@@ -873,7 +886,8 @@ export class PargvCommand {
    * Example
    * : Saves an example string for the command or tuple consisting of example string and description.
    *
-   * @param val string or array of strings.
+   * @param example string or an array of tuples [example, description].
+   * @param describe the description for the example.
    */
   example(example: string | [string, string][], describe?: string) {
     if (!example)
@@ -1112,7 +1126,7 @@ export class PargvCommand {
     if (!utils.isValue(result) || !is[<string>type](result)) {
       if (!opts.ignoreTypeErrors) {
         if (!isListType) {
-          this.err(
+          this.error(
             this._pargv._localize('expected type %s but got %s for %s.')
               .args(<string>type, utils.getType(result), (key || '').replace(FLAG_EXP, ''))
               .styles(colors.accent, colors.accent)
@@ -1120,7 +1134,7 @@ export class PargvCommand {
           );
         }
         else {
-          this.err(
+          this.error(
             this._pargv._localize('expected list or expression %s to contain %s.')
               .args(listexp, origVal)
               .styles(colors.accent, colors.accent)
@@ -1365,7 +1379,22 @@ export class PargvCommand {
     return utils.contains(this._bools, key);
   }
 
+  /////////////////////
   // PARGV WRAPPERS //
+  ///////////////////
+
+  // These are here so you don't have to step
+  // back into the pargv.eplilog() chain.
+  //
+  // Instead of this:
+  // pargv.command('somecommand');
+  // pargv.epilog('some epi.').exec();
+  //
+  // Allows you to:
+  // pargv.command('somecommand').epilog('some epi.').exec()
+  //
+  // This is because methods like exec(), parse(), epilog()
+  // are on the Pargv instance and not the PargvCommand instance.
 
   /**
    * Command
@@ -1412,6 +1441,49 @@ export class PargvCommand {
   epilog(val: string) {
     this._pargv.epilog(val);
     return this;
+  }
+
+  /**
+   * Parse
+   * : Parses the provided arguments inspecting for commands and options.
+   *
+   * @param argv the process.argv or custom args array.
+   */
+  get parse(): (...args: any[]) => IPargvParsedResult {
+    return this._pargv.parse.bind(this._pargv);
+  }
+
+  /**
+   * Exec
+   * : Parses arguments then executes command action if any.
+   *
+   * @param argv optional arguments otherwise defaults to process.argv.
+   */
+  get exec(): (...args: any[]) => IPargvParsedResult {
+    return this._pargv.exec.bind(this._pargv);
+  }
+
+  /**
+   * Completion
+   * : Adds the completion command for use within your app for generating completion script.
+   *
+   * @param command the name of the commpletion install command.
+   * @param describe the description of the command or complete handler.
+   * @param template optional template for generating completions or complete handler.
+   * @param fn the optional completion handler.
+   */
+  get completion() {
+    return this._pargv.completion.bind(this._pargv);
+  }
+
+  /**
+   * Listen
+   * : Parses arguments then executes command action if any.
+   *
+   * @param argv optional arguments otherwise defaults to process.argv.
+   */
+  get listen() {
+    return this._pargv.exec.bind(this._pargv);
   }
 
 }

@@ -67,12 +67,12 @@ export interface IPargvOptions {
   autoHelp?: boolean;
   fallbackHelp?: boolean | string;
   defaultHelp?: boolean;
-  exitHelp?: boolean;
+  // exitHelp?: boolean;
   castBeforeCoerce?: boolean;
   extendCommands?: boolean;
+  spreadCommands?: boolean;
   extendAliases?: boolean;
   extendStats?: boolean;
-  spreadCommands?: boolean;
   allowAnonymous?: boolean;
   ignoreTypeErrors?: boolean;
   displayStackTrace?: boolean;

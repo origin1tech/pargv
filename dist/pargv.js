@@ -1,5 +1,13 @@
 "use strict";
 // IMPORTS //
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
 var fs_1 = require("fs");
@@ -21,6 +29,8 @@ var DEFAULTS = {
     colorize: true,
     displayHeader: true,
     displayFooter: true,
+    displayNone: false,
+    displayTitles: false,
     headingDivider: '><><',
     commandDivider: '.',
     locale: 'en',
@@ -151,6 +161,7 @@ var Pargv = /** @class */ (function () {
         var alert = this.options.colors.alert;
         var accent = this.options.colors.accent;
         var muted = this.options.colors.muted;
+        var metaKeys = utils.keys(this._meta);
         // Default command.
         var defCmd = this.get.command(constants_1.DEFAULT_COMMAND);
         var defCmdNoArgOrOptions = utils.keys(this._commands).length <= 1 &&
@@ -161,6 +172,9 @@ var Pargv = /** @class */ (function () {
         var noneStr = this._localize('none').done();
         // Builds the app name, version descript header.
         var buildHeader = function () {
+            if (!metaKeys.length)
+                return;
+            var knownKeys = ['name', 'describe', 'version', 'license'];
             var descStr, verStr, licStr;
             descStr = _this._localize('Description').done();
             verStr = _this._localize('Version').done();
@@ -191,9 +205,9 @@ var Pargv = /** @class */ (function () {
             if (_this._meta.license)
                 layout.div(colurs.applyAnsi(licStr + ":", accent) + " " + utils.padLeft(colurs.applyAnsi(_this._meta.license, muted), 7));
             // Add description to layout.
-            if (_this._meta.describe) {
+            if (_this._meta.description) {
                 layout.div();
-                layout.div(colurs.applyAnsi(_this._meta.describe, muted));
+                layout.div(colurs.applyAnsi(_this._meta.description, muted));
                 // layout.div(`${colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._describe, muted) as string, 3)}`);
             }
             // Add break in layout.
@@ -206,26 +220,29 @@ var Pargv = /** @class */ (function () {
         // Builds commands and flags help.
         var buildOptions = function (cmd, altLayout) {
             var cmdsStr, optsStr, exStr, reqStr;
+            var padLeftIfNested = _this.options.displayTitles ? 2 : 0;
             if (!cmd._commands.length && !cmd._options.length)
                 return;
             cmdsStr = _this._localize('Commands').done();
             optsStr = _this._localize('Options').done();
             exStr = _this._localize('Examples').done();
             reqStr = _this._localize('required').done();
-            layout.section(colurs.applyAnsi(cmdsStr + ":", accent), [1, 0, 0, 1]);
+            if (cmd._commands.length || _this.options.displayNone)
+                layout.section(colurs.applyAnsi(cmdsStr + ":", accent), [1, 0, 0, 1]);
             cmd._commands.forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
                 var arr = [
-                    { text: el, padding: [0, 1, 0, 2], width: col1w },
+                    { text: el, padding: [0, 1, 0, padLeftIfNested], width: col1w },
                     { text: colurs.applyAnsi(cmd._describes[el] || '', muted), width: col2w }
                 ];
                 var lastCol = isRequired ? { text: colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
-            if (!cmd._commands.length)
-                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
-            layout.section(colurs.applyAnsi(optsStr + ":", accent), [1, 0, 0, 1]);
+            if (!cmd._commands.length && _this.options.displayNone)
+                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
+            if (cmd._options.length || _this.options.displayNone)
+                layout.section(colurs.applyAnsi(optsStr + ":", accent), [1, 0, 0, 1]);
             cmd._options.sort().forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
                 var aliases = cmd.aliases(el).sort();
@@ -238,15 +255,15 @@ var Pargv = /** @class */ (function () {
                 // if (usageVal)
                 //   describe = usageVal + ': ' + describe;
                 var arr = [
-                    { text: usages.join(', ') + usageVal, padding: [0, 1, 0, 2], width: col1w },
+                    { text: usages.join(', ') + usageVal, padding: [0, 1, 0, padLeftIfNested], width: col1w },
                     { text: describe, width: col2w }
                 ];
                 var lastCol = isRequired ? { text: colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
-            if (!cmd._options.length)
-                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
+            if (!cmd._options.length && _this.options.displayNone)
+                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
             if (cmd._examples.length) {
                 layout.section(colurs.applyAnsi(exStr + ":", accent), [1, 0, 0, 1]);
                 cmd._examples.forEach(function (tuple) {
@@ -257,7 +274,7 @@ var Pargv = /** @class */ (function () {
                     if (!/^.*\$\s/.test(ex))
                         ex = '$ ' + ex;
                     // ex = colurs.applyAnsi(ex, muted) as string;
-                    layout.div({ text: ex, padding: [0, 0, 0, 2] }, { text: (desc || ''), padding: [0, 0, 0, 1] });
+                    layout.div({ text: ex, padding: [0, 0, 0, padLeftIfNested] }, { text: (desc || ''), padding: [0, 0, 0, 1] });
                 });
             }
         };
@@ -275,7 +292,6 @@ var Pargv = /** @class */ (function () {
             }
             else {
                 cmdKeys = utils.keys(_this._commands)
-                    .filter(function (k) { return k !== constants_1.DEFAULT_COMMAND; })
                     .sort();
             }
             if (!cmdKeys.length && defCmdNoArgOrOptions) {
@@ -686,13 +702,10 @@ var Pargv = /** @class */ (function () {
      * @param data the metadata object.
      */
     Pargv.prototype.meta = function (data) {
+        data = __assign({}, data); // clone it.
+        var meta = this._meta;
         for (var k in data) {
-            if (this[k]) {
-                if (utils.isArray(data[k]))
-                    this[k].apply(this, data[k]);
-                else
-                    this[k](data[k]);
-            }
+            meta[k] = data[k];
         }
     };
     /**
@@ -729,7 +742,7 @@ var Pargv = /** @class */ (function () {
      * @param val the description string.
      */
     Pargv.prototype.description = function (val) {
-        this._meta.describe = val || this._env.PKG.description;
+        this._meta.description = val || this._env.PKG.description;
         return this;
     };
     /**

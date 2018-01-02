@@ -5,7 +5,6 @@ import { appendFileSync, writeFileSync, existsSync, mkdirSync, readFileSync, lst
 import { spawn, spawnSync, ChildProcess } from 'child_process';
 import * as util from 'util';
 import * as cliui from 'cliui';
-import * as figlet from 'figlet';
 import { Colurs, IColurs } from 'colurs';
 import * as utils from './utils';
 import { completions } from './completions';
@@ -26,6 +25,8 @@ const DEFAULTS: IPargvOptions = {
   colorize: true,           // wether or not to use colors in help & log messages.
   displayHeader: true,      // when true displays the help header.
   displayFooter: true,      // when true displays help footer.
+  displayNone: false,       // when true display "none" when help command or option missing.
+  displayTitles: false,      // when true option & command arg titles shown under each command.
   headingDivider: '><><',   // divider char(s) used in help header/footer.
   commandDivider: '.',      // divider char(s) used in help command sections.
   locale: 'en',             // localization code.
@@ -199,6 +200,7 @@ export class Pargv {
     const alert = this.options.colors.alert;
     const accent = this.options.colors.accent;
     const muted = this.options.colors.muted;
+    const metaKeys = utils.keys(this._meta);
 
     // Default command.
     const defCmd = this.get.command(DEFAULT_COMMAND);
@@ -215,6 +217,11 @@ export class Pargv {
 
     // Builds the app name, version descript header.
     const buildHeader = () => {
+
+      if (!metaKeys.length) // nothing in header.
+        return;
+
+      const knownKeys = ['name', 'describe', 'version', 'license'];
 
       let descStr, verStr, licStr;
       descStr = this._localize('Description').done();
@@ -258,9 +265,9 @@ export class Pargv {
         layout.div(`${colurs.applyAnsi(`${licStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._meta.license, muted) as string, 7)}`);
 
       // Add description to layout.
-      if (this._meta.describe) {
+      if (this._meta.description) {
         layout.div();
-        layout.div(colurs.applyAnsi(this._meta.describe, muted));
+        layout.div(colurs.applyAnsi(this._meta.description, muted));
         // layout.div(`${colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._describe, muted) as string, 3)}`);
       }
 
@@ -279,6 +286,8 @@ export class Pargv {
 
       let cmdsStr, optsStr, exStr, reqStr;
 
+      const padLeftIfNested = this.options.displayTitles ? 2 : 0;
+
       if (!cmd._commands.length && !cmd._options.length)
         return;
 
@@ -287,12 +296,13 @@ export class Pargv {
       exStr = this._localize('Examples').done();
       reqStr = this._localize('required').done();
 
-      layout.section(<string>colurs.applyAnsi(`${cmdsStr}:`, accent), [1, 0, 0, 1]);
+      if (cmd._commands.length || this.options.displayNone)
+        layout.section(<string>colurs.applyAnsi(`${cmdsStr}:`, accent), [1, 0, 0, 1]);
 
       cmd._commands.forEach((el) => { // build commands.
         const isRequired = utils.contains(cmd._demands, el);
         const arr: any = [
-          { text: el, padding: [0, 1, 0, 2], width: col1w },
+          { text: el, padding: [0, 1, 0, padLeftIfNested], width: col1w },
           { text: colurs.applyAnsi(cmd._describes[el] || '', muted), width: col2w }
         ];
         const lastCol = isRequired ? { text: colurs.applyAnsi(`${reqStr}`, alert), align: 'right', width: col3w } : { text: '', width: col3w };
@@ -300,11 +310,11 @@ export class Pargv {
         layout.div(...arr);
       });
 
-      if (!cmd._commands.length) // no commands set "none".
-        layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
+      if (!cmd._commands.length && this.options.displayNone) // no commands set "none".
+        layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
 
-
-      layout.section(<string>colurs.applyAnsi(`${optsStr}:`, accent), [1, 0, 0, 1]);
+      if (cmd._options.length || this.options.displayNone)
+        layout.section(<string>colurs.applyAnsi(`${optsStr}:`, accent), [1, 0, 0, 1]);
 
       cmd._options.sort().forEach((el) => { // build options.
         const isRequired = utils.contains(cmd._demands, el);
@@ -318,7 +328,7 @@ export class Pargv {
         // if (usageVal)
         //   describe = usageVal + ': ' + describe;
         const arr: any = [
-          { text: usages.join(', ') + usageVal, padding: [0, 1, 0, 2], width: col1w },
+          { text: usages.join(', ') + usageVal, padding: [0, 1, 0, padLeftIfNested], width: col1w },
           { text: describe, width: col2w }
         ];
         const lastCol = isRequired ? { text: colurs.applyAnsi(`${reqStr}`, alert), align: 'right', width: col3w } : { text: '', width: col3w };
@@ -326,8 +336,8 @@ export class Pargv {
         layout.div(...arr);
       });
 
-      if (!cmd._options.length) // no options set "none".
-        layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
+      if (!cmd._options.length && this.options.displayNone) // no options set "none".
+        layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
 
       if (cmd._examples.length) {
         layout.section(<string>colurs.applyAnsi(`${exStr}:`, accent), [1, 0, 0, 1]);
@@ -341,7 +351,7 @@ export class Pargv {
             ex = '$ ' + ex;
           // ex = colurs.applyAnsi(ex, muted) as string;
           layout.div(
-            { text: ex, padding: [0, 0, 0, 2] },
+            { text: ex, padding: [0, 0, 0, padLeftIfNested] },
             { text: (desc || ''), padding: [0, 0, 0, 1] }
           );
 
@@ -367,7 +377,7 @@ export class Pargv {
       }
       else {
         cmdKeys = utils.keys(this._commands)
-          .filter(k => k !== DEFAULT_COMMAND)
+          //.filter(k => k !== DEFAULT_COMMAND)
           .sort();
       }
 
@@ -805,13 +815,10 @@ export class Pargv {
    * @param data the metadata object.
    */
   meta(data: IPargvMetadata) {
+    data = { ...data } // clone it.
+    const meta = this._meta;
     for (const k in data) {
-      if (this[k]) {
-        if (utils.isArray(data[k]))
-          this[k](...data[k]);
-        else
-          this[k](data[k]);
-      }
+      meta[k] = data[k];
     }
   }
 
@@ -851,7 +858,7 @@ export class Pargv {
    * @param val the description string.
    */
   description(val: string) {
-    this._meta.describe = val || this._env.PKG.description;
+    this._meta.description = val || this._env.PKG.description;
     return this;
   }
 

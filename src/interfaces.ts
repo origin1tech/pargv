@@ -59,6 +59,8 @@ export interface IPargvOptions {
   colorize?: boolean;
   displayHeader?: boolean;
   displayFooter?: boolean;
+  displayNone?: boolean;
+  displayTitles?: boolean;
   headingDivider?: string;
   commandDivider?: string;
   itemDivider?: string;

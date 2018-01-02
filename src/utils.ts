@@ -4,7 +4,6 @@ import { existsSync, statSync } from 'fs';
 import { IPargvCommandOption, IPargvEnv } from './interfaces';
 import { isString, isArray, flatten, split, last, isFunction, isPlainObject, isError, isValue, keys, isUndefined, first, contains, noop, isWindows, tryRequire, tryRootRequire } from 'chek';
 import { NODE_PATH, ARGV, EXEC_PATH, EXE_EXP } from './constants';
-import * as prefix from 'global-prefix';
 import { FLAG_EXP, TOKEN_ANY_EXP, FLAG_SHORT_EXP, SPLIT_CHARS, FORMAT_TOKENS_EXP, CWD } from './constants';
 
 export * from 'chek';
@@ -45,7 +44,6 @@ export function environment() {
     EXEC: exec,
     EXEC_PATH: EXEC_PATH || ARGV[1],
     NODE_PATH: NODE_PATH || ARGV[0],
-    GLOBAL_PATH: prefix,
     NODE_ENV: process.env.NODE_ENV,
     HOME_PATH: process.env.HOME,
     PLATFORM: process.platform,

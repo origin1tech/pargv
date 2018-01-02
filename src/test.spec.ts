@@ -1,11 +1,17 @@
 import * as chai from 'chai';
 import * as mocha from 'mocha';
 import * as Colurs from 'colurs';
+import * as MuteStream from 'mute-stream';
 
 const expect = chai.expect;
 const should = chai.should;
 const assert = chai.assert;
 const colurs = Colurs.get();
+
+
+const ms = new MuteStream();
+ms.pipe(process.stderr);
+ms.mute();
 
 import { Pargv, PargvCommand } from './';
 import * as passpipe from 'passpipe';
@@ -256,12 +262,10 @@ describe('Pargv', () => {
 
   it('should fallback to catchall command.', (done) => {
     pargv.reset()
-      .set.option('fallbackHelp', 'fallback');
-    pargv.command('fallback')
-      .action((parsed) => {
-        assert(parsed.$command, 'unknown');
+      .set.option('fallbackHelp', (command, commands) => {
+        assert.isUndefined(command);
+        assert.deepProperty(commands.__default__, '_name');
         pargv.set.option('fallbackHelp', true);
-        pargv.remove.command('fallback');
         done();
       });
     pargv.exec(['uknown']);

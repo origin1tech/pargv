@@ -5,9 +5,10 @@ import { Lokales, ILokalesOptions } from 'lokales';
 import { PARGV_ROOT } from './constants';
 import { resolve } from 'path';
 import * as utils from './utils';
+import { IColurs } from 'colurs';
 
 
-export function localize(pargv: Pargv) {
+export function localize(pargv: Pargv, colurs: IColurs) {
 
   const opts: ILokalesOptions = {
     directory: resolve(PARGV_ROOT, pargv.options.localeDir),
@@ -34,7 +35,7 @@ export function localize(pargv: Pargv) {
     args.forEach((el, i) => { // stylize if matching style at index.
       if (styles[i]) {
         const _styles = utils.toArray<string>(styles[i]);
-        args[i] = pargv._colurs.applyAnsi(el, _styles);
+        args[i] = colurs.applyAnsi(el, _styles);
       }
     });
 

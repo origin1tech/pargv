@@ -59,13 +59,15 @@ export interface IPargvOptions {
   colorize?: boolean;
   displayHeader?: boolean;
   displayFooter?: boolean;
+  displayNone?: boolean;
+  displayTitles?: boolean;
   headingDivider?: string;
   commandDivider?: string;
   itemDivider?: string;
   locale?: string;
   localeDir?: string;
   autoHelp?: boolean;
-  fallbackHelp?: boolean | string;
+  fallbackHelp?: boolean | HelpHandler;
   defaultHelp?: boolean;
   // exitHelp?: boolean;
   castBeforeCoerce?: boolean;
@@ -91,7 +93,6 @@ export interface IPargvEnv {
   EXEC_PATH: string;
   NODE_PATH: string;
   HOME_PATH: string;
-  GLOBAL_PATH: string;
   NODE_ENV: string;
   PLATFORM: string;
   PKG: IPackage;
@@ -122,11 +123,13 @@ export interface IPargvCompletions {
 }
 
 export interface IPargvMetadata {
-  name?: string | [string, AnsiStyles | AnsiStyles[], string];
+  // name?: string | [string, AnsiStyles | AnsiStyles[], string];
+  name?: string;
   description?: string;
   version?: string;
   license?: string;
   epilog?: string;
+  [key: string]: any;
 }
 
 export interface IPargvCommandOption {

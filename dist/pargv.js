@@ -1,12 +1,19 @@
 "use strict";
 // IMPORTS //
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
 var fs_1 = require("fs");
 var child_process_1 = require("child_process");
 var util = require("util");
 var cliui = require("cliui");
-var figlet = require("figlet");
 var colurs_1 = require("colurs");
 var utils = require("./utils");
 var completions_1 = require("./completions");
@@ -14,6 +21,7 @@ var localize_1 = require("./localize");
 var command_1 = require("./command");
 var constants_1 = require("./constants");
 var utils_1 = require("./utils");
+var colurs;
 // VARIABLES & CONSTANTS //
 var DEFAULTS = {
     cast: true,
@@ -21,6 +29,8 @@ var DEFAULTS = {
     colorize: true,
     displayHeader: true,
     displayFooter: true,
+    displayNone: false,
+    displayTitles: false,
     headingDivider: '><><',
     commandDivider: '.',
     locale: 'en',
@@ -49,8 +59,10 @@ var Pargv = /** @class */ (function () {
     function Pargv(options) {
         this._completionsCommand = 'completions';
         this._completionsReply = '--reply';
-        this._name = 'Pargv';
+        // private _nameFont: string;
+        // private _nameStyles: AnsiStyles[];
         this._base = false;
+        this._meta = {};
         this._commands = {};
         utils.setEnumerable(this, '_name, _nameFont, _nameStyles, _helpCommand, _helpHandler, _errorHandler, _logHandler, _completionsHandler, _completions, _completionsCommand, _completionsReply, _colorize, _localize', false);
         this.init(options);
@@ -65,10 +77,11 @@ var Pargv = /** @class */ (function () {
     Pargv.prototype.init = function (options) {
         this.options = utils.extend({}, DEFAULTS, options);
         this.compatibility();
-        this._colurs = new colurs_1.Colurs({ enabled: this.options.colorize });
-        this._localize = localize_1.localize(this);
+        // colurs = new Colurs({ enabled: this.options.colorize });
+        colurs = new colurs_1.Colurs({ enabled: this.options.colorize });
+        this._localize = localize_1.localize(this, colurs);
         this._env = utils.environment(); // get env paths.
-        this._completions = completions_1.completions(this); // helper for generating completions.sh.
+        this._completions = completions_1.completions(this, colurs); // helper for generating completions.sh.
         this._helpCommand = this._localize('help').done(); // localized name for help.
         this._command = new command_1.PargvCommand(constants_1.DEFAULT_COMMAND, 'Default internal command.', this);
         this._commands[constants_1.DEFAULT_COMMAND] = this._command;
@@ -79,7 +92,7 @@ var Pargv = /** @class */ (function () {
         // const helpCmd = `${helpStr}.${helpAlias} [${cmdStr}]`;
         // this.command(helpCmd)                       // Default help command.
         //   .action(this.show.help.bind(this));
-        this._helpHandler = this.helpHandler; // default help handler.
+        this.onHelp(this.options.fallbackHelp); // set help handler.
         this._errorHandler = this.errorHandler; // default error handler.
         this._completionsHandler = this._completions.handler; // default completion handler.
         this._logHandler = this.logHandler; // default log handler.
@@ -148,20 +161,35 @@ var Pargv = /** @class */ (function () {
         var alert = this.options.colors.alert;
         var accent = this.options.colors.accent;
         var muted = this.options.colors.muted;
+<<<<<<< HEAD
+=======
+        var metaKeys = utils.keys(this._meta);
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
         // Default command.
         var defCmd = this.get.command(constants_1.DEFAULT_COMMAND);
         var defCmdNoArgOrOptions = utils.keys(this._commands).length <= 1 &&
             (defCmd._commands.length + defCmd._options.length) === 0;
+<<<<<<< HEAD
         var div = this.options.headingDivider;
+=======
+        var hdrDiv = this.options.headingDivider;
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
         var itmDiv = this.options.commandDivider;
         var itmDivMulti = Math.round(((layoutWidth / itmDiv.length) / 3) * 2);
         var noneStr = this._localize('none').done();
         // Builds the app name, version descript header.
         var buildHeader = function () {
+<<<<<<< HEAD
+=======
+            if (!metaKeys.length)
+                return;
+            var knownKeys = ['name', 'describe', 'version', 'license'];
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
             var descStr, verStr, licStr;
             descStr = _this._localize('Description').done();
             verStr = _this._localize('Version').done();
             licStr = _this._localize('License').done();
+<<<<<<< HEAD
             var nameFont = _this._nameFont;
             var nameStyles = _this._nameStyles;
             if (_this._name === 'Pargv') {
@@ -197,30 +225,82 @@ var Pargv = /** @class */ (function () {
                 else
                     layout.div();
             }
+=======
+            // let nameFont = this._nameFont;
+            // let nameStyles: any = this._nameStyles;
+            // if (this._name === 'Pargv') { // Is default name.
+            //   nameFont = 'standard';
+            //   nameStyles = primary;
+            // }
+            // Add the name to the layout.
+            // if (this._name) {
+            // if (!nameFont)
+            //   layout.repeat(<string>colurs.applyAnsi(div, muted));
+            // let tmpName = this._name;
+            // nameStyles = this._nameStyles && this._nameStyles.length ? this._nameStyles : null;
+            // if (nameFont)
+            //   tmpName = this.logo(tmpName, nameFont, nameStyles);
+            // if (!nameFont && nameStyles)
+            //   tmpName = <string>colurs.applyAnsi(tmpName, nameStyles);
+            // Add name to layout.
+            if (_this._meta.name)
+                layout.div(_this._meta.name);
+            // Add version to layout.
+            if (_this._meta.version)
+                layout.div(colurs.applyAnsi(verStr + ":", accent) + " " + utils.padLeft(colurs.applyAnsi(_this._meta.version, muted), 7));
+            // Add license to layout.
+            if (_this._meta.license)
+                layout.div(colurs.applyAnsi(licStr + ":", accent) + " " + utils.padLeft(colurs.applyAnsi(_this._meta.license, muted), 7));
+            // Add description to layout.
+            if (_this._meta.description) {
+                layout.div();
+                layout.div(colurs.applyAnsi(_this._meta.description, muted));
+                // layout.div(`${colurs.applyAnsi(`${descStr}:`, accent)} ${utils.padLeft(colurs.applyAnsi(this._describe, muted) as string, 3)}`);
+            }
+            // Add break in layout.
+            if (hdrDiv)
+                layout.repeat(colurs.applyAnsi(hdrDiv, muted));
+            else
+                layout.div();
+            // }
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
         };
         // Builds commands and flags help.
         var buildOptions = function (cmd, altLayout) {
             var cmdsStr, optsStr, exStr, reqStr;
+            var padLeftIfNested = _this.options.displayTitles ? 2 : 0;
             if (!cmd._commands.length && !cmd._options.length)
                 return;
             cmdsStr = _this._localize('Commands').done();
             optsStr = _this._localize('Options').done();
             exStr = _this._localize('Examples').done();
             reqStr = _this._localize('required').done();
+<<<<<<< HEAD
             layout.section(_this._colurs.applyAnsi(cmdsStr + ":", accent), [1, 0, 0, 1]);
+=======
+            if (cmd._commands.length || _this.options.displayNone)
+                layout.section(colurs.applyAnsi(cmdsStr + ":", accent), [1, 0, 0, 1]);
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
             cmd._commands.forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
                 var arr = [
-                    { text: el, padding: [0, 1, 0, 2], width: col1w },
-                    { text: _this._colurs.applyAnsi(cmd._describes[el] || '', muted), width: col2w }
+                    { text: el, padding: [0, 1, 0, padLeftIfNested], width: col1w },
+                    { text: colurs.applyAnsi(cmd._describes[el] || '', muted), width: col2w }
                 ];
-                var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
+                var lastCol = isRequired ? { text: colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
+<<<<<<< HEAD
             if (!cmd._commands.length)
                 layout.div({ text: _this._colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
             layout.section(_this._colurs.applyAnsi(optsStr + ":", accent), [1, 0, 0, 1]);
+=======
+            if (!cmd._commands.length && _this.options.displayNone)
+                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
+            if (cmd._options.length || _this.options.displayNone)
+                layout.section(colurs.applyAnsi(optsStr + ":", accent), [1, 0, 0, 1]);
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
             cmd._options.sort().forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
                 var aliases = cmd.aliases(el).sort();
@@ -229,30 +309,30 @@ var Pargv = /** @class */ (function () {
                 var usageVal = '';
                 if (/^(\[|<)/.test(utils.last(usages)))
                     usageVal = ' ' + usages.pop();
-                var describe = _this._colurs.applyAnsi(cmd._describes[el] || '', muted);
+                var describe = colurs.applyAnsi(cmd._describes[el] || '', muted);
                 // if (usageVal)
                 //   describe = usageVal + ': ' + describe;
                 var arr = [
-                    { text: usages.join(', ') + usageVal, padding: [0, 1, 0, 2], width: col1w },
+                    { text: usages.join(', ') + usageVal, padding: [0, 1, 0, padLeftIfNested], width: col1w },
                     { text: describe, width: col2w }
                 ];
-                var lastCol = isRequired ? { text: _this._colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
+                var lastCol = isRequired ? { text: colurs.applyAnsi("" + reqStr, alert), align: 'right', width: col3w } : { text: '', width: col3w };
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
-            if (!cmd._options.length)
-                layout.div({ text: _this._colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, 2] });
+            if (!cmd._options.length && _this.options.displayNone)
+                layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
             if (cmd._examples.length) {
-                layout.section(_this._colurs.applyAnsi(exStr + ":", accent), [1, 0, 0, 1]);
+                layout.section(colurs.applyAnsi(exStr + ":", accent), [1, 0, 0, 1]);
                 cmd._examples.forEach(function (tuple) {
                     var ex = tuple[0];
                     var desc = tuple[1] || null;
                     if (desc)
-                        desc = _this._colurs.applyAnsi(desc, muted);
+                        desc = colurs.applyAnsi(desc, muted);
                     if (!/^.*\$\s/.test(ex))
                         ex = '$ ' + ex;
-                    // ex = this._colurs.applyAnsi(ex, muted) as string;
-                    layout.div({ text: ex, padding: [0, 0, 0, 2] }, { text: (desc || ''), padding: [0, 0, 0, 1] });
+                    // ex = colurs.applyAnsi(ex, muted) as string;
+                    layout.div({ text: ex, padding: [0, 0, 0, padLeftIfNested] }, { text: (desc || ''), padding: [0, 0, 0, 1] });
                 });
             }
         };
@@ -270,6 +350,7 @@ var Pargv = /** @class */ (function () {
             }
             else {
                 cmdKeys = utils.keys(_this._commands)
+<<<<<<< HEAD
                     .filter(function (k) { return k !== constants_1.DEFAULT_COMMAND; })
                     .sort();
             }
@@ -277,6 +358,14 @@ var Pargv = /** @class */ (function () {
                 //  layout.div(this._colurs.applyAnsi('~ No commands configured ~', accent));
                 var noCmd = '~ ' + _this._localize("No commands configured").done() + ' ~';
                 layout.div(_this._colurs.applyAnsi(noCmd, accent));
+=======
+                    .sort();
+            }
+            if (!cmdKeys.length && defCmdNoArgOrOptions) {
+                //  layout.div(colurs.applyAnsi('~ No commands configured ~', accent));
+                var noCmd = '~ ' + _this._localize("No commands configured").done() + ' ~';
+                layout.div(colurs.applyAnsi(noCmd, accent));
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
                 return;
             }
             var ctr = 0;
@@ -290,31 +379,31 @@ var Pargv = /** @class */ (function () {
                 if (!cmd._showHelp)
                     return;
                 if (ctr > 0)
-                    layout.repeat(_this._colurs.applyAnsi(itmDiv, muted), itmDivMulti);
+                    layout.repeat(colurs.applyAnsi(itmDiv, muted), itmDivMulti);
                 ctr++;
                 var aliases = cmd.aliases(cmd._name).join(', '); // get aliases.
                 if (!aliases || !aliases.length)
                     aliases = noneStr;
                 var divs = [
-                    _this._colurs.applyAnsi(usageStr + ": ", primary) + cmd._usage, _this._colurs.applyAnsi(aliasStr + ": ", primary) + aliases,
+                    colurs.applyAnsi(usageStr + ": ", primary) + cmd._usage, colurs.applyAnsi(aliasStr + ": ", primary) + aliases,
                 ];
                 if (cmd._external)
-                    divs.push(_this._colurs.applyAnsi("(" + extStr + ")", accent));
+                    divs.push(colurs.applyAnsi("(" + extStr + ")", accent));
                 layout.div.apply(layout, divs);
                 if (cmd._describe) {
-                    layout.div({ text: _this._colurs.applyAnsi(cmd._describe, muted), padding: [1, 0, 0, 0] });
+                    layout.div({ text: colurs.applyAnsi(cmd._describe, muted), padding: [1, 0, 0, 0] });
                 }
                 buildOptions(cmd);
             });
         };
         var buildFooter = function () {
             // Add epilog if any.
-            if (_this._epilog) {
-                if (div)
-                    layout.repeat(_this._colurs.applyAnsi(div, muted));
+            if (_this._meta.epilog) {
+                if (hdrDiv)
+                    layout.repeat(colurs.applyAnsi(hdrDiv, muted));
                 else
                     layout.div();
-                layout.div(_this._colurs.applyAnsi(_this._epilog, muted));
+                layout.div(colurs.applyAnsi(_this._meta.epilog, muted));
             }
         };
         // Build help for single command.
@@ -338,7 +427,7 @@ var Pargv = /** @class */ (function () {
      * @param command optional command to get help for.
      */
     Pargv.prototype.helpHandler = function (command) {
-        if (this._helpEnabled === false)
+        if (this.options.fallbackHelp === false)
             return;
         return this.compileHelp(command).get();
     };
@@ -351,11 +440,10 @@ var Pargv = /** @class */ (function () {
     Pargv.prototype.errorHandler = function (err) {
         // if (MOCHA_TESTING) // if we're testing just throw the error.
         //   throw err;
-        var _this = this;
         // let name = err.name;
         // let msg = err.message;
         // let stack = err.stack;
-        // msg = this._colurs.bold.red(name) + ': ' + msg;
+        // msg = colurs.bold.red(name) + ': ' + msg;
         // Wrap errors with \n to make them stand out a bit better.
         // process.stderr.write(`\n${msg}`);
         // if (this.options.displayStackTrace && stack)
@@ -364,8 +452,8 @@ var Pargv = /** @class */ (function () {
         // process.exit(1);
         err.stack = err.stack.split('\n').map(function (s, i) {
             if (i === 0)
-                return _this._colurs.bold.red(s);
-            return _this._colurs.gray(s);
+                return colurs.bold.red(s);
+            return colurs.gray(s);
         }).join('\n') + '\n';
         throw err;
     };
@@ -378,7 +466,7 @@ var Pargv = /** @class */ (function () {
     Pargv.prototype.logHandler = function (message) {
         // const colors = ['bold'].concat(utils.toArray<string>(this.options.colors.primary));
         // let prefix: any = this._name ? utils.capitalize(this._name.toLowerCase()) : 'Pargv';
-        // prefix = this._colurs.applyAnsi(prefix, colors);
+        // prefix = colurs.applyAnsi(prefix, colors);
         // DEPRECATED - don't prefix with name user can insert in message if needed.
         // console.log();
         // console.log(prefix + ': ' + message);
@@ -438,7 +526,7 @@ var Pargv = /** @class */ (function () {
          * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
          */
         get: function () {
-            this.log(this._colurs.applyAnsi('DEPRECATED:', 'magenta') + " pargv.$ is deprecated, call pargv.command() with no args to return the default command.");
+            this.log(colurs.applyAnsi('DEPRECATED:', 'magenta') + " pargv.$ is deprecated, call pargv.command() with no args to return the default command.");
             return this.get.command(constants_1.DEFAULT_COMMAND);
         },
         enumerable: true,
@@ -554,8 +642,11 @@ var Pargv = /** @class */ (function () {
                     }
                     var valKeys = utils.keys(_this.options);
                     for (var k in obj) {
-                        if (~valKeys.indexOf(k))
+                        if (~valKeys.indexOf(k)) {
                             _this.options[k] = obj[k];
+                            if (k === 'fallbackHelp')
+                                _this.onHelp(obj[k]);
+                        }
                     }
                     return _this;
                 }
@@ -581,7 +672,9 @@ var Pargv = /** @class */ (function () {
                     // console.log();
                     // console.log(this.buildHelp(command));
                     // console.log();
-                    process.stdout.write('\n' + _this.buildHelp(command) + '\n\n');
+                    var helpStr = _this.buildHelp(command);
+                    if (helpStr)
+                        process.stdout.write('\n' + helpStr + '\n\n');
                 },
                 /**
                  * Completion
@@ -677,32 +770,26 @@ var Pargv = /** @class */ (function () {
      * @param data the metadata object.
      */
     Pargv.prototype.meta = function (data) {
+        data = __assign({}, data); // clone it.
+        var meta = this._meta;
         for (var k in data) {
-            if (this[k]) {
-                if (utils.isArray(data[k]))
-                    this[k].apply(this, data[k]);
-                else
-                    this[k](data[k]);
-            }
+            meta[k] = data[k];
         }
     };
     /**
      * App
      * Just adds a string to use as title of app, used in help.
-     * If invoked without value package.json name is used.
-     *
-     * @see http://flamingtext.com/tools/figlet/fontlist.html
-     * Simple Font examples
-     * standard, doom, ogre, slant, rounded, big, banner
      *
      * @param val the value to use as app name.
-     * @param font a Figlet font.
-     * @param styles an ansi color/style or array of styles.
+     * @param font a Figlet font. (DEPRECATED)
+     * @param styles an ansi color/style or array of styles. (DEPRECATED)
      */
     Pargv.prototype.name = function (val, styles, font) {
-        this._name = val || utils.capitalize(this._env.PKG.name || '');
-        this._nameStyles = utils.toArray(styles, null);
-        this._nameFont = font;
+        if (styles || font)
+            this.log(colurs.applyAnsi('DEPRECATED:', 'magenta') + " Figlet fonts deprecated in favor of user passing pre-stylized string.");
+        this._meta.name = val || utils.capitalize(this._env.PKG.name || '');
+        // this._nameStyles = utils.toArray<AnsiStyles>(styles, null);
+        // this._nameFont = font;
         return this;
     };
     /**
@@ -713,7 +800,7 @@ var Pargv = /** @class */ (function () {
      * @param val the value to use as version name.
      */
     Pargv.prototype.version = function (val) {
-        this._version = val || this._env.PKG.version;
+        this._meta.version = val || this._env.PKG.version;
         return this;
     };
     /**
@@ -723,7 +810,7 @@ var Pargv = /** @class */ (function () {
      * @param val the description string.
      */
     Pargv.prototype.description = function (val) {
-        this._describe = val;
+        this._meta.description = val || this._env.PKG.description;
         return this;
     };
     /**
@@ -733,7 +820,7 @@ var Pargv = /** @class */ (function () {
      * @param val the license type.
      */
     Pargv.prototype.license = function (val) {
-        this._license = val;
+        this._meta.license = val || this._env.PKG.license;
         return this;
     };
     /**
@@ -743,7 +830,7 @@ var Pargv = /** @class */ (function () {
      * @param val the trailing epilogue to be displayed.
      */
     Pargv.prototype.epilog = function (val) {
-        this._epilog = val;
+        this._meta.epilog = val;
         return this;
     };
     // COMMANDS & PARSING //
@@ -904,7 +991,8 @@ var Pargv = /** @class */ (function () {
         if (name === this._completionsCommand && ~source.indexOf(this._completionsReply)) {
             result = {
                 $exec: env.EXEC,
-                $command: name,
+                // $command: name,
+                $command: cmd._name,
                 $commands: []
             };
             result.$source = source.filter(function (el) {
@@ -1098,23 +1186,36 @@ var Pargv = /** @class */ (function () {
         var parsed = this.parse.apply(this, argv.concat(['__exec__']));
         if (!parsed)
             return {};
+<<<<<<< HEAD
         var helpFallbackName = utils.isString(this.options.fallbackHelp) ?
             this.options.fallbackHelp : null;
+=======
+        // DEPRECATED - favor custom callback instead.
+        // const helpFallbackName =
+        //   utils.isString(this.options.fallbackHelp) ?
+        //     this.options.fallbackHelp : null;
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
         var normLen = parsed.$stats && parsed.$stats.normalized.length;
         var optsLen = parsed.$stats && parsed.$stats.optionsCount;
         var cmdName = parsed.$command;
         if (!cmdName && (normLen || optsLen))
             cmdName = constants_1.DEFAULT_COMMAND;
         var cmd = this.get.command(cmdName) || null;
+        // DEPRECATED - favor custom callback set in onHelp.
         // Ensure the command is not the fallback help command.
+<<<<<<< HEAD
         if (cmd && (cmd._name === helpFallbackName))
             cmd = null;
+=======
+        // if (cmd && (cmd._name === helpFallbackName))
+        //   cmd = null;
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
         if (cmd && cmd._external) {
             this.spawn(parsed, cmd);
             return parsed;
         }
         // if (!parsed.$command && !normLen && !optsLen && this.options.fallbackHelp === true) {
-        if (!cmd && this.options.fallbackHelp === true) {
+        if (!cmd) {
             this.show.help();
             return parsed;
         }
@@ -1131,6 +1232,7 @@ var Pargv = /** @class */ (function () {
                     cmd._action.call(this, parsed, cmd);
             }
         }
+<<<<<<< HEAD
         if (!cmd && helpFallbackName) {
             var fallbackCmd = this.get.command(helpFallbackName);
             if (fallbackCmd && fallbackCmd._action) {
@@ -1145,8 +1247,25 @@ var Pargv = /** @class */ (function () {
         }
         if (this.options.fallbackHelp === true && !constants_1.MOCHA_TESTING && !cmd)
             this.show.help();
+=======
+        // DEPRECATED - favor custom callback onHelp.
+        // if (!cmd && helpFallbackName) {
+        //   const fallbackCmd = this.get.command(<string>helpFallbackName);
+        //   if (fallbackCmd && fallbackCmd._action) {
+        //     if (this.options.spreadCommands)
+        //       fallbackCmd._action.call(this, ...parsed.$commands, parsed, null);
+        //     else
+        //       fallbackCmd._action.call(this, parsed, null);
+        //   }
+        //   else {
+        //     this.show.help(); // fallback is defined but something went wrong just show help.
+        //   }
+        // }
+        // if (this.options.fallbackHelp === true && !MOCHA_TESTING && !cmd)
+        //   this.show.help();
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
         return parsed;
-        var _a, _b;
+        var _a;
     };
     /**
      * Base
@@ -1241,24 +1360,28 @@ var Pargv = /** @class */ (function () {
       * set "all" to true.
       *
       * @param options Pargv options to reset with.
+      * @param all when true resets metadata, base, help handler if set.
       */
     Pargv.prototype.reset = function (options, all) {
         this._commands = {};
         if (!all)
             return this.init(options);
-        this._helpEnabled = undefined;
-        this._name = undefined;
-        this._nameFont = undefined;
-        this._nameStyles = undefined;
-        this._version = undefined;
-        this._license = undefined;
-        this._describe = undefined;
-        this._epilog = undefined;
+        // this._helpEnabled = undefined;
         this._base = false;
+        this._meta = {};
+        this._helpHandler = undefined;
+        // this._name = undefined;
+        // this._nameFont = undefined;
+        // this._nameStyles = undefined;
+        // this._version = undefined;
+        // this._license = undefined;
+        // this._describe = undefined;
+        // this._epilog = undefined;
         return this.init(options);
     };
     /**
      * On Help
+<<<<<<< HEAD
      * Method for adding custom help handler, disabling or mapping to a command.
      *
      * @param fn boolean to enable/disable, a function or command name for custom handling.
@@ -1267,7 +1390,23 @@ var Pargv = /** @class */ (function () {
         var _this = this;
         if (utils.isString(fn)) {
         }
+=======
+     * Method for adding custom help handler, disabling.
+     * If custom handler return compiled help to be displayed or false to handle manually.
+     *
+     * @param fn boolean to enable/disable, or function for custom help.
+     */
+    Pargv.prototype.onHelp = function (fn) {
+        var _this = this;
+        if (!utils.isValue(fn))
+            fn = true;
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
         this._helpHandler = function (command) {
+            if (fn === false)
+                return null;
+            if (fn === true)
+                return _this.helpHandler(command);
+            // use custom user handler.
             return fn(command, _this._commands);
         };
         return this;
@@ -1386,6 +1525,7 @@ var Pargv = /** @class */ (function () {
      * @param font the figlet font to be used.
      * @param styles the optional styles to be used.
      */
+<<<<<<< HEAD
     Pargv.prototype.logo = function (text, font, styles) {
         var result;
         // let methods: IPargvLogo;
@@ -1437,6 +1577,59 @@ var Pargv = /** @class */ (function () {
         // };
         // return methods;
     };
+=======
+    // logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]) {
+    //   let result: string;
+    //   // let methods: IPargvLogo;
+    //   let defaults: IFigletOptions = {
+    //     text: 'Pargv',
+    //     font: 'standard',
+    //     horizontalLayout: 'default',
+    //     verticalLayout: 'default'
+    //   };
+    //   let options = utils.isPlainObject(text) ? <IFigletOptions>text : {
+    //     text: text,
+    //     font: font
+    //   };
+    //   // Merge the options.
+    //   options = utils.extend({}, defaults, options);
+    //   // Process the text.
+    //   result = figlet.textSync(options.text, options);
+    //   // Apply ansi styles if any.
+    //   if (styles)
+    //     result = colurs.applyAnsi(result, styles) as string;
+    //   return result;
+    //   // DEPRECATE: methods no real need.
+    //   /**
+    //    * Render
+    //    * Renders out the Figlet font logo.
+    //    */
+    //   // function show() {
+    //   //   console.log(result);
+    //   //   return this;
+    //   // }
+    //   /**
+    //    * Fonts
+    //    * Lists Figlet Fonts.
+    //    */
+    //   // function fonts() {
+    //   //   return figlet.fontsSync();
+    //   // }
+    //   /**
+    //    * Get
+    //    * Returns the Figlet font without rendering.
+    //    */
+    //   // function get() {
+    //   //   return result;
+    //   // }
+    //   // methods = {
+    //   //   fonts,
+    //   //   show,
+    //   //   get
+    //   // };
+    //   // return methods;
+    // }
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
     /**
       * Layout
       * Creates a CLI layout much like creating divs in the terminal.
@@ -1501,9 +1694,9 @@ var Pargv = /** @class */ (function () {
             var origLen = multiplier;
             multiplier = multiplier || width;
             var _char = char;
-            var stripChar = self._colurs.strip(_char); // strip any color formatting.
+            var stripChar = colurs.strip(_char); // strip any color formatting.
             var canAppend = function () {
-                var curLen = self._colurs.strip(char).length;
+                var curLen = colurs.strip(char).length;
                 var offset = stripChar.length;
                 return curLen < (width - offset);
             };

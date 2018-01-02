@@ -1,10 +1,12 @@
 /// <reference types="node" />
 import { ChildProcess } from 'child_process';
-import { IColurs } from 'colurs';
 import { PargvCommand } from './command';
+<<<<<<< HEAD
 import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, IPargvCoerceConfig, IPargvWhenConfig, ActionHandler } from './interfaces';
+=======
+import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IPargvLayout, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, IPargvCoerceConfig, IPargvWhenConfig, ActionHandler } from './interfaces';
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
 export declare class Pargv {
-    private _helpEnabled;
     private _helpHandler;
     private _errorHandler;
     private _logHandler;
@@ -12,6 +14,7 @@ export declare class Pargv {
     private _completions;
     private _completionsCommand;
     private _completionsReply;
+<<<<<<< HEAD
     private _name;
     private _command;
     private _nameFont;
@@ -23,6 +26,12 @@ export declare class Pargv {
     private _epilog;
     _env: IPargvEnv;
     _colurs: IColurs;
+=======
+    private _base;
+    private _meta;
+    private _command;
+    _env: IPargvEnv;
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
     _localize: LocalizeInit;
     _commands: IMap<PargvCommand>;
     _helpCommand: string;
@@ -162,15 +171,10 @@ export declare class Pargv {
     /**
      * App
      * Just adds a string to use as title of app, used in help.
-     * If invoked without value package.json name is used.
-     *
-     * @see http://flamingtext.com/tools/figlet/fontlist.html
-     * Simple Font examples
-     * standard, doom, ogre, slant, rounded, big, banner
      *
      * @param val the value to use as app name.
-     * @param font a Figlet font.
-     * @param styles an ansi color/style or array of styles.
+     * @param font a Figlet font. (DEPRECATED)
+     * @param styles an ansi color/style or array of styles. (DEPRECATED)
      */
     name(val: string, styles?: AnsiStyles | AnsiStyles[], font?: string): this;
     /**
@@ -268,15 +272,25 @@ export declare class Pargv {
       * set "all" to true.
       *
       * @param options Pargv options to reset with.
+      * @param all when true resets metadata, base, help handler if set.
       */
     reset(options?: IPargvOptions, all?: boolean): this;
     /**
      * On Help
+<<<<<<< HEAD
      * Method for adding custom help handler, disabling or mapping to a command.
      *
      * @param fn boolean to enable/disable, a function or command name for custom handling.
      */
     onHelp(fn: string | boolean | HelpHandler): this;
+=======
+     * Method for adding custom help handler, disabling.
+     * If custom handler return compiled help to be displayed or false to handle manually.
+     *
+     * @param fn boolean to enable/disable, or function for custom help.
+     */
+    onHelp(fn: boolean | HelpHandler): this;
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
     /**
      * On Error
      * Add custom on error handler.
@@ -322,7 +336,6 @@ export declare class Pargv {
      * @param font the figlet font to be used.
      * @param styles the optional styles to be used.
      */
-    logo(text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]): string;
     /**
       * Layout
       * Creates a CLI layout much like creating divs in the terminal.

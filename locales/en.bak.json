@@ -30,7 +30,12 @@
   "Optional command.": "Optional command.",
   "Optional flag.": "Optional flag.",
   "help": "help",
+<<<<<<< HEAD
   "No commands configured.": "No commands configured",
+=======
+  "No commands configured.": "No commands configured.",
+  "Default internal command.": "Default internal command.",
+>>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
   "completions already installed at %s, use --force to reinstall.": "completions already installed at %s, use --force to reinstall.",
   "cannot automatically install completions on platform %s.": "cannot automatically install completions on platform %s.",
   "could not write, append or create path %s.": "could not write, append or create path %s.",

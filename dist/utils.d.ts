@@ -10,7 +10,6 @@ export declare function environment(): {
     EXEC: string;
     EXEC_PATH: string;
     NODE_PATH: string;
-    GLOBAL_PATH: any;
     NODE_ENV: string;
     HOME_PATH: string;
     PLATFORM: NodeJS.Platform;

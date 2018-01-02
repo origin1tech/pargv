@@ -4,7 +4,7 @@ var lokales_1 = require("lokales");
 var constants_1 = require("./constants");
 var path_1 = require("path");
 var utils = require("./utils");
-function localize(pargv) {
+function localize(pargv, colurs) {
     var opts = {
         directory: path_1.resolve(constants_1.PARGV_ROOT, pargv.options.localeDir),
         locale: pargv.options.locale
@@ -26,7 +26,7 @@ function localize(pargv) {
         args.forEach(function (el, i) {
             if (styles[i]) {
                 var _styles = utils.toArray(styles[i]);
-                args[i] = pargv._colurs.applyAnsi(el, _styles);
+                args[i] = colurs.applyAnsi(el, _styles);
             }
         });
         if (plural)

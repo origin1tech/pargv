@@ -13,11 +13,11 @@ const srcTpl =  // template used to add to bash.
   `###-end-{{app_name}}-completions-###${EOL}`;
 
 
-export function completions(pargv: Pargv): IPargvCompletions {
+export function completions(pargv: Pargv, colurs: IColurs): IPargvCompletions {
 
   const env = pargv._env;
   const colors = pargv.options.colors;
-  const colurs = pargv._colurs;
+  // const colurs = pargv._colurs;
 
   /**
    * Get Completion Paths

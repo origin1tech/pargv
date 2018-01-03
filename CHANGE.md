@@ -7,6 +7,8 @@ List of changes in descending order.
 Note minor version change. Configs from 2.0.30 or greater should still be compatible but moving to 2.1.x due to refactor of help and a couple additional methods.
 
 <table>
+  <tr><td>usage</td><td>add method to allow manual override of usage string.</td></tr>
+  <tr><td>when</td><td>fix bug in whens where error is thrown but no demand was triggered.</td></tr>
   <tr><td>figlet</td><td>deprecate Figlet font generation favor pre-styled provided by user.</td></tr>
   <tr><td>onHelp</td><td>simplify how help is called was unnecessarily complex.</td></tr>
   <tr><td>command.arg</td><td>Add alias to .option() where tokens are auto wrapped with [arg] if [] or <> are not present.</td></tr>

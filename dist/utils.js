@@ -132,11 +132,16 @@ function mergeArgs(val) {
     for (var _i = 1; _i < arguments.length; _i++) {
         args[_i - 1] = arguments[_i];
     }
-    if (!chek_1.isString(val))
+    if (chek_1.isString(val))
         val = val.trim();
     if (!chek_1.isArray(val))
         val = [val];
-    return chek_1.flatten(val.concat(args));
+    // flatten and remove dupes.
+    return chek_1.flatten(val.concat(args))
+        .sort()
+        .filter(function (v, i, arr) {
+        return !i || v !== arr[i - 1];
+    });
 }
 exports.mergeArgs = mergeArgs;
 /**
@@ -154,13 +159,23 @@ exports.splitToList = splitToList;
 /**
  * To Option Tokens
  * : Formats option string to support Pargv syntax.
+ *
  * @example
+ *
+ * coverts: 'command'
+ * to: '[command]'
+ *
  * converts: '-n, --name <value>'
  * to: '-n.--name <value>'
  *
  * @param token the string to insepct.
  */
 function toOptionToken(token) {
+    if (!/^-/.test(token)) {
+        token = token.split(' ')[0];
+        if (!/^(\[|<)/.test(token))
+            token = "[" + token + "]";
+    }
     var pre = token;
     var suffix = '';
     var reqIdx = token.indexOf('<');

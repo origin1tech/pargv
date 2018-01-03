@@ -56,5 +56,17 @@
   "%s does not exist, try --%s.": "%s does not exist, try --%s.",
   "flag %s contains ...variadic, only commands can contain variadic values.": "flag %s contains ...variadic, only commands can contain variadic values.",
   "found %s variadic commands but only one is permitted.": "found %s variadic commands but only one is permitted.",
-  "No commands configured": "No commands configured"
+  "No commands configured": "No commands configured",
+  "the token \"%s\" is missing -, [, < or has unwanted space.": "the token \"%s\" is missing -, [, < or has unwanted space.",
+  "Arguments": "Arguments",
+  "flag %s contains variadic, only arguments can contain variadic values.": "flag %s contains variadic, only arguments can contain variadic values.",
+  "found %s variadic arguments but only one is permitted.": "found %s variadic arguments but only one is permitted.",
+  "argument": "argument",
+  "Required argument.": "Required argument.",
+  "Optional argument.": "Optional argument.",
+  "license": "license",
+  "version": "version",
+  "name": "name",
+  "description": "description",
+  "Global commands and options.": "Global commands and options."
 }

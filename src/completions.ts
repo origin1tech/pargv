@@ -209,7 +209,7 @@ export function completions(pargv: Pargv, colurs: IColurs): IPargvCompletions {
     if (pargv._env.EXEC === argv[0])
       argv.shift(); // remove first arg which is app/exec name.
 
-    const tmpCmd = pargv.get.command(utils.first(argv)); // is first is known command.
+    const tmpCmd = pargv.getCommand(utils.first(argv)); // is first is known command.
 
     if (tmpCmd) { // limit to single command if known.
 
@@ -218,7 +218,7 @@ export function completions(pargv: Pargv, colurs: IColurs): IPargvCompletions {
 
       const sliced = argv.slice(1); // remove command name.
       let curCmdIdx = 0;
-      const lastCmdIdx = tmpCmd._commands.length - 1; // last index for commands.
+      const lastCmdIdx = tmpCmd._arguments.length - 1; // last index for commands.
       sliced.forEach((el, i) => {
         if (!FLAG_EXP.test(el) && i <= lastCmdIdx) {
           const prev = sliced[i - 1] || null;

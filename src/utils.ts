@@ -124,11 +124,16 @@ export function stripToken(val: string, exp?: RegExp) {
  * @param args rest param of args.
  */
 export function mergeArgs(val: any | any[], ...args: any[]) {
-  if (!isString(val))
+  if (isString(val))
     val = val.trim();
   if (!isArray(val))
     val = [val];
-  return flatten(val.concat(args));
+  // flatten and remove dupes.
+  return flatten<any>(val.concat(args))
+    .sort()
+    .filter((v, i, arr) => {
+      return !i || v !== arr[i - 1];
+    });
 }
 
 /**
@@ -146,13 +151,23 @@ export function splitToList(val: string) {
 /**
  * To Option Tokens
  * : Formats option string to support Pargv syntax.
+ *
  * @example
+ *
+ * coverts: 'command'
+ * to: '[command]'
+ *
  * converts: '-n, --name <value>'
  * to: '-n.--name <value>'
  *
  * @param token the string to insepct.
  */
 export function toOptionToken(token: string) {
+  if (!/^-/.test(token)) {
+    token = token.split(' ')[0];
+    if (!/^(\[|<)/.test(token))
+      token = `[${token}]`;
+  }
   let pre = token;
   let suffix = '';
   let reqIdx = token.indexOf('<');

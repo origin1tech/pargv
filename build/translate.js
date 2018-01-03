@@ -9,9 +9,10 @@ module.exports = (log) => {
   if (!API_KEY) // Api key not pushed to repo must provide own.
     throw new Error('Cannot run translate with Google Translate API Key of undefined.');
 
-  const argv = process.argv.slice(2);
-  let langs = argv[0] || 'es,fr,hi,it,ja,ru,zh_CN,zh_TW' // first arg are langs.
-  let localePath = argv[1] || path.join(__dirname, '../locales/en.json');
+  const argv = process.argv.slice(3);
+  let langs = 'es,fr,hi,it,ja,ru,zh_CN,zh_TW'
+
+  let localePath = path.join(__dirname, '../locales/en.json');
   const parsedPath = path.parse(localePath);
   const baseDir = parsedPath.dir;
   const normalized = [];
@@ -20,8 +21,7 @@ module.exports = (log) => {
 
   if (!langs) throw new Error('Translate requires a language(s).');
 
-  langs = langs.trim().split(',')
-    .map(v => v.trim());
+  langs = langs.split(',');
 
   // Load base locales.
   if (!fs.existsSync(localePath))
@@ -57,7 +57,9 @@ module.exports = (log) => {
   }
 
   langs.forEach((lang, i) => {
+
     const translated = {};
+
     trans.translate(normalized, lang, (err, res) => {
       if (err) throw err;
       if (!Array.isArray(res))

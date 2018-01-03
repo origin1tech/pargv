@@ -15,11 +15,9 @@ export type SpawnActionHandler = (method: SpawnMethod, config: IPargvSpawnConfig
 
 export type CompletionHandler = (current: string, argv: any[] | NodeCallback, done?: CompletionHandlerCallback) => any[];
 export type CompletionHandlerCallback = (completions: any[]) => void;
-export type HelpHandler = (command: string, commands?: IMap<PargvCommand>) => string;
+export type HelpHandler = (command: string, commands?: IMap<PargvCommand>) => any;
 export type LocalizeInit = (singular: string, plural?: string) => IPargvLocalize;
 export type AnsiStyles = keyof IAnsiStyles;
-
-export type FigletLayout = 'default' | 'full' | 'fitted' | 'controlled smushing' | 'universal smushing';
 
 export interface IMap<T> {
   [key: string]: T;
@@ -29,28 +27,6 @@ export interface IPargvSpawnConfig {
   command: string;
   args: any[];
   options: SpawnOptions;
-}
-
-// Just the most common properties.
-export interface IPackage extends IMap<any> {
-  name: string;
-  version: string;
-  description: string;
-  license: string;
-  main: string;
-  bin: IMap<any>;
-  typings: string;
-  keywords: string[];
-  scripts: IMap<any>;
-  author: string | string[] | IMap<any>[];
-  contributors: string | string[] | IMap<any>[];
-  repository: IMap<any>;
-  bugs: IMap<any>;
-  homepage: string;
-  dependencies: IMap<any>;
-  devDependencies: IMap<any>;
-  peerDependencies: IMap<any>;
-  [key: string]: any;
 }
 
 export interface IPargvOptions {
@@ -66,13 +42,10 @@ export interface IPargvOptions {
   itemDivider?: string;
   locale?: string;
   localeDir?: string;
-  autoHelp?: boolean;
-  fallbackHelp?: boolean | HelpHandler;
   defaultHelp?: boolean;
-  // exitHelp?: boolean;
   castBeforeCoerce?: boolean;
-  extendCommands?: boolean;
-  spreadCommands?: boolean;
+  extendArguments?: boolean;
+  spreadArguments?: boolean;
   extendAliases?: boolean;
   extendStats?: boolean;
   allowAnonymous?: boolean;
@@ -85,6 +58,14 @@ export interface IPargvOptions {
     alert?: AnsiStyles | AnsiStyles[];
     muted?: AnsiStyles | AnsiStyles[];
   };
+
+  // DEPRECATED //
+  fallbackHelp?: boolean | HelpHandler;
+  autoHelp?: boolean;
+  exitHelp?: boolean;
+  extendCommands?: boolean;
+  spreadCommands?: boolean;
+
 }
 
 export interface IPargvEnv {
@@ -95,7 +76,7 @@ export interface IPargvEnv {
   HOME_PATH: string;
   NODE_ENV: string;
   PLATFORM: string;
-  PKG: IPackage;
+  PKG: any;
 }
 
 export interface IPargvCompletionPaths {
@@ -123,7 +104,6 @@ export interface IPargvCompletions {
 }
 
 export interface IPargvMetadata {
-  // name?: string | [string, AnsiStyles | AnsiStyles[], string];
   name?: string;
   description?: string;
   version?: string;
@@ -151,11 +131,13 @@ export interface IPargvParsedResult {
   $exec?: string;
   $command?: string;
   $external?: string;
-  $commands?: any[];
+  $arguments?: any[];
   $variadics?: any[];
   $source?: string[];
   $stats?: IPargvStats;
   [key: string]: any;
+  // Deprecated //
+  $commands?: any[];
 }
 
 export interface IPargvCoerceConfig {
@@ -166,13 +148,6 @@ export interface IPargvCoerceConfig {
 export interface IPargvWhenConfig {
   demand: string;
   converse?: boolean;
-}
-
-export interface IFigletOptions {
-  text?: string;
-  font?: string;
-  horizontalLayout?: FigletLayout;
-  verticalLayout?: FigletLayout;
 }
 
 export interface IPargvLayout {
@@ -194,15 +169,18 @@ export interface IPargvLogo {
 
 
 export interface IPargvStats {
-  commands?: any[];
+  arguments?: any[];
   options?: any[];
   map?: any[];
   normalized: any[];
   missing?: any[];
   anonymous?: any[];
   whens?: any[];
-  commandsCount?: number;
+  argumentsCount?: number;
   optionsCount?: number;
+  // Deprecated //
+  commands?: any[];
+  commandsCount?: number;
 }
 
 export interface IPargvLocalize {

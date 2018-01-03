@@ -1,6 +1,12 @@
 # Pargv 2.x
 
-Pargv has been rewritten in TypeScript as of version **2.0.0**. Pargv is similar to Yargs, Commander, Minimist with a handful of additional features not to mention is written in TypeScript which is quite helpful with teams. Pargv is actively being developed so pay close attention to [CHANGE.md](CHANGE.md). Doing best to keep up with Readme/Examples but best bet if somethign sees off check change log. You can also open the index.html page in the "docs" folder which contains documentation on every method and interface.
+Pargv is a Typesript module used for CLI tools. Similar to Yargs or Commander, Pargv differs in that commands are separated into instances. This means that usage descriptions are a bit more clear and options are individually assigned to each defined command. This allows for displaying help for a specific command or all commands. In short I'm not a fan of all options listed together for commands they may not be related to. Without some custom logic that's what you end up with in Commander/Yargs.
+
+For simple tools it may be overkill but more involved CLI's you may find it helpful. If using VSCode you'll find the Typescript typings very helpful in displaying intellisense properties and methods.
+
+### New (v2.1.x)
+
+The minor version upgrade from 2.0.x to 2.1.x should be compatible with older configs. You may see deprecation warnings which will indicate the new method or property name to be used however your config should still work. The reason for the minor upgrade is a lot of refactoring was done and several new methods and properties were created. Handling of help was significantly simplified. It was just overly complex and needed to be simplified. Additionally added events see [events](#events) below for details.
 
 [![Help Preview](screenshot.png)](https://www.youtube.com/watch?v=c2tg32oNC8E)
 
@@ -279,12 +285,11 @@ date, boolean, array, regexp, object
 number, float, integer, string, json
 
 ```ts
-// Creates Command: query
-// Requires sub command: table
+// Creates Command: query which requires a sub command of table name.
 // Option: start          Type: date
 // Option: end            Type: date
 // Option: max            Type: integer
-pargv.command('query <table> --start [start:date] --end [end:date] --max [max:integer]');
+pargv.command('query <tablename> --start [start:date] --end [end:date] --max [max:integer]');
 ```
 
 ### Argument Conventions
@@ -326,108 +331,16 @@ const args = ['generate', 'aboutus', '--ext', '.html', '-f', '-b', '-p'];
 
 ## API
 
-This section describes both Pargv api methods as well as PargvCommand api methods. One of the things that many find confusing when using parsing libs with chaining is how they work with multiple commands or nesting commands. Lets first cover the methods for each and then explain how they work together to accomplish what you need.
+Please pull source and see [docs](docs/index.html) initially this readme displayed tables denoting properities and methods for class instances but it's too difficult to keep in sync see docs instead.
 
-You will notice a few special characters in the "arguments" for the method's signature. This is taken from TypeScript. If you are not using TypeScript that's fine and has no relevance other than to denote the characteristics of each argument. TypeScript simply uses these tokens for realtime type checking.
+## Events
 
-Again if you are not using TypeScirpt don't worry they aren't needed it's just a way of describing what each method expects.
-
-+ **any**       - means any type
-+ **?**         - means it's optional.
-+ **[]**        - means an array of some type like string[].
-+ **...**       - indicates a spread operator.
-+ **T**         - indicates generic type (if not using TypeScript you can ignore).
-
-For the following take a look at the [interfaces](dist/interfaces.d.ts) for more on what these objects contain. The below is NOT a complete list be sure to see interfaces for more info along with docs.
-
-+ **IPargvOptions** - denotes the Pargv options object.
-+ **IPargvResult** - the resulting object after parse is called.
-+ **IPargvLayout** - helpers/wrapper to [cliui](https://github.com/yargs/cliui) for displaying help text.
-+ **IPargvLogo** - helpers/wrapper to [figlet](https://github.com/patorjk/figlet.js)
-+ **IPargvEnv** - interface containing environment info.
-+ **IPargvCompletionPaths** - interface containing paths used in tab completions.
-+ **IPargvMetadata** - interface containing metadata for program.
-+ **IPargvLocalize** - interface for localization helper methods.
-+ **AnsiStyles** - type containing supported [colurs](https://github.com/origin1tech/colurs) styles.
-+ **HelpHandler** - an override callback to be called for help.
-+ **CoerceHandlerk** - callback used for custom coercion.
-+ **IPargvCoerceConfig** - an object containing coerce configuration.
-+ **IPargvWhenConfig** - an object containing when configuration.
-+ **ErrorHandler** - custom handler for handling errors.
-+ **ActionHandler** - handler for command action callbacks.
-+ **CompletionHandler** - handler used for replying with tab completion results.
-+ **IMap`<T>`**   - simple type which basically represents an object literal.
-
-### Pargv
-
-Always check [docs](docs/index.html) the below is for conveience and may not represent all methods.
+The below events should not be confused with methods such as onLog, onError etc. Those methods allow intercepting the actual log or error handler whereas events simply listen to the emitted events. For example if you simply wish to log to a file or something you could call <code>.on('log', handler)</code>. If you wanted to intercept all log events and handle them yourself use the onLog(handler) which will prevent them from being output to the terminal.
 
 <table>
-  <thead>
-    <tr><th>Method</th><th>Description</th><th>Params</th><th>Returns</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>$</td><td>returns a default instance you can use to parse args without a command.</td><td>n/a</td><td>PargvCommand</td></tr>
-    <tr><td>name</td><td>name of your program.</td><td>val: string, styles?: AnsiStyles | AnsiStyles[], font?: string</td><td>Pargv</td></tr>
-    <tr><td>version</td><td>program version.</td><td>val: string</td><td>Pargv</td></tr>
-    <tr><td>description</td><td>program description.</td><td>val: string</td><td>Pargv</td></tr>
-    <tr><td>license</td><td>program license type.</td><td>val: string</td><td>Pargv</td></tr>
-    <tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
-    <tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
-    <tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
-    <tr><td>exec (or listen)</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
-    <tr><td>onHelp</td><td>overrides default help handler.</td><td>fn: HelpHandler</td><td>Pargv</td></tr>
-    <tr><td>get.option</td><td>gets value for option.</td><td>key: string</td><td>any</td></tr>
-    <tr><td>set.option</td><td>sets value for option.</td><td>key: string | IPargvOptions, val: any</td><td>Pargv</td></tr>
-    <tr><td>show.help</td><td>displays help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
-    <tr><td>get.help</td><td>gets help text for all or specified command.</td><td>command?: string | PargvCommand</td><td>void</td></tr>
-    <tr><td>get.completion</td><td>gets the completion script for manual install.</td><td>n/a</td><td>string</td></tr>
-    <tr><td>show.completion</td><td>shows the completion script for manual in terminal.</td><td>n/a</td><td>void</td></tr>
-    <tr><td>find.command</td><td>returns a command instance if found.</td><td>key: string</td><td>PargvCommand</td></tr>
-    <tr><td>remove.command</td><td>removes a command instance if found.</td><td>key: string</td><td>Pargv</td></tr>
-    <tr><td>get.env</td><td>gets environment paths and properties.</td><td>n/a</td><td>IPargvEnv</td></tr>
-    <tr><td>show.env</td><td>displays environment paths and properties.</td><td>n/a</td><td>Pargv</td></tr>
-    <tr><td>onError</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
-    <tr><td>onLog</td><td>overrides default on log handler.</td><td>fn: LogHandler</td><td>Pargv</td></tr>
-    <tr><td>reset</td><td>deletes all commands and updates options if provided.</td><td>options?: IPargvOptions</td><td>Pargv</td></tr>
-    <tr><td>stats</td><td>compares args to command config returning stats/metadata.</td><td>command: string, ...args: any[]</td><td>Pargv</td></tr>
-    <tr><td>logo</td><td>wrapper to output Figlet type logo.</td><td>text?: string | IFigletOptions, font?: string, styles?: AnsiStyles | AnsiStyles[]</td><td>IPargvLogo</td></tr>
-    <tr><td>layout</td><td>wrapper/helper for building help using cliui.</td><td>width?: number, wrap?: boolean</td><td>IPargvLogo</td></tr>
-  </tbody>
-</table>
-
-### Pargv Command
-
-Always check [docs](docs/index.html) the below is for conveience and may not represent all methods.
-
-<table>
-  <thead>
-    <tr><th>Method</th><th>Description</th><th>Params</th><th>Returns</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>command</td><td>primary method creates a PargvCommand.</td><td>command: string, describe?: string</td><td>PargvCommand</td></tr>
-    <tr><td>option</td><td>adds an option to the command.</td><td>token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler</td><td>PargvCommand</td></tr>
-    <tr><td>alias</td><td>adds an alias to the command.</td><td>key: string | IMap< string[], ...alias: string[]</td><td>PargvCommand</td></tr>
-    <tr><td>describe</td><td>adds a description for command or option.</td><td>key: string | IMap< string >, describe?: string</td><td>PargvCommand</td></tr>
-    <tr><td>coerce</td><td>adds a coercion type/method to the specified command or option.</td><td>key: string | IMap< IPargvCoerceConfig >, fn?: string | RegExp | CoerceHandler, def?: any</td><td>PargvCommand</td></tr>
-    <tr><td>demand</td><td>adds a demand requiring the specified command or option.</td><td>...keys: string[]</td><td>PargvCommand</td></tr>
-    <tr><td>when</td><td>requires sibling command or option when present.</td><td>key: string | IMap< IPargvWhenConfig >, demand?: string | boolean, converse?: boolean</td><td>PargvCommand</td></tr>
-    <tr><td>default</td><td>adds a default value for command or option.</td><td>key: string | IMap< any >, val: any</td><td>PargvCommand</td></tr>
-    <tr><td>completionFor</td><td>adds custom completion for variable.</td><td>key: string, ...vals: any[]</td><td>PargvCommand</td></tr>
-    <tr><td>min</td><td>add min requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
-    <tr><td>max</td><td>add max requirement of commands or options.</td><td>n/a</td><td>{ commands: (count: number), options: (count: number) }</td></tr>
-    <tr><td>spawnAction</td><td>allows granular control of spawn actions for external commands.</td><td>options: SpawnOptions | SpawnActionHandler, handler?: SpawnActionHandler</td><td>PargvCommand</td></tr>
-    <tr><td>spreadCommands</td><td>allows for toggling a command's spread behavior for action callback signature arguments.</td><td>spread?: boolean</td><td>PargvCommand</td></tr>
-    <tr><td>extendCommands</td><td>allows for toggling a command's extend behavior for extending commands by name on result object.</td><td>extend?: boolean</td><td>PargvCommand</td></tr>
-    <tr><td>extendAliases</td><td>allows for toggling a command's extend behavior for extending aliases to the result object.</td><td>extend?: boolean</td><td>PargvCommand</td></tr>
-    <tr><td>action</td><td>an action to be called when a command is matched on exec.</td><td>fn: ActionCallback</td><td>PargvCommand</td></tr>
-    <tr><td>example</td><td>adds an example for the given command.</td><td>example: string, describe?: string</td><td>PargvCommand</td></tr>
-    <tr><td>parse</td><td>parses arguments returns result.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
-    <tr><td>exec</td><td>parses arguments then executes action.</td><td>...args: any[]</td><td>IPargvResult</td></tr>
-    <tr><td>help</td><td>creates custom help method or disables.</td><td>fn: boolean | HelpHandler</td><td>Pargv</td></tr>
-    <tr><td>fail</td><td>overrides default on error handler.</td><td>fn: ErrorHandler</td><td>Pargv</td></tr>
-    <tr><td>epilog</td><td>closing message in help ex: copyright Pargv 2018.</td><td>val: string</td><td>Pargv</td></tr>
-  </tbody>
+  <tr><td>log</td><td>listens to log events.</td></tr>
+  <tr><td>error</td><td>listens to error events.</td></tr>
+  <tr><td>completion</td><td>listens to completion, returns completion results.</td></tr>
 </table>
 
 ## Localization

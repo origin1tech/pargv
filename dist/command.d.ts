@@ -1,12 +1,12 @@
 /// <reference types="node" />
 import { Pargv } from './';
 import { SpawnOptions } from 'child_process';
-import { IMap, ActionHandler, CoerceHandler, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult, LogHandler, SpawnActionHandler } from './interfaces';
+import { IMap, ActionHandler, CoerceHandler, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult, LogHandler, SpawnActionHandler, HelpHandler } from './interfaces';
 export declare class PargvCommand {
     _name: string;
     _usage: string;
     _describe: string;
-    _commands: string[];
+    _arguments: string[];
     _options: string[];
     _bools: string[];
     _variadic: string;
@@ -19,9 +19,9 @@ export declare class PargvCommand {
     _whens: IMap<string>;
     _examples: [string, string][];
     _action: ActionHandler;
-    _maxCommands: number;
+    _maxArguments: number;
     _maxOptions: number;
-    _minCommands: number;
+    _minArguments: number;
     _minOptions: number;
     _showHelp: boolean;
     _completions: IMap<any[]>;
@@ -30,8 +30,8 @@ export declare class PargvCommand {
     _extension: string;
     _spawnOptions: SpawnOptions;
     _spawnAction: SpawnActionHandler;
-    _spreadCommands: boolean;
-    _extendCommands: boolean;
+    _spreadArguments: boolean;
+    _extendArguments: boolean;
     _extendAliases: boolean;
     _pargv: Pargv;
     constructor(token: string, describe?: string, pargv?: Pargv);
@@ -80,34 +80,26 @@ export declare class PargvCommand {
      */
     private readonly error;
     /**
-     * Min
-     * : Gets methods for adding min commands or options.
-     */
-    readonly min: {
-        commands: (count: number) => this;
-        options: (count: number) => this;
-    };
-    /**
-      * Max
-      * : Gets methods for adding max commands or options.
-      */
-    readonly max: {
-        commands: (count: number) => this;
-        options: (count: number) => this;
-    };
-    /**
      * If
      * : Alias for when.
      */
     readonly if: {
         (config: IMap<IPargvWhenConfig>): PargvCommand;
-        (key: string, converse?: string): PargvCommand;
+        (key: string, demand?: string): PargvCommand;
         (key: string, demand?: string, converse?: boolean): PargvCommand;
         (key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): PargvCommand;
     };
+    readonly epilogue: (val: string) => this;
     /**
-      * Sub Command
-      * Adds sub command to command. If token is not wrapped with [arg] or <arg> it will be wrapped with [arg].
+     * Usage
+     * Usage is generated automatically, this method allows override of the internal generated usage.
+     *
+     * @param val the value to display for command usage.
+     */
+    usage(val: string): this;
+    /**
+      * Argument
+      * Adds sub command argument to command. Wrapped with [arg] if [] or <> not detected.
       *
       * Supported to type strings: string, date, array,
       * number, integer, float, json, regexp, boolean
@@ -117,7 +109,7 @@ export declare class PargvCommand {
       * @param def an optional default value.
       * @param type a string type, RegExp to match or Coerce method.
       */
-    subcommand(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand;
+    arg(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand;
     /**
       * Option
       * Adds option to command.
@@ -133,14 +125,14 @@ export declare class PargvCommand {
     option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand;
     /**
      * Alias
-     * Maps alias keys to primary flag/command key.
+     * Maps alias keys to option/argument key.
      *
      * @param config object map containing aliases.
      */
     alias(config: IMap<string[]>): PargvCommand;
     /**
      * Alias
-     * Maps alias keys to primary flag/command key.
+     * Maps alias keys to option/argument key.
      *
      * @param key the key to map alias keys to.
      * @param alias keys to map as aliases.
@@ -149,14 +141,14 @@ export declare class PargvCommand {
     alias(key: string | IMap<string[]>, ...alias: string[]): PargvCommand;
     /**
      * Describe
-     * Adds description for an option.
+     * Adds description for an option/argument.
      *
      * @param config object containing describes by property.
      */
     describe(config: IMap<string>): PargvCommand;
     /**
      * Describe
-     * Adds description for an option.
+     * Adds description for an option/argument.
      *
      * @param key the option key to add description to.
      * @param describe the associated description.
@@ -165,7 +157,7 @@ export declare class PargvCommand {
     describe(key: string | IMap<string>, describe?: string): PargvCommand;
     /**
      * Coerce
-     * Coerce or transform the defined option when matched.
+     * Coerce or transform the defined option/argument when matched.
      *
      * @param config object containing coerce configurations.
      */
@@ -181,7 +173,7 @@ export declare class PargvCommand {
     coerce(key: string | IMap<IPargvCoerceConfig>, type?: string | RegExp | CoerceHandler, def?: any): PargvCommand;
     /**
      * Demand
-     * The commands or flag/option keys to demand.
+     * The commands or option/argument keys to demand.
      *
      * @param key the key to demand.
      * @param keys additional keys to demand.
@@ -199,9 +191,9 @@ export declare class PargvCommand {
      * When a specified key demand dependent key.
      *
      * @param key require this key.
-     * @param converse when true the coverse when is also created.
+     * @param demand this key is present.
      */
-    when(key: string, converse?: string): PargvCommand;
+    when(key: string, demand?: string): PargvCommand;
     /**
      * When
      * When a specified key demand dependent key.
@@ -214,20 +206,48 @@ export declare class PargvCommand {
     when(key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): PargvCommand;
     /**
      * Default
-     * Sets a default value for a command or option.
+     * Sets a default value for a sub command arg or option.
      *
      * @param config an object containing configs for property defaults.
      */
     default(config: IMap<any>): PargvCommand;
     /**
      * Default
-     * Sets a default value for a command or option.
+     * Sets a default value for sub command arg or option.
      *
      * @param key the key to set default value for.
      * @param val the value to set for the provided key.
      */
     default(key: string, val: any): PargvCommand;
     default(key: string | IMap<any>, val?: any): PargvCommand;
+    /**
+     * Max Commands
+     * Specifies the maxium commands allowed.
+     *
+     * @param count the number of command arguments allowed.
+     */
+    maxArguments(count: number): this;
+    /**
+     * Min Commands
+     * Specifies the minimum commands required.
+     *
+     * @param count the number of command arguments required.
+     */
+    minArguments(count: number): this;
+    /**
+     * Max Options
+     * Specifies the maxium options allowed.
+     *
+     * @param count the number of options allowed.
+     */
+    maxOptions(count: number): this;
+    /**
+     * Min Options
+     * Specifies the minimum options required.
+     *
+     * @param count the number of options required.
+     */
+    minOptions(count: number): this;
     /**
      * Completion At
      * : Injects custom completion value for specified key.
@@ -273,14 +293,14 @@ export declare class PargvCommand {
      *
      * @param spread when true spreads command args in callback action.
      */
-    spreadCommands(spread?: boolean): this;
+    spreadArguments(spread?: boolean): this;
     /**
      * Extend Commands
      * When true known commands are extended to result object { some_command: value }.
      *
      * @param extend when true commands are exteneded on Pargv result object.
      */
-    extendCommands(extend?: boolean): this;
+    extendArguments(extend?: boolean): this;
     /**
      * Extend Aliases
      * When true option aliases are extended on result object --option, -o results in { option: value, o: value }.
@@ -331,12 +351,12 @@ export declare class PargvCommand {
      * Iterates arguments mapping to known options and commands
      * finding required, anonymous and missing args.
      *
-     * @param args the args to get stats for.
+     * @param arr the args to get stats for.
      * @param skip when true deamnds and whens are not built.
      */
-    stats(args: any[], skip?: boolean): IPargvStats;
+    stats(arr: any[], skip?: boolean): IPargvStats;
     /**
-     * Has Command
+     * Is Command
      * Checks if a command exists by index or name.
      *
      * @param key the command string or index.
@@ -369,6 +389,14 @@ export declare class PargvCommand {
      * @param describe a description describing the command.
      */
     command(command: string, describe?: string): PargvCommand;
+    /**
+     * On Help
+     * Method for adding custom help handler, disabling.
+     * If custom handler return compiled help to be displayed or false to handle manually.
+     *
+     * @param fn boolean to enable/disable, or function for custom help.
+     */
+    onHelp(fn: boolean | HelpHandler): this;
     /**
      * On Error
      * Add custom on error handler.
@@ -421,4 +449,38 @@ export declare class PargvCommand {
      * @param argv optional arguments otherwise defaults to process.argv.
      */
     readonly listen: any;
+    /**
+     * Min
+     * : Gets methods for adding min commands or options.
+     */
+    readonly min: {
+        commands: (count: number) => this;
+        options: (count: number) => this;
+    };
+    /**
+      * Max
+      * : Gets methods for adding max commands or options.
+      */
+    readonly max: {
+        commands: (count: number) => this;
+        options: (count: number) => this;
+    };
+    /**
+     * @deprecated use .spreadArguments() instead.
+     *
+     * Spread Commands
+     * When true found commands are spread in .action(cmd1, cmd2, ...).
+     *
+     * @param spread when true spreads command args in callback action.
+     */
+    spreadCommands(spread?: boolean): this;
+    /**
+     * @deprecated use .extendArguments() instead.
+     *
+     * Extend Commands
+     * When true known commands are extended to result object { some_command: value }.
+     *
+     * @param extend when true commands are exteneded on Pargv result object.
+     */
+    extendCommands(extend?: boolean): this;
 }

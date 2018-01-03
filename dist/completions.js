@@ -169,13 +169,13 @@ function completions(pargv, colurs) {
         var completions = [];
         if (pargv._env.EXEC === argv[0])
             argv.shift(); // remove first arg which is app/exec name.
-        var tmpCmd = pargv.get.command(utils.first(argv)); // is first is known command.
+        var tmpCmd = pargv.getCommand(utils.first(argv)); // is first is known command.
         if (tmpCmd) {
             cmds = {}; // set the commands to just the one known command.
             cmds[tmpCmd._name] = tmpCmd;
             var sliced_1 = argv.slice(1); // remove command name.
             var curCmdIdx_1 = 0;
-            var lastCmdIdx_1 = tmpCmd._commands.length - 1; // last index for commands.
+            var lastCmdIdx_1 = tmpCmd._arguments.length - 1; // last index for commands.
             sliced_1.forEach(function (el, i) {
                 if (!constants_1.FLAG_EXP.test(el) && i <= lastCmdIdx_1) {
                     var prev_1 = sliced_1[i - 1] || null;

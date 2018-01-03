@@ -1,12 +1,9 @@
 /// <reference types="node" />
 import { ChildProcess } from 'child_process';
 import { PargvCommand } from './command';
-<<<<<<< HEAD
-import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IFigletOptions, IPargvLayout, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, IPargvCoerceConfig, IPargvWhenConfig, ActionHandler } from './interfaces';
-=======
 import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IPargvLayout, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, IPargvCoerceConfig, IPargvWhenConfig, ActionHandler } from './interfaces';
->>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
-export declare class Pargv {
+import { EventEmitter } from 'events';
+export declare class Pargv extends EventEmitter {
     private _helpHandler;
     private _errorHandler;
     private _logHandler;
@@ -14,24 +11,10 @@ export declare class Pargv {
     private _completions;
     private _completionsCommand;
     private _completionsReply;
-<<<<<<< HEAD
-    private _name;
-    private _command;
-    private _nameFont;
-    private _nameStyles;
-    private _version;
-    private _license;
-    private _describe;
-    private _base;
-    private _epilog;
-    _env: IPargvEnv;
-    _colurs: IColurs;
-=======
     private _base;
     private _meta;
     private _command;
     _env: IPargvEnv;
->>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
     _localize: LocalizeInit;
     _commands: IMap<PargvCommand>;
     _helpCommand: string;
@@ -46,9 +29,12 @@ export declare class Pargv {
     private init(options?);
     /**
      * Compatibility
-     * : Maps methods/props for legacy compatiblity.
+     * Ensures compatibility with deprecated properties.
+     *
+     * @param key the key or object to map.
+     * @param warn when true deprecation message is logged.
      */
-    private compatibility();
+    private compatibility(key, warn?);
     /**
      * Logger
      * Formats messages for logging.
@@ -100,51 +86,6 @@ export declare class Pargv {
      */
     private toNormalized(...args);
     /**
-     * @deprecated use pargv.command()
-     *
-     * Default Command
-     * Exposes default command for parsing anonymous arguments.
-     *
-     * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
-     */
-    readonly $: PargvCommand;
-    /**
-     * Env
-     * Returns environment variables.
-     */
-    readonly env: IPargvEnv;
-    /**
-     * Gets help, completion script, completions, options...
-     */
-    readonly get: {
-        help: (command?: string | PargvCommand) => any;
-        completion: (path?: string, template?: string) => string;
-        completions: (args: any[], fn: Function) => void;
-        command: (key: string) => PargvCommand;
-        env: () => IPargvEnv;
-        option: (key: string) => any;
-    };
-    /**
-     * Methods for setting values.
-     */
-    readonly set: {
-        option: (key: string | IPargvOptions, val?: any) => this;
-    };
-    /**
-     * Shows help, completion script or env.
-     */
-    readonly show: {
-        help: (command?: string | PargvCommand) => void;
-        completion: (path?: string, template?: string) => void;
-        env: () => this;
-    };
-    /**
-     * Removes elements and objects.
-     */
-    readonly remove: {
-        command: (key: string) => this;
-    };
-    /**
      * Listen
      * : Alias for exec.
      */
@@ -160,45 +101,115 @@ export declare class Pargv {
      */
     readonly epilogue: (val: string) => this;
     /**
-     * Meta
-     * Accepts object containing metadata information for program.
-     * Simply a way to enter name, description, version etc by object
-     * rather than chaining each value.
-     *
-     * @param data the metadata object.
-     */
-    meta(data: IPargvMetadata): void;
+      * Option
+      * : Gets an option value by the specified key.
+      *
+      * @param key the option key to get.
+      */
+    getOption(key: string): any;
     /**
-     * App
-     * Just adds a string to use as title of app, used in help.
+     * Option
+     * : Sets an option or group of options.
+     *
+     * @param key the key or PargvOptions object to be set.
+     * @param val the value for the provided key.
+     */
+    setOption(key: string | IPargvOptions, val?: any): this;
+    /**
+     * Help
+     * : Gets help text.
+     *
+     * @param command optional command to show help for.
+     */
+    getHelp(command?: string | PargvCommand): any;
+    /**
+     * Help
+     * Shows help in terminal.
+     *
+     * @param command optional command to show help for.
+     */
+    showHelp(command?: string | PargvCommand): this;
+    /**
+      * Get Completion
+      * : Gets the completion script.
+      *
+      * @param path the path/name of executable.
+      * @param template the template string.
+      */
+    getCompletion(path?: string, template?: string): string;
+    /**
+     * Completion
+     * Shows the completion script in terminal.
+     *
+     * @param path the path/name of executable.
+     * @param template the template string.
+     */
+    showCompletion(path?: string, template?: string): this;
+    /**
+     * Command
+     * : Finds a command by name.
+     *
+     * @param key the name of the command to find.
+     */
+    getCommand(key: string): PargvCommand;
+    /**
+     * Remove
+     * Removes a command from the collection.
+     *
+     * @param key the command key/name to be removed.
+     */
+    removeCommand(key: string): this;
+    /**
+     * Meta
+     * Enables adding metadata to your header.
+     *
+     * @example
+     * .meta('version', '1.1.0')
+     *
+     * @param meta the metadata object.
+     */
+    meta(meta: IPargvMetadata): Pargv;
+    /**
+      * Meta
+      * Enables adding metadata to your header.
+      *
+      * @example
+      * .meta('version', '1.1.0')
+      *
+      * @param key the key to be added.
+      * @param val the value for key, if undefined will try to lookup from package.json.
+      */
+    meta(key: string, val?: any): Pargv;
+    /**
+     * Name
+     * Adds name of CLI to help header.
      *
      * @param val the value to use as app name.
      * @param font a Figlet font. (DEPRECATED)
      * @param styles an ansi color/style or array of styles. (DEPRECATED)
      */
-    name(val: string, styles?: AnsiStyles | AnsiStyles[], font?: string): this;
+    name(val?: string, styles?: AnsiStyles | AnsiStyles[], font?: string): Pargv;
     /**
      * Version
-     * Just adds a string to use as the version for your program, used in help.
-     * If no value is provided package.json version is used.
+     * Adds version to help header.
      *
      * @param val the value to use as version name.
      */
-    version(val?: string): this;
-    /**
-     * Description
-     * The program's description or purpose.
-     *
-     * @param val the description string.
-     */
-    description(val: string): this;
+    version(val?: string): Pargv;
     /**
      * License
-     * Stores license type for showing in help.
+     * Adds license to help header.
      *
      * @param val the license type.
      */
-    license(val: string): this;
+    license(val?: string): Pargv;
+    /**
+     * Description
+     * Adds description to help header.
+     *
+     * @param val the description string.
+     */
+    description(val?: string): Pargv;
     /**
      * Epilog
      * Displays trailing message.
@@ -267,44 +278,41 @@ export declare class Pargv {
     completionResult(line: string | string[] | IPargvParsedResult, fn?: CompletionHandler): string[];
     /**
       * Reset
-      * : Deletes all commands and resets the default command and handlers.
-      * If you wish to reset all meta data like name, describe, license etc
-      * set "all" to true.
+      * Clears all defined commands as well as custom handlers and metadata.
       *
-      * @param options Pargv options to reset with.
       * @param all when true resets metadata, base, help handler if set.
       */
-    reset(options?: IPargvOptions, all?: boolean): this;
+    reset(all?: boolean): Pargv;
+    /**
+     * Reset
+     * Clears all commands and optionally resets custom handlers and metadata.
+     *
+     * @param options Pargv options to reset with.
+     * @param all when true resets metadata, base, help handler if set.
+     */
+    reset(options?: IPargvOptions, all?: boolean): Pargv;
     /**
      * On Help
-<<<<<<< HEAD
-     * Method for adding custom help handler, disabling or mapping to a command.
-     *
-     * @param fn boolean to enable/disable, a function or command name for custom handling.
-     */
-    onHelp(fn: string | boolean | HelpHandler): this;
-=======
      * Method for adding custom help handler, disabling.
      * If custom handler return compiled help to be displayed or false to handle manually.
      *
      * @param fn boolean to enable/disable, or function for custom help.
      */
-    onHelp(fn: boolean | HelpHandler): this;
->>>>>>> c0c44bcdeaad657ddd6745d610a513969bc61444
+    onHelp(fn?: boolean | HelpHandler): this;
     /**
      * On Error
      * Add custom on error handler.
      *
      * @param fn the error handler function.
      */
-    onError(fn: ErrorHandler): this;
+    onError(fn?: ErrorHandler): this;
     /**
      * On Log
      * Add custom on log handler.
      *
      * @param fn the log handler function.
      */
-    onLog(fn: LogHandler): this;
+    onLog(fn?: LogHandler): this;
     /**
      * Error
      * : Handles error messages.
@@ -329,14 +337,6 @@ export declare class Pargv {
      */
     stats(command: string, ...args: any[]): IPargvStats;
     /**
-     * Logo
-     * Builds or Displays an ASCII logo using Figlet.
-     *
-     * @param text the text to be displayed.
-     * @param font the figlet font to be used.
-     * @param styles the optional styles to be used.
-     */
-    /**
       * Layout
       * Creates a CLI layout much like creating divs in the terminal.
       * @see https://www.npmjs.com/package/cliui
@@ -346,8 +346,15 @@ export declare class Pargv {
       */
     layout(width?: number, wrap?: boolean): IPargvLayout;
     /**
-      * Sub Command
-      * Adds sub command to default command. If argument is not wrapped with [arg] or <arg> it will be wrapped with [arg].
+     * Usage
+     * Usage is generated automatically, this method allows override of the internal generated usage for default command.
+     *
+     * @param val the value to display for command usage.
+     */
+    usage(val: string): this;
+    /**
+      * Argument
+      * Adds sub command argument to command. Wrapped with [arg] if [] or <> not detected.
       *
       * Supported to type strings: string, date, array,
       * number, integer, float, json, regexp, boolean
@@ -357,7 +364,7 @@ export declare class Pargv {
       * @param def an optional default value.
       * @param type a string type, RegExp to match or Coerce method.
       */
-    subcommand(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): Pargv;
+    arg(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): Pargv;
     /**
       * Option
       * Adds option to default command.
@@ -373,14 +380,14 @@ export declare class Pargv {
     option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): Pargv;
     /**
      * Alias
-     * Maps alias option keys to default command.
+     * Maps alias configs to default command.
      *
      * @param config object map containing aliases.
      */
     alias(config: IMap<string[]>): Pargv;
     /**
      * Alias
-     * Maps alias option key to default command.
+     * Maps alias to default command.
      *
      * @param key the key to map alias keys to.
      * @param alias keys to map as aliases.
@@ -388,14 +395,14 @@ export declare class Pargv {
     alias(key: string, ...alias: string[]): Pargv;
     /**
      * Describe
-     * Adds description for default command, subcommand or option.
+     * Adds description for default command sub command argument or option.
      *
      * @param config object containing describes by property.
      */
     describe(config: IMap<string>): Pargv;
     /**
      * Describe
-     * Adds description for default command, command or option.
+     * Adds description for default command sub command argument or option.
      *
      * @param key the option key to add description to.
      * @param describe the associated description.
@@ -403,14 +410,14 @@ export declare class Pargv {
     describe(key: string, describe?: string): Pargv;
     /**
      * Coerce
-     * Coerce or transform each subcommand or option in config object for default command.
+     * Coerce or transform each sub command argument or option in config object for default command.
      *
      * @param config object containing coerce configurations.
      */
     coerce(config: IMap<IPargvCoerceConfig>): Pargv;
     /**
      * Demand
-     * The subcommand or option keys to be demanded for default command.
+     * The sub command argument or option keys to be demanded for default command.
      *
      * @param key the key to demand.
      */
@@ -441,23 +448,51 @@ export declare class Pargv {
     when(key: string, demand?: string, converse?: boolean): Pargv;
     /**
      * Default
-     * Sets a default value for specified subcommand or option in default command.
+     * Sets a default value for specified sub command argument or option in default command.
      *
      * @param config an object containing configs for property defaults.
      */
     default(config: IMap<any>): Pargv;
     /**
      * Default
-     * Sets a default value for specified subcommand or option in default command.
+     * Sets a default value for specified sub command argument or option in default command.
      *
      * @param key the key to set default value for.
      * @param val the value to set for the provided key.
      */
     default(key: string, val: any): Pargv;
     /**
+     * Max Commands
+     * Specifies the maxium commands allowed for default command.
+     *
+     * @param count the number of command arguments allowed.
+     */
+    maxArguments(count: number): this;
+    /**
+     * Min Commands
+     * Specifies the minimum commands required for default command.
+     *
+     * @param count the number of command arguments required.
+     */
+    minArguments(count: number): this;
+    /**
+     * Max Options
+     * Specifies the maxium options allowed for default command.
+     *
+     * @param count the number of options allowed.
+     */
+    maxOptions(count: number): this;
+    /**
+     * Min Options
+     * Specifies the minimum options required for default command.
+     *
+     * @param count the number of options required.
+     */
+    minOptions(count: number): this;
+    /**
      * Completion At
      * : Injects custom completion value for specified key.
-     * Key can be a known arg, option or * for anonymous in default command.
+     * Key can be a known sub command argument option or * for anonymous.
      *
      * @param key the key to inject completion values for.
      * @param vals the completion values for the provided key.
@@ -472,14 +507,14 @@ export declare class Pargv {
     action(fn: ActionHandler): Pargv;
     /**
      * Spread Commands
-     * When true found commands are spread in .action(cmd1, cmd2, ...).
+     * When true found sub command arguments are spread in .action(cmd1, cmd2, ...).
      *
      * @param spread when true spreads command args in callback action.
      */
     spreadCommands(spread?: boolean): Pargv;
     /**
      * Extend Commands
-     * When true known commands are extended to result object { some_command: value }.
+     * When true known sub command arguments are extended to result object { some_command: value }.
      *
      * @param extend when true commands are exteneded on Pargv result object.
      */
@@ -506,17 +541,46 @@ export declare class Pargv {
      * @param enabled true or false to toggle help.
      */
     help(enabled?: boolean): Pargv;
-    readonly min: {
-        commands: (count: number) => this;
-        options: (count: number) => this;
-    };
-    readonly max: {
-        commands: (count: number) => this;
-        options: (count: number) => this;
-    };
     readonly if: {
         (config: IMap<IPargvWhenConfig>): Pargv;
         (key: string, converse?: string): Pargv;
         (key: string, demand?: string, converse?: boolean): Pargv;
+    };
+    /**
+     * @deprecated use pargv.command()
+     *
+     * Default Command
+     * Exposes default command for parsing anonymous arguments.
+     *
+     * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
+     */
+    readonly $: PargvCommand;
+    /**
+     * Gets help, completion script, completions, options...
+     */
+    readonly get: {
+        help: (command?: string | PargvCommand) => any;
+        completion: (path?: string, template?: string) => string;
+        command: (key: string) => PargvCommand;
+        option: (key: string) => any;
+    };
+    /**
+     * Methods for setting values.
+     */
+    readonly set: {
+        option: (key: string | IPargvOptions, val?: any) => this;
+    };
+    /**
+     * Shows help, completion script or env.
+     */
+    readonly show: {
+        help: (command?: string | PargvCommand) => this;
+        completion: (path?: string, template?: string) => this;
+    };
+    /**
+     * Removes elements and objects.
+     */
+    readonly remove: {
+        command: (key: string) => this;
     };
 }

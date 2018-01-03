@@ -59,7 +59,7 @@ export declare function stripToken(val: string, exp?: RegExp): string;
  * @param val the single value or array of values.
  * @param args rest param of args.
  */
-export declare function mergeArgs(val: any | any[], ...args: any[]): {}[];
+export declare function mergeArgs(val: any | any[], ...args: any[]): any[];
 /**
  * Split To List
  * : Takes a list 'small, medium, large' and
@@ -72,7 +72,12 @@ export declare function splitToList(val: string): RegExp;
 /**
  * To Option Tokens
  * : Formats option string to support Pargv syntax.
+ *
  * @example
+ *
+ * coverts: 'command'
+ * to: '[command]'
+ *
  * converts: '-n, --name <value>'
  * to: '-n.--name <value>'
  *

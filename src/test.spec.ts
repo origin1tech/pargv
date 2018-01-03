@@ -6,7 +6,7 @@ import * as MuteStream from 'mute-stream';
 const expect = chai.expect;
 const should = chai.should;
 const assert = chai.assert;
-const colurs = Colurs.get();
+const colurs = Colurs.init();
 
 
 const ms = new MuteStream();
@@ -35,10 +35,10 @@ describe('Pargv', () => {
   });
 
   it('should split args from space separated string.', () => {
-    pargv.set.option('splitArgs', ' ');
+    pargv.setOption('splitArgs', ' ');
     const parsed = pargv.parse('mycommand arg1 arg2');
-    assert.deepEqual(parsed.$commands, ['mycommand', 'arg1', 'arg2']);
-    pargv.set.option('splitArgs', null);
+    assert.deepEqual(parsed.$arguments, ['mycommand', 'arg1', 'arg2']);
+    pargv.setOption('splitArgs', null);
   });
 
   it('should parse args for command "generate <template> [name]".', () => {
@@ -58,6 +58,7 @@ describe('Pargv', () => {
       '$external': null,
       '$variadics': [],
       '$commands': ['component.tpl', 'aboutus.html'],
+      '$arguments': ['component.tpl', 'aboutus.html'],
       '$source': ['generate', 'component.tpl'],
       force: true
     };
@@ -69,10 +70,10 @@ describe('Pargv', () => {
 
   });
 
-  it('should reset Pargv and add extendCommands option.', () => {
-    pargv.reset({ extendCommands: true });
+  it('should reset Pargv and add extendArguments option.', () => {
+    pargv.reset({ extendArguments: true });
     const len = Object.keys(pargv._commands).length; // should be zero now.
-    assert.isTrue(pargv.options.extendCommands);
+    assert.isTrue(pargv.options.extendArguments);
     assert.equal(len, 1); // should contain only the default command.
   });
 
@@ -139,13 +140,13 @@ describe('Pargv', () => {
 
     const args = procArgs.concat(['generate', 'component.tpl', 'about.html', 'other.jsx']);
 
-    pargv.set.option('spreadCommands', false);
+    pargv.setOption('spreadArguments', false);
 
     pargv.command('generate <template> [name]')
       .describe('generate', 'Generates a new template with optional name.')
       .action((parsed, cmd) => {
         assert.instanceOf(cmd, PargvCommand);
-        pargv.set.option('spreadCommands', true);
+        pargv.setOption('spreadArguments', true);
         done();
       }).exec(args);
 
@@ -155,7 +156,7 @@ describe('Pargv', () => {
 
     const args = procArgs.concat(['download', 'http://domain.com/file.zip']);
 
-    pargv.set.option('extendCommands', false);
+    pargv.setOption('extendArguments', false);
 
     pargv.command('download <url> [others...]')
       .default('others', ['other1', 'other2'])
@@ -199,7 +200,7 @@ describe('Pargv', () => {
         return helpTxt;
       });
 
-    assert.equal(pargv.get.help(), helpTxt);
+    assert.equal(pargv.getHelp(), helpTxt);
 
   });
 
@@ -254,19 +255,19 @@ describe('Pargv', () => {
     it('should get auto generated help text.', () => {
       pargv.reset();
       pargv.command('help');
-      let resultTxt = colurs.strip(pargv.get.help());
+      let resultTxt = colurs.strip(pargv.getHelp());
       expect(resultTxt.length).gt(0);
       assert.match(resultTxt, /usage: help/gi);
-      pargv.remove.command('help');
+      pargv.removeCommand('help');
     });
 
   it('should fallback to catchall command.', (done) => {
     pargv.reset()
-      .set.option('fallbackHelp', (command, commands) => {
+      .onHelp((command, commands) => {
         assert.isUndefined(command);
         assert.deepProperty(commands.__default__, '_name');
-        pargv.set.option('fallbackHelp', true);
         done();
+        pargv.onHelp(true);
       });
     pargv.exec(['uknown']);
   });

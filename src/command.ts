@@ -1,18 +1,21 @@
 
 import { Pargv } from './';
 import { SpawnOptions } from 'child_process';
-import { IMap, ActionHandler, CoerceHandler, IPargvCommandOption, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult, LogHandler, SpawnActionHandler } from './interfaces';
+import { Colurs, IColurs } from 'colurs';
+import { IMap, ActionHandler, CoerceHandler, IPargvCommandOption, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult, LogHandler, SpawnActionHandler, HelpHandler } from './interfaces';
 import { TOKEN_PREFIX_EXP, SPLIT_CHARS, FLAG_EXP, COMMAND_VAL_EXP, LIST_EXP, KEYVAL_EXP, SPLIT_PAIRS_EXP, DOT_EXP, SPLIT_KEYVAL_EXP, JSON_EXP, REGEX_EXP, DEFAULT_COMMAND } from './constants';
 import { sep, extname, basename, join } from 'path';
 import * as utils from './utils';
 import { isValue } from './utils';
+
+let colurs: IColurs;
 
 export class PargvCommand {
 
   _name: string;
   _usage: string;
   _describe: string;
-  _commands: string[] = [];
+  _arguments: string[] = [];
   _options: string[] = [];
   _bools: string[] = [];
   _variadic: string;
@@ -25,9 +28,9 @@ export class PargvCommand {
   _whens: IMap<string> = {};
   _examples: [string, string][] = [];
   _action: ActionHandler;
-  _maxCommands: number;
+  _maxArguments: number;
   _maxOptions: number;
-  _minCommands: number;
+  _minArguments: number;
   _minOptions: number;
   _showHelp: boolean;
   _completions: IMap<any[]> = {};
@@ -38,8 +41,8 @@ export class PargvCommand {
   // Overrides.
   _spawnOptions: SpawnOptions;
   _spawnAction: SpawnActionHandler;
-  _spreadCommands: boolean;
-  _extendCommands: boolean;
+  _spreadArguments: boolean;
+  _extendArguments: boolean;
   _extendAliases: boolean;
 
   _pargv: Pargv;
@@ -48,11 +51,12 @@ export class PargvCommand {
     utils.setEnumerable(this, '_usages, _showHelp, _external, _cwd, _extension, _spawnOptions, _spawnAction, _spreadCommands, _extendCommands, _extendAliases, _pargv', false);
     this._describe = describe;
     this._pargv = pargv;
+    colurs = new Colurs({ enabled: pargv.options.colorize });
     this.parseCommand(token);
     this.toggleHelp(pargv.options.defaultHelp);
     // Set defaults for overrides.
-    this._spreadCommands = pargv.options.spreadCommands;
-    this._extendCommands = pargv.options.extendCommands;
+    this._spreadArguments = pargv.options.spreadArguments;
+    this._extendArguments = pargv.options.extendArguments;
     this._extendAliases = pargv.options.extendAliases;
   }
 
@@ -73,10 +77,11 @@ export class PargvCommand {
     if (isVariadic)
       token = token.replace('...', '');
 
-    let tokens = token.split(':');                // <age:number> to ['<age', 'number>'];
+    let tokens = token.split(':');                // <age:number> to ['<age', 'number'];
     let key = tokens[0];                          // first element is command/option key.
     let type = tokens[1];                         // optional type.
     let def = tokens[2];                          // optional default value.
+    let desc = tokens[3];                         // optional description
 
     if (!TOKEN_PREFIX_EXP.test(key)) {
       this.error(
@@ -120,12 +125,16 @@ export class PargvCommand {
       tmpUsage = isRequired ?                            // ensure closing char for token.
         token.replace(/>$/, '') + '>' :
         token.replace(/\]$/, '') + ']';
-      if (isVariadic)
-        tmpUsage = tmpUsage.charAt(0) + '...' + tmpUsage.slice(1);
+      if (isVariadic) {
+        const tmpUsageLast = tmpUsage.slice(tmpUsage.length - 1);
+        tmpUsage = tmpUsage.slice(0, tmpUsage.length - 1) + '...' + tmpUsageLast;
+      }
     }
 
-    if (def) // try to parse default val.
-      def = this.castToType(key, 'auto', def);
+    if (def) {  // try to parse default val.
+      const defType = type ? type : 'auto';
+      def = this.castToType(key, defType, def);
+    }
 
     let usage: string[] = [[tmpUsage].concat(aliases).join(', ')];
 
@@ -139,7 +148,8 @@ export class PargvCommand {
         type: type,
         default: def,
         required: isRequired,
-        isVariadic: isVariadic
+        isVariadic: isVariadic,
+        describe: desc
       };
 
     next = this.parseToken(next, null);
@@ -154,7 +164,8 @@ export class PargvCommand {
       as: next.key,
       required: next.required,
       default: next.default,
-      isVariadic: next.isRange
+      isVariadic: next.isRange,
+      describe: desc
     };
 
   }
@@ -204,14 +215,11 @@ export class PargvCommand {
     if (variadics.length > 1)
       this.error(
         this._pargv
-          ._localize('found %s variadic commands but only one is permitted.')
+          ._localize('found %s variadic arguments but only one is permitted.')
           .args(variadics.length)
           .styles(this._pargv.options.colors.accent)
           .done()
       );
-
-    // if (variadics.length)                            // if variadic cmd must allow anon.
-    //   this._pargv.options.allowAnonymous = true;
 
     // Iterate the tokens.
     split.forEach((el, i) => {
@@ -229,7 +237,7 @@ export class PargvCommand {
           if (parsed.isVariadic)
             this.error(
               this._pargv
-                ._localize('flag %s contains ...variadic, only commands can contain variadic values.')
+                ._localize('flag %s contains variadic, only arguments can contain variadic values.')
                 .args(parsed.as)
                 .styles(this._pargv.options.colors.accent)
                 .done()
@@ -248,11 +256,13 @@ export class PargvCommand {
     });
 
     const cmdStr =
-      this._pargv._localize('command').done();
+      name === DEFAULT_COMMAND ?
+        this._pargv._localize('command').done() :
+        this._pargv._localize('argument').done()
 
     this._name = name;                                 // Save the commmand name.
-    this._describe = this._describe ||                 // Ensure command description.
-      `${name} ${cmdStr}.`;
+    // this._describe = this._describe ||              // Ensure command description.
+    //   `${name} ${cmdStr}.`;
     this._usage = usage.join(' ');                     // create usage string.
     this.alias(name, ...aliases);                      // Map aliases to command name.
     this.alias(name, name);
@@ -272,10 +282,14 @@ export class PargvCommand {
     let describe;
 
     const reqCmd =
-      this._pargv._localize('Required command.').done();
+      this._name === DEFAULT_COMMAND ?
+        this._pargv._localize('Required command.').done() :
+        this._pargv._localize('Required argument.').done()
 
     const optCmd =
-      this._pargv._localize('Optional command.').done();
+      this._name === DEFAULT_COMMAND ?
+        this._pargv._localize('Optional command.').done() :
+        this._pargv._localize('Optional argument.').done()
 
     const reqFlag =
       this._pargv._localize('Required flag.').done();
@@ -291,7 +305,7 @@ export class PargvCommand {
     }
 
     else {
-      this._commands.push(option.key);
+      this._arguments.push(option.key);
       describe = option.required ? reqCmd : optCmd;
     }
 
@@ -300,7 +314,7 @@ export class PargvCommand {
     this.alias(option.key, ...option.aliases);              // Add aliases to map.
     if (!utils.isUndefined(option.index))                   // Index to Command map.
       this.alias(option.key, option.index + '');
-    if (option.required)                                   // set as required.
+    if (option.required)                                    // set as required.
       this.demand(option.key);
     if (option.default)
       this._defaults[option.key] = option.default;
@@ -358,7 +372,7 @@ export class PargvCommand {
     aliases.forEach(k => delete this._aliases[k]);
 
     if (!isFlag) {
-      this._commands = this._commands.filter(k => k !== key);
+      this._arguments = this._arguments.filter(k => k !== key);
     }
     else {
       this._bools = this._bools.filter(k => k !== key);
@@ -380,74 +394,6 @@ export class PargvCommand {
   // GETTERS //
 
   /**
-   * Min
-   * : Gets methods for adding min commands or options.
-   */
-  get min() {
-
-    return {
-
-      /**
-       * Min Commands
-       * Sets minimum command count.
-       *
-       * @param count the minimum number of commands.
-       */
-      commands: (count: number) => {
-        this._minCommands = count;
-        return this;
-      },
-
-      /**
-       * Min Options
-       * Sets minimum option count.
-       *
-       * @param count the minimum number of options.
-       */
-      options: (count: number) => {
-        this._minOptions = count;
-        return this;
-      }
-
-    };
-
-  }
-
-  /**
-    * Max
-    * : Gets methods for adding max commands or options.
-    */
-  get max() {
-
-    return {
-
-      /**
-       * Max Commands
-       * Sets maximum command count.
-       *
-       * @param count the maximum number of commands.
-       */
-      commands: (count: number) => {
-        this._maxCommands = count;
-        return this;
-      },
-
-      /**
-       * Max Options
-       * Sets maximum option count.
-       *
-       * @param count the maximum number of options.
-       */
-      options: (count: number) => {
-        this._maxOptions = count;
-        return this;
-      }
-
-    };
-
-  }
-
-  /**
    * If
    * : Alias for when.
    */
@@ -455,11 +401,26 @@ export class PargvCommand {
     return this.when;
   }
 
+  get epilogue() {
+    return this.epilog;
+  }
+
   // METHODS //
 
   /**
-    * Sub Command
-    * Adds sub command to command. If token is not wrapped with [arg] or <arg> it will be wrapped with [arg].
+   * Usage
+   * Usage is generated automatically, this method allows override of the internal generated usage.
+   *
+   * @param val the value to display for command usage.
+   */
+  usage(val: string) {
+    this._usage = val || this._usage;
+    return this;
+  }
+
+  /**
+    * Argument
+    * Adds sub command argument to command. Wrapped with [arg] if [] or <> not detected.
     *
     * Supported to type strings: string, date, array,
     * number, integer, float, json, regexp, boolean
@@ -469,8 +430,8 @@ export class PargvCommand {
     * @param def an optional default value.
     * @param type a string type, RegExp to match or Coerce method.
     */
-  subcommand(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler) {
-    if (!/^(\[|\<)/.test(token))
+  arg(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler) {
+    if (!/^(\[|<)/.test(token))
       token = `[${token}]`;
     return this.option(token, describe, def, type);
   }
@@ -488,8 +449,6 @@ export class PargvCommand {
     * @param type a string type, RegExp to match or Coerce method.
     */
   option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): PargvCommand {
-    if (!/^-/.test(token) && this._name === DEFAULT_COMMAND)
-      this.error('Command arg "%s" invalid, options should start with - or -- for Default command.', token);
     token = utils.toOptionToken(token);
     const tokens = utils.split(token.trim(), SPLIT_CHARS);
     tokens.forEach((el, i) => {
@@ -510,7 +469,7 @@ export class PargvCommand {
 
   /**
    * Alias
-   * Maps alias keys to primary flag/command key.
+   * Maps alias keys to option/argument key.
    *
    * @param config object map containing aliases.
    */
@@ -518,7 +477,7 @@ export class PargvCommand {
 
   /**
    * Alias
-   * Maps alias keys to primary flag/command key.
+   * Maps alias keys to option/argument key.
    *
    * @param key the key to map alias keys to.
    * @param alias keys to map as aliases.
@@ -556,7 +515,7 @@ export class PargvCommand {
 
   /**
    * Describe
-   * Adds description for an option.
+   * Adds description for an option/argument.
    *
    * @param config object containing describes by property.
    */
@@ -564,7 +523,7 @@ export class PargvCommand {
 
   /**
    * Describe
-   * Adds description for an option.
+   * Adds description for an option/argument.
    *
    * @param key the option key to add description to.
    * @param describe the associated description.
@@ -598,7 +557,7 @@ export class PargvCommand {
 
   /**
    * Coerce
-   * Coerce or transform the defined option when matched.
+   * Coerce or transform the defined option/argument when matched.
    *
    * @param config object containing coerce configurations.
    */
@@ -644,13 +603,14 @@ export class PargvCommand {
 
   /**
    * Demand
-   * The commands or flag/option keys to demand.
+   * The commands or option/argument keys to demand.
    *
    * @param key the key to demand.
    * @param keys additional keys to demand.
    */
   demand(...keys: string[]) {
     keys.forEach((k) => {
+      k = this.stripToAlias(k);
       if (!utils.contains(this._demands, this.aliasToKey(k)))
         this._demands.push(k);
     });
@@ -670,9 +630,9 @@ export class PargvCommand {
    * When a specified key demand dependent key.
    *
    * @param key require this key.
-   * @param converse when true the coverse when is also created.
+   * @param demand this key is present.
    */
-  when(key: string, converse?: string): PargvCommand;
+  when(key: string, demand?: string): PargvCommand;
 
   /**
    * When
@@ -718,7 +678,7 @@ export class PargvCommand {
 
   /**
    * Default
-   * Sets a default value for a command or option.
+   * Sets a default value for a sub command arg or option.
    *
    * @param config an object containing configs for property defaults.
    */
@@ -726,7 +686,7 @@ export class PargvCommand {
 
   /**
    * Default
-   * Sets a default value for a command or option.
+   * Sets a default value for sub command arg or option.
    *
    * @param key the key to set default value for.
    * @param val the value to set for the provided key.
@@ -758,6 +718,50 @@ export class PargvCommand {
   }
 
   /**
+   * Max Commands
+   * Specifies the maxium commands allowed.
+   *
+   * @param count the number of command arguments allowed.
+   */
+  maxArguments(count: number) {
+    this._maxArguments = count;
+    return this;
+  }
+
+  /**
+   * Min Commands
+   * Specifies the minimum commands required.
+   *
+   * @param count the number of command arguments required.
+   */
+  minArguments(count: number) {
+    this._minArguments = count;
+    return this;
+  }
+
+  /**
+   * Max Options
+   * Specifies the maxium options allowed.
+   *
+   * @param count the number of options allowed.
+   */
+  maxOptions(count: number) {
+    this._maxOptions = count;
+    return this;
+  }
+
+  /**
+   * Min Options
+   * Specifies the minimum options required.
+   *
+   * @param count the number of options required.
+   */
+  minOptions(count: number) {
+    this._minOptions = count;
+    return this;
+  }
+
+  /**
    * Completion At
    * : Injects custom completion value for specified key.
    * Key can be a know command, option or * for anonymous.
@@ -766,7 +770,7 @@ export class PargvCommand {
    * @param vals the completion values for the provided key.
    */
   completionFor(key: string, ...vals: any[]) {
-    key = key === '*' ? key : this.aliasToKey(key);
+    key = key === '*' ? key : this.stripToAlias(this.aliasToKey(key));
     if (utils.isArray(vals[0]))
       vals = vals[0];
     const colors = this._pargv.options.colors;
@@ -855,8 +859,8 @@ export class PargvCommand {
    *
    * @param spread when true spreads command args in callback action.
    */
-  spreadCommands(spread?: boolean) {
-    this._spreadCommands = spread;
+  spreadArguments(spread?: boolean) {
+    this._spreadArguments = spread;
     return this;
   }
 
@@ -866,8 +870,8 @@ export class PargvCommand {
    *
    * @param extend when true commands are exteneded on Pargv result object.
    */
-  extendCommands(extend?: boolean) {
-    this._extendCommands = extend;
+  extendArguments(extend?: boolean) {
+    this._extendArguments = extend;
     return this;
   }
 
@@ -1199,15 +1203,15 @@ export class PargvCommand {
    * Iterates arguments mapping to known options and commands
    * finding required, anonymous and missing args.
    *
-   * @param args the args to get stats for.
+   * @param arr the args to get stats for.
    * @param skip when true deamnds and whens are not built.
    */
-  stats(args: any[], skip?: boolean): IPargvStats {
+  stats(arr: any[], skip?: boolean): IPargvStats {
 
-    const lastIdx = this._commands.length - 1;
-    const clone = args.slice(0);
+    const lastIdx = this._arguments.length - 1;
+    const clone = arr.slice(0);
 
-    const commands = [];        // contains only commands.
+    const args = [];            // contains only arguments.
     const options = [];         // contains only options.
     const anonymous = [];       // contains only anonymous options.
     const mapCmds = [];         // contains command keys.
@@ -1230,7 +1234,7 @@ export class PargvCommand {
         }
       }
       else {
-        const idx = this._commands.indexOf(k);
+        const idx = this._arguments.indexOf(k);
         const cur = clone[idx];
         if (!utils.isValue(cur) || FLAG_EXP.test(clone[idx]))
           clone.splice(idx, 0, def);
@@ -1269,7 +1273,7 @@ export class PargvCommand {
       }
 
       else if (!isFlag && key) {                 // is a known command.
-        commands.push(el);
+        args.push(el);
         mapCmds.push(key);
         ctr++;
       }
@@ -1277,7 +1281,7 @@ export class PargvCommand {
     });
 
     let map = mapCmds.concat(mapOpts).concat(mapAnon);    // map by key to normalized.
-    let normalized = commands.concat(options).concat(anonymous);  // normalized args.
+    let normalized = args.concat(options).concat(anonymous);  // normalized args.
 
     const missing = [];
 
@@ -1286,7 +1290,7 @@ export class PargvCommand {
         const isFlag = FLAG_EXP.test(el);
         let def = this._defaults[el] || null;
         if (!isFlag) {
-          const idx = this._commands.indexOf(el);
+          const idx = this._arguments.indexOf(el);
           if (!utils.isValue(def))
             missing.push(el);
           map.splice(idx, 0, el);
@@ -1310,32 +1314,35 @@ export class PargvCommand {
 
     let whens: any = [];
 
-    if (!skip) // skipped when getting completions, not needed
+    if (!skip && map.length) // skipped when getting completions, not needed
       for (const k in this._whens) {                // iterate whens ensure demand exists.
         const demand = this._whens[k];
         if (!utils.contains(map, demand))
           whens.push([k, demand]);
       }
 
-    const commandsCount = normalized.filter(c => !FLAG_EXP.test(c)).length;
-    const optionsCount = normalized.length - commandsCount;
+    const argumentsCount = normalized.filter(c => !FLAG_EXP.test(c)).length;
+    const optionsCount = normalized.length - argumentsCount;
 
     return {
-      commands,
+      arguments: args,
       options,
       anonymous,
       missing,
       map,
       normalized,
       whens,
-      commandsCount,
-      optionsCount
+      argumentsCount,
+      optionsCount,
+      // Deprecated //
+      commandsCount: argumentsCount,
+      commands: args
     };
 
   }
 
   /**
-   * Has Command
+   * Is Command
    * Checks if a command exists by index or name.
    *
    * @param key the command string or index.
@@ -1407,6 +1414,19 @@ export class PargvCommand {
     const cmd = new PargvCommand(command, describe, this._pargv);
     this._pargv._commands[cmd._name] = cmd;
     return cmd;
+  }
+
+  /**
+   * On Help
+   * Method for adding custom help handler, disabling.
+   * If custom handler return compiled help to be displayed or false to handle manually.
+   *
+   * @param fn boolean to enable/disable, or function for custom help.
+   */
+  onHelp(fn: boolean | HelpHandler) {
+    this._pargv.onHelp(fn);
+    return this;
+
   }
 
   /**
@@ -1484,6 +1504,104 @@ export class PargvCommand {
    */
   get listen() {
     return this._pargv.exec.bind(this._pargv);
+  }
+
+  // DEPRECATED //
+
+  /**
+   * Min
+   * : Gets methods for adding min commands or options.
+   */
+  get min() {
+
+    return {
+
+      /**
+       * Min Commands
+       * Sets minimum command count.
+       *
+       * @param count the minimum number of commands.
+       */
+      commands: (count: number) => {
+        this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'yellow')} call ".minArguments()" instead of "min.commands()".`);
+        return this.minArguments(count);
+      },
+
+      /**
+       * Min Options
+       * Sets minimum option count.
+       *
+       * @param count the minimum number of options.
+       */
+      options: (count: number) => {
+        this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'yellow')} call ".minOptions()" instead of "min.options()".`);
+        return this.minOptions(count);
+      }
+
+    };
+
+  }
+
+  /**
+    * Max
+    * : Gets methods for adding max commands or options.
+    */
+  get max() {
+
+    return {
+
+      /**
+       * Max Commands
+       * Sets maximum command count.
+       *
+       * @param count the maximum number of commands.
+       */
+      commands: (count: number) => {
+        this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} call ".maxArguments()" instead of "max.commands()".`);
+        return this.maxArguments(count);
+      },
+
+      /**
+       * Max Options
+       * Sets maximum option count.
+       *
+       * @param count the maximum number of options.
+       */
+      options: (count: number) => {
+        this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} call ".maxOptions()" instead of "max.options()".`);
+        return this.maxOptions(count);
+      }
+
+    };
+
+  }
+
+  /**
+   * @deprecated use .spreadArguments() instead.
+   *
+   * Spread Commands
+   * When true found commands are spread in .action(cmd1, cmd2, ...).
+   *
+   * @param spread when true spreads command args in callback action.
+   */
+  spreadCommands(spread?: boolean) {
+    this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} call ".spreadArguments()" instead of ".spreadCommands()".`);
+    this._spreadArguments = spread;
+    return this;
+  }
+
+  /**
+   * @deprecated use .extendArguments() instead.
+   *
+   * Extend Commands
+   * When true known commands are extended to result object { some_command: value }.
+   *
+   * @param extend when true commands are exteneded on Pargv result object.
+   */
+  extendCommands(extend?: boolean) {
+    this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} call ".extendArguments()" instead of ".extendCommands()".`);
+    this._extendArguments = extend;
+    return this;
   }
 
 }

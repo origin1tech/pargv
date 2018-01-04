@@ -452,18 +452,21 @@ pargv.example([
 ])
 ```
 
-## Custom error handler:
-
-When creating a custom error handler you'll want to handle exiting
-the process yourself as shown below after you handle the error.
-This is what Pargv does internally.
+## Custom log handler:
 
 ```ts
 pargv
-  .onError((message, err, instance) => {
-    // message - is the error message thrown.
-    // err - is the PargvError object you can access the stack here err.stack.
-    // instance - the pargv instance.
+  .onLog((message) => {
+    // Do something with log message.
+  });
+```
+
+## Custom error handler:
+
+```ts
+pargv
+  .onError((err) => {
+    // Do something with error.
     process.exit(1);
   });
 ```
@@ -473,47 +476,9 @@ pargv
 ```ts
 pargv
   .onHelp((command, commands) => {
-    // These args are injected for convenience you could just as
-    // easily access them from pargv._commands if you wish.
     // command - optional value if help was called with a specific command.
     // commands - contains all commands that have been configured.
-  });
-```
-
-Use Pargv's built in wrappers for building help menus. The below is not
-complete it's just here to point you in the right direction. If you wish
-to build custom help it is largely up to you how it would look or be configured
-but again this should give you an idea. You can also look at the private
-method "compileHelp" in the Pargv class.
-
-```ts
-pargv
-  .onHelp((command, commands) => {
-
-    // We'll create a layout that is a 80 wide
-    const layout = this.layout(80);
-
-    for (const k in commands) {
-      const cmd = commands[k];
-      layout.section(cmd._name); // add the name of the command as a section.
-      layout.repeat('=') // add a divider.
-      layout.div() // just some space you could also pad see cliui for padding instructions.
-      layout.section('Commands:');
-      cmd._commands.forEach((el) => {
-        // iterate the commands add to layout.
-      });
-      layout.section('Options:');
-      cmd._options.forEach((el) => {
-        // iterate options add to layout.
-      });
-    }
-
-    // Quick note on .repeat() method. You can use patterns and
-    // Pargv layout will calculate the number of repeats so that
-    // it is constrained to the layout's width.
-
-    // ex: layout.repeat('><><')
-
+    // using command and commands build out your own help text.
   });
 ```
 

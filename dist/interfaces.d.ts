@@ -45,7 +45,6 @@ export interface IPargvOptions {
     extendStats?: boolean;
     allowAnonymous?: boolean;
     ignoreTypeErrors?: boolean;
-    displayStackTrace?: boolean;
     layoutWidth?: number;
     colors?: {
         primary?: AnsiStyles | AnsiStyles[];
@@ -58,6 +57,7 @@ export interface IPargvOptions {
     exitHelp?: boolean;
     extendCommands?: boolean;
     spreadCommands?: boolean;
+    displayStackTrace?: boolean;
 }
 export interface IPargvEnv {
     CWD: string;

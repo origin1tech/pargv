@@ -31,7 +31,7 @@ describe('Pargv', () => {
   });
 
   it('should ensure is instance of PargvCommand.', () => {
-    assert.instanceOf(pargv.command(), PargvCommand);
+    assert.instanceOf(pargv['_command'], PargvCommand);
   });
 
   it('should split args from space separated string.', () => {
@@ -175,7 +175,7 @@ describe('Pargv', () => {
 
     pargv.reset()
       .command('download <url> --username.user.u [username] --password.pass.p [password]', 'Downloads from url.')
-      .min.options(2)
+      .minOptions(2)
       .coerce('--password', (val, cmd) => {
         let len = val.length;
         let result = '';
@@ -207,14 +207,14 @@ describe('Pargv', () => {
   it('should set custom error callback.', (done) => {
 
     const func = function errorHandler(err) {
-      assert.equal('at least 2 commands are required but got 1.', colurs.strip(err.message));
+      assert.equal('at least 1 arguments are required but got 0.', colurs.strip(err.message));
       done();
     };
 
-    pargv.command()
-      .min.commands(2)
+    pargv.command('command [path]')
+      .minArguments(1)
       .onError(func)
-      .parse(['test']);
+      .parse(['command']);
 
   });
 
@@ -227,10 +227,10 @@ describe('Pargv', () => {
 
     pargv.reset();
 
-    pargv.command()
+    pargv.command('command')
       .when('-x', '-y')
       .onError(func)
-      .parse(['-x']);
+      .parse(['command', '-x']);
 
   });
 
@@ -243,10 +243,10 @@ describe('Pargv', () => {
 
     pargv.reset();
 
-    pargv.command()
+    pargv.command('command')
       .demand('-x', '-y')
       .onError(func)
-      .parse(['-x']);
+      .parse(['command', '-x']);
 
   });
 

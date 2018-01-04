@@ -72,6 +72,7 @@ export declare class PargvCommand {
      * @param key the key name to be cleaned.
      */
     private clean(key);
+    private unsupportedMethod(name, vals?);
     /**
      * Error
      * : Handles error messages.

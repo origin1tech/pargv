@@ -1,8 +1,6 @@
 # Pargv 2.x
 
-Pargv is a Typesript module used for CLI tools. Similar to Yargs or Commander, Pargv differs in that commands are separated into instances. This means that usage descriptions are a bit more clear and options are individually assigned to each defined command. This allows for displaying help for a specific command or all commands. In short I'm not a fan of all options listed together for commands they may not be related to. Without some custom logic that's what you end up with in Commander/Yargs.
-
-For simple tools it may be overkill but more involved CLI's you may find it helpful. If using VSCode you'll find the Typescript typings very helpful in displaying intellisense properties and methods.
+Pargv is a CLI argument parsing library. While similar to Yargs or Commander it differs in that it focuses on commands. Without custom logic/help most libs lump options together where most real CLI tools require different argument and option requirements. Pargv takes aim at that issue. For this reason Pargv is likely more suited to larger CLI modules.
 
 ### New (v2.1.x)
 
@@ -11,6 +9,8 @@ The minor version upgrade from 2.0.x to 2.1.x should be compatible with older co
 [![Help Preview](screenshot.png)](https://www.youtube.com/watch?v=c2tg32oNC8E)
 
 ### Tutorial Video
+
+This is a bit dated but still largely relevant. To be safe also view [docs](docs/index.html)
 
 See >> [https://www.youtube.com/watch?v=c2tg32oNC8E](https://www.youtube.com/watch?v=c2tg32oNC8E)
 
@@ -121,13 +121,14 @@ Pargv options, descriptions and defaults.
     <tr><td>colorize</td><td>Whether to use colors in help/log messages.</td><td>True</td></tr>
     <tr><td>displayHeader</td><td>When true help header is displayed.</td><td>True</td></tr>
     <tr><td>displayFooter</td><td>When true help footer is displayed.</td><td>True</td></tr>
+    <tr><td>displayNone</td><td>When Arguments & Options show "none" in help otherwise hidden.</td><td>True</td></tr>
+    <tr><td>displayTitles</td><td>When true Arguments & Options titles displayed in help.</td><td>True</td></tr>
     <tr><td>headingDivider</td><td>A string repeated for heading/footing in help.</td><td>><><</td></tr>
     <tr><td>commandDivider</td><td>A string divider repeated between command help.</td><td>.</td></tr>
     <tr><td>locale</td><td>The i18n locale to use for messages/help.</td><td>en</td></tr>
     <tr><td>localeDir</td><td>A directory for locales if u wish to roll your own.</td><td>undefined</td></tr>
-    <tr><td>fallbackHelp</td><td>True to fallback to help, a command name or false to disable.</td><td>True</td></tr>
     <tr><td>defaultHelp</td><td>When true commands automatically to help.</td><td>True</td></tr>
-      <tr><td>exitHelp</td><td>Exit after displaying help.</td><td>True</td></tr>
+    <tr><td>exitHelp</td><td>Exit after displaying help.</td><td>True</td></tr>
     <tr><td>layoutWidth</td><td>The width of help text layout.</td><td>80</td></tr>
     <tr><td>castBeforeCoerce</td><td>When true will attempt to cast to type before coerce is called.</td><td>True</td></tr>
     <tr><td>extendCommands</td><td>When true known sub commands extended as properties in result.</td><td>False</td></tr>
@@ -136,7 +137,6 @@ Pargv options, descriptions and defaults.
     <tr><td>spreadCommands</td><td>When true commands are spread in action callback.</td><td>True</td></tr>
     <tr><td>allowAnonymous</td><td>When true anonymous sub commands and options are allowed.</td><td>True</td></tr>
     <tr><td>ignoreTypeErrors</td><td>When true type checking is ignored.</td><td>False</td></tr>
-    <tr><td>displayStackTrace</td><td>When true stack trace is displayed for errors.</td><td>True</td></tr>
     <tr><td>colors</td>
     <td colspan="2">
       <table width="100%">
@@ -335,12 +335,13 @@ Please pull source and see [docs](docs/index.html) initially this readme display
 
 ## Events
 
-The below events should not be confused with methods such as onLog, onError etc. Those methods allow intercepting the actual log or error handler whereas events simply listen to the emitted events. For example if you simply wish to log to a file or something you could call <code>.on('log', handler)</code>. If you wanted to intercept all log events and handle them yourself use the onLog(handler) which will prevent them from being output to the terminal.
+The below events should not be confused with methods such as onLog, onError or onHelp. Those methods allow intercepting the actual log, error or help handler whereas events simply listen to the emitted events. For example if you simply wish to log to a file or something you could call <code>.on('log', your_handler)</code>. If you wanted to intercept all log events and handle them yourself use the onLog(handler) which will prevent them from being output to the terminal. You would need to handle this yourself.
 
 <table>
-  <tr><td>log</td><td>listens to log events.</td></tr>
-  <tr><td>error</td><td>listens to error events.</td></tr>
+  <tr><td>log</td><td>when not overridden listens to log events.</td></tr>
+  <tr><td>error</td><td>when not overridden listens to error events.</td></tr>
   <tr><td>completion</td><td>listens to completion, returns completion results.</td></tr>
+  <tr><td>help</td><td>when not overridden listens to show help events.</td></tr>
 </table>
 
 ## Localization

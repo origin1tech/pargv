@@ -47,7 +47,6 @@ var DEFAULTS = {
     spreadArguments: true,
     allowAnonymous: true,
     ignoreTypeErrors: false,
-    displayStackTrace: false,
     colors: {
         primary: 'blue',
         accent: 'cyan',
@@ -77,22 +76,19 @@ var Pargv = /** @class */ (function (_super) {
      * @param options the Pargv options object.
      */
     Pargv.prototype.init = function (options) {
-        // Init here as we need colurs for deprecation messages.
-        var colorize = utils.isValue(this.options && this.options.colorize) ? this.options.colorize : true;
-        colurs = new colurs_1.Colurs({ enabled: colorize });
-        this.options = utils.extend({}, DEFAULTS, this.compatibility(options, true));
+        this.options = utils.extend({}, DEFAULTS, options);
+        colurs = new colurs_1.Colurs({ enabled: this.options.colorize });
         this._localize = localize_1.localize(this, colurs);
         this._env = utils.environment(); // get env paths.
         this._completions = completions_1.completions(this, colurs); // helper for generating completions.sh.
         this._helpCommand = this._localize('help').done(); // localized name for help.
-        this._command = new command_1.PargvCommand(constants_1.DEFAULT_COMMAND, this._localize('Global commands and options.').done(), this);
-        this._commands[constants_1.DEFAULT_COMMAND] = this._command;
-        this.usage('[command] [options]');
-        this.describe('--help', "Displays global help.");
         this._logHandler = this.logHandler;
         this._errorHandler = this.errorHandler;
         this._helpHandler = this.helpHandler;
         this._completionsHandler = this._completions.handler; // default completion handler.
+        this.compatibility(options, true);
+        this._command = new command_1.PargvCommand(constants_1.DEFAULT_COMMAND, this._localize('Default command.').done(), this);
+        this._commands[constants_1.DEFAULT_COMMAND] = this._command;
         return this;
     };
     /**
@@ -107,9 +103,10 @@ var Pargv = /** @class */ (function (_super) {
             itemDivider: 'commandDivider',
             spreadCommands: 'spreadArguments',
             extendCommands: 'extendArguments',
-            autoHelp: 'onHelp',
-            fallbackHelp: 'onHelp',
-            exitHelp: 'onHelp'
+            autoHelp: [this.onHelp, 'onHelp'],
+            fallbackHelp: [this.onHelp, 'onHelp'],
+            exitHelp: [this.onHelp, 'onHelp'],
+            displayStackTrace: 'n/a'
         };
         if (utils.isString(key)) {
             var mapped = obj[key];
@@ -121,10 +118,18 @@ var Pargv = /** @class */ (function (_super) {
         }
         for (var k in key) {
             var mappedKey = obj[k];
-            if (mappedKey) {
-                key[mappedKey] = key[k];
-                if (warn)
-                    process.stderr.write(colurs.yellow('DEPRECATED') + ": \"" + k + "\" has been deprecated, use \"" + mappedKey + "\" instead.\n");
+            if (mappedKey && mappedKey !== 'n/a') {
+                var useKey = mappedKey;
+                if (utils.isArray(mappedKey)) {
+                    mappedKey[0].call(this, key[k]);
+                    useKey = "pargv." + mappedKey[1] + "()";
+                }
+                else {
+                    this.options[mappedKey] = key[mappedKey] = key[k];
+                }
+                if (warn) {
+                    process.stderr.write(colurs.yellow('DEPRECATED') + ": \"" + k + "\" has been deprecated, use \"" + useKey + "\" instead.\n");
+                }
             }
         }
         return key;
@@ -185,8 +190,6 @@ var Pargv = /** @class */ (function (_super) {
         var metaKeys = utils.keys(this._meta);
         // Default command.
         var defCmd = this.getCommand(constants_1.DEFAULT_COMMAND);
-        var defCmdNoArgOrOptions = utils.keys(this._commands).length <= 1 &&
-            (defCmd._arguments.length + defCmd._options.length) === 0;
         var hdrDiv = this.options.headingDivider;
         var itmDiv = this.options.commandDivider;
         var itmDivMulti = Math.round(((layoutWidth / itmDiv.length) / 2.85) * 2);
@@ -227,14 +230,12 @@ var Pargv = /** @class */ (function (_super) {
         };
         // Builds commands and flags help.
         var buildOptions = function (cmd, altLayout) {
-            var argStr, optsStr, exStr, reqStr, cmdsStr;
-            cmdsStr = _this._localize('Commands').done();
+            var argStr, optsStr, exStr, reqStr;
+            //  cmdsStr = this._localize('Commands').done();
             argStr = _this._localize('Arguments').done();
             optsStr = _this._localize('Options').done();
             exStr = _this._localize('Examples').done();
             reqStr = _this._localize('required').done();
-            if (cmd._name === constants_1.DEFAULT_COMMAND)
-                argStr = cmdsStr;
             if ((cmd._arguments.length && _this.options.displayTitles) || (!cmd._arguments.length && _this.options.displayNone))
                 layout.section(colurs.applyAnsi(argStr + ":", accent), [1, 0, 0, 1]);
             cmd._arguments.forEach(function (el) {
@@ -300,11 +301,8 @@ var Pargv = /** @class */ (function (_super) {
                 cmdKeys = utils.keys(_this._commands)
                     .sort();
             }
-            if (!cmdKeys.length && defCmdNoArgOrOptions) {
-                var noCmd = '~ ' + _this._localize("No commands configured").done() + ' ~';
-                layout.div(colurs.applyAnsi(noCmd, accent));
-                return;
-            }
+            cmdKeys = cmdKeys.filter(function (k) { return k !== constants_1.DEFAULT_COMMAND; });
+            cmdKeys.unshift(constants_1.DEFAULT_COMMAND); // Make default command first.
             var ctr = 0;
             cmdKeys.forEach(function (el, i) {
                 if (el._name)
@@ -380,12 +378,12 @@ var Pargv = /** @class */ (function (_super) {
      */
     Pargv.prototype.errorHandler = function (err) {
         var _this = this;
+        this.emit('error', err);
         err.stack = err.stack.split('\n').map(function (s, i) {
             if (i === 0)
                 return colurs.applyAnsi(colurs.strip(s), _this.options.colors.alert);
             return colurs.applyAnsi(s, _this.options.colors.muted);
         }).join('\n') + '\n';
-        this.emit('error', err);
         throw err;
     };
     /**
@@ -474,6 +472,7 @@ var Pargv = /** @class */ (function (_super) {
         enumerable: true,
         configurable: true
     });
+    // GET, SET, REMOVE & SHOW //
     /**
       * Option
       * : Gets an option value by the specified key.
@@ -657,13 +656,6 @@ var Pargv = /** @class */ (function (_super) {
      * @param describe a description describing the command.
      */
     Pargv.prototype.command = function (command, describe) {
-        if (!command) {
-            if (describe)
-                this._command.describe(describe);
-            return this._command;
-        }
-        if (command === constants_1.DEFAULT_COMMAND)
-            this.error("Cannot overwrite the default command " + command + ".");
         var cmd = new command_1.PargvCommand(command, describe, this);
         this._commands[cmd._name] = cmd;
         return cmd;
@@ -790,8 +782,8 @@ var Pargv = /** @class */ (function (_super) {
         // lookup the command.
         var cmd = this.getCommand(name);
         // if (isExec || cmd)
-        // if ((isExec || cmd) && name !== undefined)
-        if (name !== undefined && name !== constants_1.DEFAULT_COMMAND)
+        if ((isExec || cmd) && name !== undefined)
+            // if (name !== undefined && name !== DEFAULT_COMMAND)
             normalized.shift(); // shift first arg.
         if (!cmd)
             cmd = this.getCommand(constants_1.DEFAULT_COMMAND);
@@ -811,7 +803,6 @@ var Pargv = /** @class */ (function (_super) {
         var val;
         var stats = cmd.stats(normalized);
         normalized = stats.normalized; // set to normalized & ordered args.
-        console.log(stats);
         result = {
             $exec: env.EXEC,
             $command: name,
@@ -828,56 +819,60 @@ var Pargv = /** @class */ (function (_super) {
             if (cmd._name === constants_1.DEFAULT_COMMAND)
                 cmd = null;
             this.showHelp(cmd);
-            return;
+            return {};
         }
         if (this.options.extendStats || cmd._external || isExec)
             result.$stats = stats;
-        if (!this.options.allowAnonymous && stats.anonymous.length && !cmd._variadic && cmd._name !== constants_1.DEFAULT_COMMAND) {
+        if (!this.options.allowAnonymous && stats.anonymous.length && !cmd._variadic) {
             this.error(this._localize('anonymous arguments %s prohibited in strict mode.')
-                .args(stats.anonymous.join(', '))
-                .done());
+                .args(stats.anonymous.join(', ')).done()
+            // .styles(colors.accent)
+            );
         }
         if (stats.missing.length) {
             this.error(// no anon in strict mode.
             this._localize('missing required arguments %s or have no default value.')
-                .args(stats.missing.join(', '))
-                .done());
+                .args(stats.missing.join(', ')).done()
+            // .styles(colors.accent)
+            );
         }
         if (stats.whens.length) {
             var when = stats.whens.shift();
             this.error(// no anon in strict mode.
             this._localize('%s requires %s but is missing.')
-                .args(when[0], when[1])
+                .args(when[0], when[1]).done()
             // .styles(colors.accent, colors.accent).done()
             );
         }
-        var cmdStr = this._localize('commands').done();
+        var argStr = this._localize('arguments').done();
         var optStr = this._localize('options').done();
         if (utils.isValue(cmd._minArguments) && stats.argumentsCount < cmd._minArguments) {
             this.error(// min commands required.
             this._localize('at least %s %s are required but got %s.')
-                .args(cmd._minArguments, cmdStr, stats.argumentsCount + '')
+                .args(cmd._minArguments, argStr, stats.argumentsCount + '').done()
             // .styles(colors.accent, colors.primary, colors.accent).done()
             );
         }
         if (utils.isValue(cmd._minOptions) && stats.optionsCount < cmd._minOptions) {
             this.error(// min options required.
             this._localize('at least %s %s are required but got %s.')
-                .args(cmd._minOptions, optStr, stats.optionsCount + '')
+                .args(cmd._minOptions, optStr, stats.optionsCount + '').done()
             // .styles(colors.accent, colors.primary, colors.accent).done()
             );
         }
         if (utils.isValue(cmd._maxArguments) && stats.argumentsCount > cmd._maxArguments) {
             this.error(// max commands allowed.
             this._localize('got %s %s but no more than %s are allowed.')
-                .args(stats.argumentsCount, cmdStr, cmd._maxArguments)
-                .done());
+                .args(stats.argumentsCount, argStr, cmd._maxArguments).done()
+            // .styles(colors.accent, colors.primary, colors.accent)
+            );
         }
         if (utils.isValue(cmd._maxOptions) && stats.optionsCount > cmd._maxOptions) {
             this.error(// max commands allowed.
             this._localize('got %s %s but no more than %s are allowed.')
-                .args(stats.optionsCount, optStr, cmd._maxOptions)
-                .done());
+                .args(stats.optionsCount, optStr, cmd._maxOptions).done()
+            // .styles(colors.accent, colors.primary, colors.accent)
+            );
         }
         if (cmd._external)
             return result;
@@ -994,7 +989,7 @@ var Pargv = /** @class */ (function (_super) {
             argv[_i] = arguments[_i];
         }
         var parsed = this.parse.apply(this, argv.concat(['__exec__']));
-        if (!parsed)
+        if (!parsed || utils.isEmpty(parsed))
             return {};
         var normLen = parsed.$stats && parsed.$stats.normalized.length;
         var optsLen = parsed.$stats && parsed.$stats.optionsCount;
@@ -1136,17 +1131,14 @@ var Pargv = /** @class */ (function (_super) {
      * @param fn boolean to enable/disable, or function for custom help.
      */
     Pargv.prototype.onHelp = function (fn) {
-        var _this = this;
         if (!utils.isValue(fn))
             fn = true;
-        this._helpHandler = function (command) {
-            if (fn === false)
-                return null;
-            if (fn === true)
-                return _this.helpHandler(command);
-            // use custom user handler.
-            return fn(command, _this._commands);
-        };
+        if (fn === false)
+            this._helpHandler = utils.noop;
+        else if (fn === true)
+            this._helpHandler = this.helpHandler;
+        else
+            this._helpHandler = fn;
         return this;
     };
     /**
@@ -1192,8 +1184,6 @@ var Pargv = /** @class */ (function (_super) {
             formatted = err.message;
             prune = 0;
         }
-        // if (this._name)
-        //   err.name = utils.capitalize(this._name) + 'Error';
         if (err.stack) {
             var stack = err.stack.split(constants_1.EOL);
             var stackMsg = stack.shift();
@@ -1201,12 +1191,9 @@ var Pargv = /** @class */ (function (_super) {
             stack.unshift(stackMsg);
             err.stack = stack.join(constants_1.EOL);
         }
-        // If we haven't init and wired everything up
-        // make sure we just throw the error.
         if (!this._errorHandler)
             throw err;
-        this._errorHandler.call(this, err);
-        return this;
+        this._errorHandler(err);
     };
     /**
      * Log
@@ -1219,10 +1206,10 @@ var Pargv = /** @class */ (function (_super) {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        // NOTE: Need to change this to just intercept the stream/hide.
-        if (constants_1.MOCHA_TESTING)
-            return this;
-        this._logHandler.call(this, this.formatLogMessage.apply(this, args));
+        // // NOTE: Need to change this to just intercept the stream/hide.
+        // if (MOCHA_TESTING) // when testing don't log anything.
+        //   return this;
+        this._logHandler(this.formatLogMessage.apply(this, args));
         return this;
     };
     /**
@@ -1399,225 +1386,6 @@ var Pargv = /** @class */ (function (_super) {
         };
         return methods;
     };
-    // DEFAULT COMMAND METHODS //
-    // This is not the best solution need to refactor in next
-    // minor version so a partial base class extends this
-    // class for Default Command.
-    /**
-     * Usage
-     * Usage is generated automatically, this method allows override of the internal generated usage for default command.
-     *
-     * @param val the value to display for command usage.
-     */
-    Pargv.prototype.usage = function (val) {
-        this._command.usage(val);
-        return this;
-    };
-    /**
-      * Argument
-      * Adds sub command argument to command. Wrapped with [arg] if [] or <> not detected.
-      *
-      * Supported to type strings: string, date, array,
-      * number, integer, float, json, regexp, boolean
-      *
-      * @param token the option token to parse as option.
-      * @param describe the description for the option.
-      * @param def an optional default value.
-      * @param type a string type, RegExp to match or Coerce method.
-      */
-    Pargv.prototype.arg = function (token, describe, def, type) {
-        this._command.arg(token, describe, def, type);
-        return this;
-    };
-    /**
-      * Option
-      * Adds option to default command.
-      *
-      * Supported types: string, date, array,
-      * number, integer, float, json, regexp, boolean
-      *
-      * @param token the option token to parse as option.
-      * @param describe the description for the option.
-      * @param def an optional default value.
-      * @param type a string type, RegExp to match or Coerce method.
-      */
-    Pargv.prototype.option = function (token, describe, def, type) {
-        this._command.option(token, describe, def, type);
-        return this;
-    };
-    Pargv.prototype.alias = function (key) {
-        var alias = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            alias[_i - 1] = arguments[_i];
-        }
-        (_a = this._command).alias.apply(_a, [key].concat(alias));
-        return this;
-        var _a;
-    };
-    Pargv.prototype.describe = function (key, describe) {
-        this._command.describe(key, describe);
-        return this;
-    };
-    /**
-     * Coerce
-     * Coerce or transform sub command  arguemnt or option for default command.
-     *
-     * @param key the option key to be coerced.
-     * @param type the string type, RegExp or coerce callback function.
-     * @param def an optional value when coercion fails.
-     */
-    Pargv.prototype.coerce = function (key, type, def) {
-        this._command.coerce(key, type, def);
-        return this;
-    };
-    /**
-     * Demand
-     * The sub command argument or option keys to be demanded for default command.
-     *
-     * @param key the key to demand.
-     */
-    Pargv.prototype.demand = function () {
-        var keys = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            keys[_i] = arguments[_i];
-        }
-        (_a = this._command).demand.apply(_a, keys);
-        return this;
-        var _a;
-    };
-    Pargv.prototype.when = function (key, demand, converse) {
-        this._command.when(key, demand, converse);
-        return this;
-    };
-    Pargv.prototype.default = function (key, val) {
-        this._command.default(key, val);
-        return this;
-    };
-    /**
-     * Max Commands
-     * Specifies the maxium commands allowed for default command.
-     *
-     * @param count the number of command arguments allowed.
-     */
-    Pargv.prototype.maxArguments = function (count) {
-        this._command._maxArguments = count;
-        return this;
-    };
-    /**
-     * Min Commands
-     * Specifies the minimum commands required for default command.
-     *
-     * @param count the number of command arguments required.
-     */
-    Pargv.prototype.minArguments = function (count) {
-        this._command._minArguments = count;
-        return this;
-    };
-    /**
-     * Max Options
-     * Specifies the maxium options allowed for default command.
-     *
-     * @param count the number of options allowed.
-     */
-    Pargv.prototype.maxOptions = function (count) {
-        this._command._maxOptions = count;
-        return this;
-    };
-    /**
-     * Min Options
-     * Specifies the minimum options required for default command.
-     *
-     * @param count the number of options required.
-     */
-    Pargv.prototype.minOptions = function (count) {
-        this._command._minOptions = count;
-        return this;
-    };
-    /**
-     * Completion At
-     * : Injects custom completion value for specified key.
-     * Key can be a known sub command argument option or * for anonymous.
-     *
-     * @param key the key to inject completion values for.
-     * @param vals the completion values for the provided key.
-     */
-    Pargv.prototype.completionFor = function (key) {
-        var vals = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            vals[_i - 1] = arguments[_i];
-        }
-        (_a = this._command).completionFor.apply(_a, [key].concat(vals));
-        return this;
-        var _a;
-    };
-    /**
-     * Action
-     * Adds an action event to be called when parsing matches command.
-     *
-     * @param fn the callback function when parsed command matches.
-     */
-    Pargv.prototype.action = function (fn) {
-        this._command.action(fn);
-        return this;
-    };
-    /**
-     * Spread Commands
-     * When true found sub command arguments are spread in .action(cmd1, cmd2, ...).
-     *
-     * @param spread when true spreads command args in callback action.
-     */
-    Pargv.prototype.spreadCommands = function (spread) {
-        this._command.spreadArguments(spread);
-        return this;
-    };
-    /**
-     * Extend Commands
-     * When true known sub command arguments are extended to result object { some_command: value }.
-     *
-     * @param extend when true commands are exteneded on Pargv result object.
-     */
-    Pargv.prototype.extendCommands = function (extend) {
-        this._command.extendArguments(extend);
-        return this;
-    };
-    /**
-     * Extend Aliases
-     * When true option aliases are extended on result object --option, -o results in { option: value, o: value }.
-     *
-     * @param extend when true aliases are exteneded on Pargv result object.
-     */
-    Pargv.prototype.extendAliases = function (extend) {
-        this._command.extendAliases(extend);
-        return this;
-    };
-    /**
-     * Example
-     * : Saves an example string/tuple of example string & description for default command.
-     *
-     * @param example string or an array of tuples [example, description].
-     * @param describe the description for the example.
-     */
-    Pargv.prototype.example = function (example, describe) {
-        this._command.example(example, describe);
-        return this;
-    };
-    /**
-     * Help
-     * Enables or disables help for default command.
-     *
-     * @param enabled true or false to toggle help.
-     */
-    Pargv.prototype.help = function (enabled) {
-        this._command.help(enabled);
-        return this;
-    };
-    Object.defineProperty(Pargv.prototype, "if", {
-        get: function () {
-            return this.when;
-        },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(Pargv.prototype, "$", {
         // DEPRECATED //
         /**
@@ -1629,7 +1397,7 @@ var Pargv = /** @class */ (function (_super) {
          * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
          */
         get: function () {
-            this.log(colurs.applyAnsi('DEPRECATED:', 'yellow') + " pargv.$ is deprecated, call pargv.command() with no args to return the default command.");
+            this.log(colurs.applyAnsi('DEPRECATED:', 'yellow') + " pargv.$ is deprecated, call pargv.command() without arguments.");
             return this.getCommand(constants_1.DEFAULT_COMMAND);
         },
         enumerable: true,

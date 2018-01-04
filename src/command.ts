@@ -381,6 +381,24 @@ export class PargvCommand {
 
   }
 
+  private unsupportedMethod(name: string, vals?: any) {
+
+    const invalid = ['arg', 'maxArguments', 'minArguments', 'spawnAction', 'spreadArguments', 'extendArguments'];
+
+    if (this._name !== DEFAULT_COMMAND || !~invalid.indexOf(name))
+      return false;
+
+    this._pargv.log(
+      this._pargv.
+        _localize('Default command does not support method %s')
+        .args(`"${name}"`)
+        .done()
+    );
+
+    return true;
+
+  }
+
   /**
    * Error
    * : Handles error messages.
@@ -431,6 +449,8 @@ export class PargvCommand {
     * @param type a string type, RegExp to match or Coerce method.
     */
   arg(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler) {
+    if (this.unsupportedMethod('arg'))
+      return this;
     if (!/^(\[|<)/.test(token))
       token = `[${token}]`;
     return this.option(token, describe, def, type);
@@ -609,6 +629,7 @@ export class PargvCommand {
    * @param keys additional keys to demand.
    */
   demand(...keys: string[]) {
+
     keys.forEach((k) => {
       k = this.stripToAlias(k);
       if (!utils.contains(this._demands, this.aliasToKey(k)))

@@ -296,6 +296,16 @@ var PargvCommand = /** @class */ (function () {
             this._options = this._options.filter(function (k) { return k !== key; });
         }
     };
+    PargvCommand.prototype.unsupportedMethod = function (name, vals) {
+        var invalid = ['arg', 'maxArguments', 'minArguments', 'spawnAction', 'spreadArguments', 'extendArguments'];
+        if (this._name !== constants_1.DEFAULT_COMMAND || !~invalid.indexOf(name))
+            return false;
+        this._pargv.log(this._pargv.
+            _localize('Default command does not support method %s')
+            .args("\"" + name + "\"")
+            .done());
+        return true;
+    };
     Object.defineProperty(PargvCommand.prototype, "error", {
         /**
          * Error
@@ -352,6 +362,8 @@ var PargvCommand = /** @class */ (function () {
       * @param type a string type, RegExp to match or Coerce method.
       */
     PargvCommand.prototype.arg = function (token, describe, def, type) {
+        if (this.unsupportedMethod('arg'))
+            return this;
         if (!/^(\[|<)/.test(token))
             token = "[" + token + "]";
         return this.option(token, describe, def, type);

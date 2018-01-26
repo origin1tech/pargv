@@ -3,6 +3,7 @@ import { Pargv } from './';
 import { SpawnOptions } from 'child_process';
 import { IMap, ActionHandler, CoerceHandler, IPargvCoerceConfig, IPargvWhenConfig, IPargvStats, ErrorHandler, IPargvParsedResult, LogHandler, SpawnActionHandler, HelpHandler } from './interfaces';
 export declare class PargvCommand {
+    private _customUsage;
     _name: string;
     _usage: string;
     _describe: string;
@@ -72,7 +73,11 @@ export declare class PargvCommand {
      * @param key the key name to be cleaned.
      */
     private clean(key);
-    private unsupportedMethod(name, vals?);
+    /**
+     * Rebuild Usage
+     * Rebuilds the auto generated usage string.
+     */
+    private rebuildUsage();
     /**
      * Error
      * : Handles error messages.

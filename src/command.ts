@@ -12,6 +12,8 @@ let colurs: IColurs;
 
 export class PargvCommand {
 
+  private _customUsage: boolean;
+
   _name: string;
   _usage: string;
   _describe: string;
@@ -93,7 +95,7 @@ export class PargvCommand {
     const isRequired = /^</.test(key);            // starts with <.
 
     let isFlag = utils.isFlag(key);              // starts with - or -- or anonymous.
-    const isBool = isFlag && !next;              // if flag but no next val is bool flag.
+    const isBool = isFlag && !next && next !== ''; // if flag but no next val is bool flag.
     let aliases = key.split('.');                // split generate.g to ['generate', 'g']
     key = aliases[0];                            // reset name to first element.
 
@@ -258,7 +260,7 @@ export class PargvCommand {
     const cmdStr =
       name === DEFAULT_COMMAND ?
         this._pargv._localize('command').done() :
-        this._pargv._localize('argument').done()
+        this._pargv._localize('argument').done();
 
     this._name = name;                                 // Save the commmand name.
     // this._describe = this._describe ||              // Ensure command description.
@@ -282,14 +284,14 @@ export class PargvCommand {
     let describe;
 
     const reqCmd =
-      this._name === DEFAULT_COMMAND ?
-        this._pargv._localize('Required command.').done() :
-        this._pargv._localize('Required argument.').done()
+      // this._name === DEFAULT_COMMAND ?
+      //   this._pargv._localize('Required command.').done() :
+      this._pargv._localize('Required argument.').done();
 
     const optCmd =
-      this._name === DEFAULT_COMMAND ?
-        this._pargv._localize('Optional command.').done() :
-        this._pargv._localize('Optional argument.').done()
+      // this._name === DEFAULT_COMMAND ?
+      //   this._pargv._localize('Optional command.').done() :
+      this._pargv._localize('Optional argument.').done();
 
     const reqFlag =
       this._pargv._localize('Required flag.').done();
@@ -381,22 +383,18 @@ export class PargvCommand {
 
   }
 
-  private unsupportedMethod(name: string, vals?: any) {
-
-    const invalid = ['arg', 'maxArguments', 'minArguments', 'spawnAction', 'spreadArguments', 'extendArguments'];
-
-    if (this._name !== DEFAULT_COMMAND || !~invalid.indexOf(name))
-      return false;
-
-    this._pargv.log(
-      this._pargv.
-        _localize('Default command does not support method %s')
-        .args(`"${name}"`)
-        .done()
-    );
-
-    return true;
-
+  /**
+   * Rebuild Usage
+   * Rebuilds the auto generated usage string.
+   */
+  private rebuildUsage() {
+    let arr: any = [this._name];
+    this._arguments.forEach(k => {
+      arr.push(this._usages[k]);
+    });
+    arr = utils.flatten(arr).join(' ');
+    this._usage = arr;
+    return arr;
   }
 
   /**
@@ -433,6 +431,7 @@ export class PargvCommand {
    */
   usage(val: string) {
     this._usage = val || this._usage;
+    this._customUsage = true;
     return this;
   }
 
@@ -449,8 +448,6 @@ export class PargvCommand {
     * @param type a string type, RegExp to match or Coerce method.
     */
   arg(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler) {
-    if (this.unsupportedMethod('arg'))
-      return this;
     if (!/^(\[|<)/.test(token))
       token = `[${token}]`;
     return this.option(token, describe, def, type);
@@ -484,6 +481,8 @@ export class PargvCommand {
       this.clean(parsed.key); // clean so we don't end up with dupes.
       this.expandOption(parsed);
     });
+    if (!this._customUsage)
+      this.rebuildUsage();
     return this;
   }
 
@@ -942,8 +941,8 @@ export class PargvCommand {
     type = utils.isString(type) ? (type as string).trim() : type;
     const isAuto = type === 'auto';
 
-    if (utils.isString(val))
-      val = val.trim();
+    // if (utils.isString(val))
+    //   val = val.trim();
 
     // Check if is list type expression.
     let isListType =

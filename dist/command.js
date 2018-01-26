@@ -59,7 +59,7 @@ var PargvCommand = /** @class */ (function () {
         } // ensure valid token.
         var isRequired = /^</.test(key); // starts with <.
         var isFlag = utils.isFlag(key); // starts with - or -- or anonymous.
-        var isBool = isFlag && !next; // if flag but no next val is bool flag.
+        var isBool = isFlag && !next && next !== ''; // if flag but no next val is bool flag.
         var aliases = key.split('.'); // split generate.g to ['generate', 'g']
         key = aliases[0]; // reset name to first element.
         if (isFlag) {
@@ -213,12 +213,14 @@ var PargvCommand = /** @class */ (function () {
      */
     PargvCommand.prototype.expandOption = function (option) {
         var describe;
-        var reqCmd = this._name === constants_1.DEFAULT_COMMAND ?
-            this._pargv._localize('Required command.').done() :
-            this._pargv._localize('Required argument.').done();
-        var optCmd = this._name === constants_1.DEFAULT_COMMAND ?
-            this._pargv._localize('Optional command.').done() :
-            this._pargv._localize('Optional argument.').done();
+        var reqCmd = 
+        // this._name === DEFAULT_COMMAND ?
+        //   this._pargv._localize('Required command.').done() :
+        this._pargv._localize('Required argument.').done();
+        var optCmd = 
+        // this._name === DEFAULT_COMMAND ?
+        //   this._pargv._localize('Optional command.').done() :
+        this._pargv._localize('Optional argument.').done();
         var reqFlag = this._pargv._localize('Required flag.').done();
         var optFlag = this._pargv._localize('Optional flag.').done();
         if (option.flag) {
@@ -296,15 +298,19 @@ var PargvCommand = /** @class */ (function () {
             this._options = this._options.filter(function (k) { return k !== key; });
         }
     };
-    PargvCommand.prototype.unsupportedMethod = function (name, vals) {
-        var invalid = ['arg', 'maxArguments', 'minArguments', 'spawnAction', 'spreadArguments', 'extendArguments'];
-        if (this._name !== constants_1.DEFAULT_COMMAND || !~invalid.indexOf(name))
-            return false;
-        this._pargv.log(this._pargv.
-            _localize('Default command does not support method %s')
-            .args("\"" + name + "\"")
-            .done());
-        return true;
+    /**
+     * Rebuild Usage
+     * Rebuilds the auto generated usage string.
+     */
+    PargvCommand.prototype.rebuildUsage = function () {
+        var _this = this;
+        var arr = [this._name];
+        this._arguments.forEach(function (k) {
+            arr.push(_this._usages[k]);
+        });
+        arr = utils.flatten(arr).join(' ');
+        this._usage = arr;
+        return arr;
     };
     Object.defineProperty(PargvCommand.prototype, "error", {
         /**
@@ -347,6 +353,7 @@ var PargvCommand = /** @class */ (function () {
      */
     PargvCommand.prototype.usage = function (val) {
         this._usage = val || this._usage;
+        this._customUsage = true;
         return this;
     };
     /**
@@ -362,8 +369,6 @@ var PargvCommand = /** @class */ (function () {
       * @param type a string type, RegExp to match or Coerce method.
       */
     PargvCommand.prototype.arg = function (token, describe, def, type) {
-        if (this.unsupportedMethod('arg'))
-            return this;
         if (!/^(\[|<)/.test(token))
             token = "[" + token + "]";
         return this.option(token, describe, def, type);
@@ -397,6 +402,8 @@ var PargvCommand = /** @class */ (function () {
             _this.clean(parsed.key); // clean so we don't end up with dupes.
             _this.expandOption(parsed);
         });
+        if (!this._customUsage)
+            this.rebuildUsage();
         return this;
     };
     PargvCommand.prototype.alias = function (key) {
@@ -738,8 +745,8 @@ var PargvCommand = /** @class */ (function () {
         var origVal = val;
         type = utils.isString(type) ? type.trim() : type;
         var isAuto = type === 'auto';
-        if (utils.isString(val))
-            val = val.trim();
+        // if (utils.isString(val))
+        //   val = val.trim();
         // Check if is list type expression.
         var isListType = (utils.isString(type) && constants_1.LIST_EXP.test(type)) ||
             utils.isRegExp(type);

@@ -104,7 +104,7 @@ export class Pargv extends EventEmitter {
     this._completionsHandler = this._completions.handler; // default completion handler.
     this.compatibility(options, true)
 
-    this._command = new PargvCommand(DEFAULT_COMMAND, this._localize('Default command.').done(), this);
+    this._command = new PargvCommand(DEFAULT_COMMAND, this._localize('General Options:').done(), this);
     this._commands[DEFAULT_COMMAND] = this._command;
 
     return this;
@@ -246,11 +246,11 @@ export class Pargv extends EventEmitter {
       }
 
       // Get longest of meta keys.
-      const metaPadLongest =
+      let metaPadLongest =
         utils.keys(this._meta)
           .filter(k => k !== 'name' && k !== 'description')
           .map(v => this._localize(v).done())
-          .reduce(function (a, b) { return a.length > b.length ? a : b; }).length;
+          .reduce(function (a, b) { return a.length > b.length ? a : b; }, '').length;
 
 
       for (const k in this._meta) {
@@ -262,8 +262,6 @@ export class Pargv extends EventEmitter {
         }
       }
 
-
-
       // Add break in layout.
       if (hdrDiv)
         layout.repeat(<string>colurs.applyAnsi(hdrDiv, muted));
@@ -273,7 +271,7 @@ export class Pargv extends EventEmitter {
     };
 
     // Builds commands and flags help.
-    const buildOptions = (cmd: PargvCommand, altLayout?: IPargvLayout) => {
+    const buildOptions = (cmd: PargvCommand) => {
 
       let argStr, optsStr, exStr, reqStr;
 
@@ -282,6 +280,8 @@ export class Pargv extends EventEmitter {
       optsStr = this._localize('Options').done();
       exStr = this._localize('Examples').done();
       reqStr = this._localize('required').done();
+
+      const isDef = cmd._name === DEFAULT_COMMAND;
 
       if ((cmd._arguments.length && this.options.displayTitles) || (!cmd._arguments.length && this.options.displayNone))
         layout.section(<string>colurs.applyAnsi(`${argStr}:`, accent), [1, 0, 0, 1]);
@@ -300,13 +300,23 @@ export class Pargv extends EventEmitter {
       if (!cmd._arguments.length && this.options.displayNone) // no commands set "none".
         layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
 
-      if (cmd._arguments.length && cmd._options.length && !this.options.displayTitles)
-        layout.div(); // when no titles and have commands and opts add some space.
+      if (!isDef) {
 
-      if ((cmd._options.length && this.options.displayTitles) || (!cmd._options.length && this.options.displayNone))
-        layout.section(<string>colurs.applyAnsi(`${optsStr}:`, accent), [1, 0, 0, 1]);
+        if (cmd._arguments.length && cmd._options.length && !this.options.displayTitles)
+          layout.div(); // when no titles and have commands and opts add some space.
 
-      cmd._options.sort().forEach((el) => { // build options.
+
+        if ((cmd._options.length && this.options.displayTitles) || (!cmd._options.length && this.options.displayNone))
+          layout.section(<string>colurs.applyAnsi(`${optsStr}:`, accent), [1, 0, 0, 1]);
+
+      }
+
+      const cmdOpts = cmd._options.sort();
+
+
+      cmdOpts.forEach((el) => { // build options.
+
+
         const isRequired = utils.contains(cmd._demands, el);
         const aliases = cmd.aliases(el).sort();
 
@@ -323,7 +333,10 @@ export class Pargv extends EventEmitter {
         const lastCol = isRequired ? { text: colurs.applyAnsi(`${reqStr}`, alert), align: 'right', width: col3w } : { text: '', width: col3w };
         arr.push(lastCol);
         layout.div(...arr);
+
+
       });
+
 
       if (!cmd._options.length && this.options.displayNone) // no options set "none".
         layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
@@ -363,7 +376,6 @@ export class Pargv extends EventEmitter {
 
       if (command) {
         cmdKeys = [command];
-        // console.log(); // only displaying one command add spacing.
       }
       else {
         cmdKeys = utils.keys(this._commands)
@@ -372,7 +384,8 @@ export class Pargv extends EventEmitter {
 
       cmdKeys = cmdKeys.filter(k => k !== DEFAULT_COMMAND);
 
-      cmdKeys.unshift(DEFAULT_COMMAND); // Make default command first.
+      if (defCmd._options.length > 1)
+        cmdKeys.unshift(DEFAULT_COMMAND); // Make default command first.
 
       let ctr = 0;
 
@@ -382,6 +395,7 @@ export class Pargv extends EventEmitter {
           el = el._name;
 
         const cmd: PargvCommand = this.getCommand(el);
+        const isDef = cmd._name === DEFAULT_COMMAND;
 
         if (!cmd._showHelp)
           return;
@@ -397,21 +411,31 @@ export class Pargv extends EventEmitter {
         if (!aliases || !aliases.length)
           aliases = noneStr;
 
-        let divs = [
-          colurs.applyAnsi(`${usageStr}: `, primary) + cmd._usage
-        ];
+        if (!isDef) {
 
-        if (aliasesLen || this.options.displayNone)
-          divs.push(colurs.applyAnsi(`${aliasStr}: `, primary) + aliases)
+          let divs = [
+            colurs.applyAnsi(`${usageStr}: `, primary) + cmd._usage
+          ];
 
-        if (cmd._external)
-          divs.push(colurs.applyAnsi(`(${extStr})`, accent) as string);
+          if (aliasesLen || this.options.displayNone)
+            divs.push(colurs.applyAnsi(`${aliasStr}: `, primary) + aliases)
 
-        layout.div(...divs);
+          if (cmd._external)
+            divs.push(colurs.applyAnsi(`(${extStr})`, accent) as string);
 
-        if (cmd._describe && cmdKeys.length > 1) {
-          const descPadding = this.options.displayTitles ? [1, 0, 0, 0] : [1, 0, 1, 0];
-          layout.div({ text: colurs.applyAnsi(cmd._describe, muted), padding: descPadding });
+          layout.div(...divs);
+
+          if (cmd._describe && cmdKeys.length > 1) {
+            const descPadding = this.options.displayTitles ? [1, 0, 0, 0] : [1, 0, 1, 0];
+            layout.div({ text: colurs.applyAnsi(cmd._describe, muted), padding: descPadding });
+          }
+
+        }
+
+        else {
+
+          layout.div({ text: colurs.applyAnsi(cmd._describe, primary), padding: [0, 0, 1, 0] });
+
         }
 
         if (!cmd._options.length && !cmd._arguments.length) {
@@ -524,7 +548,7 @@ export class Pargv extends EventEmitter {
       if (FLAG_EXP.test(el) && ~(idx = el.indexOf('='))) {
         arr.push(el.slice(0, idx), el.slice(idx + 1));
       }
-      else if (FLAG_SHORT_EXP.test(el)) {
+      else if (FLAG_SHORT_EXP.test(el) && el.charAt(0) !== '"' && el.charAt(0) !== "'") {
         el.replace(FLAG_EXP, '').split('').forEach((s) => {
           arr.push('-' + s);
         });
@@ -974,7 +998,7 @@ export class Pargv extends EventEmitter {
     }
 
     let ctr = 0;
-    let val;
+
     const stats = cmd.stats(normalized);
     normalized = stats.normalized;      // set to normalized & ordered args.
 
@@ -1080,7 +1104,7 @@ export class Pargv extends EventEmitter {
     };
 
     normalized.forEach((el, i) => {
-
+      let val;
       let key = stats.map[i];              // get cmd/opt by position in map.
       if ('$value' === key) return;        // if $value expects flag value no process.
       const isNot = /^--no/.test(el) ? true : false;  // flag prefixed with --no.
@@ -1088,12 +1112,14 @@ export class Pargv extends EventEmitter {
 
       let next = normalized[i + 1];                   // next arg.
       const isFlag = FLAG_EXP.test(el);               // is a flag/option key.
-      const isFlagNext = FLAG_EXP.test(next || '');   // next is a flag/option key.
+      let isFlagNext = cmd.isBool(key) && FLAG_EXP.test(next || '');   // next is a flag/option key.
       let def = cmd._defaults[key];                 // check if has default value.
       const isVariadic = cmd._variadic === key;     // is a variadic key.
 
-      const isBool =
-        (isFlag && (!next || cmd.isBool(key) || isFlagNext)); // is boolean key.
+      let isBool =
+        (isFlag && (cmd.isBool(key) || isFlagNext)); // is boolean key.
+      //  (isFlag && (!next || cmd.isBool(key) || isFlagNext));
+
       let coercion: CoerceHandler = cmd._coercions[key];  // lookup user coerce function.
 
       if (isNot && !isBool) {
@@ -1309,11 +1335,6 @@ export class Pargv extends EventEmitter {
           path = parsed.install;
         const success = this._completions.install(path || this._env.EXEC, replyCmd, <string>template, parsed.force);
         if (success) {
-          // console.log();
-          // this.log(
-          //   this._localize('successfully installed tab completions, quit and reopen terminal.').done()
-          // );
-          // console.log();
           this.log(
             '\n' + this._localize('successfully installed tab completions, quit and reopen terminal.\n\n').done()
           );
@@ -1530,8 +1551,6 @@ export class Pargv extends EventEmitter {
     return cmd.stats(args);
   }
 
-  // EXTENDED METHODS //
-
   /**
     * Layout
     * Creates a CLI layout much like creating divs in the terminal.
@@ -1672,6 +1691,246 @@ export class Pargv extends EventEmitter {
     return methods;
   }
 
+  // DEFAULT COMMAND METHODS //
+
+  /**
+   * Usage
+   * Usage is generated automatically, this method allows override of the internal generated usage for default command.
+   *
+   * @param val the value to display for command usage.
+   */
+  usage(val: string) {
+    this._command.usage(val);
+    return this;
+  }
+
+  /**
+    * Option
+    * Adds option to default command.
+    *
+    * Supported types: string, date, array,
+    * number, integer, float, json, regexp, boolean
+    *
+    * @param token the option token to parse as option.
+    * @param describe the description for the option.
+    * @param def an optional default value.
+    * @param type a string type, RegExp to match or Coerce method.
+    */
+  option(token: string, describe?: string, def?: any, type?: string | RegExp | CoerceHandler): Pargv {
+    this._command.option(token, describe, def, type);
+    return this;
+  }
+
+  /**
+   * Alias
+   * Maps alias configs to default command.
+   *
+   * @param config object map containing aliases.
+   */
+  alias(config: IMap<string[]>): Pargv;
+
+  /**
+   * Alias
+   * Maps alias to default command.
+   *
+   * @param key the key to map alias keys to.
+   * @param alias keys to map as aliases.
+   */
+  alias(key: string, ...alias: string[]): Pargv;
+  alias(key: string | IMap<string[]>, ...alias: string[]): Pargv {
+    this._command.alias(key, ...alias);
+    return this;
+  }
+
+  /**
+   * Describe
+   * Adds description for default command sub command argument or option.
+   *
+   * @param config object containing describes by property.
+   */
+  describe(config: IMap<string>): Pargv;
+
+  /**
+   * Describe
+   * Adds description for default command sub command argument or option.
+   *
+   * @param key the option key to add description to.
+   * @param describe the associated description.
+   */
+  describe(key: string, describe?: string): Pargv;
+  describe(key: string | IMap<string>, describe?: string): Pargv {
+    this._command.describe(key, describe);
+    return this;
+  }
+
+  /**
+   * Coerce
+   * Coerce or transform each sub command argument or option in config object for default command.
+   *
+   * @param config object containing coerce configurations.
+   */
+  coerce(config: IMap<IPargvCoerceConfig>): Pargv;
+
+  /**
+   * Coerce
+   * Coerce or transform sub command  arguemnt or option for default command.
+   *
+   * @param key the option key to be coerced.
+   * @param type the string type, RegExp or coerce callback function.
+   * @param def an optional value when coercion fails.
+   */
+  coerce(key: string | IMap<IPargvCoerceConfig>, type?: string | RegExp | CoerceHandler, def?: any): Pargv {
+    this._command.coerce(key, type, def);
+    return this;
+  }
+
+  /**
+   * Demand
+   * The sub command argument or option keys to be demanded for default command.
+   *
+   * @param key the key to demand.
+   */
+  demand(...keys: string[]): Pargv {
+    this._command.demand(...keys);
+    return this;
+  }
+
+  /**
+   * When
+   * When a specified key in config object demand dependent key for default command.
+   *
+   * @param config an object containing when configurations.
+   */
+  when(config: IMap<IPargvWhenConfig>): Pargv;
+
+  /**
+   * When
+   * When a specified key demand dependent key for default command.
+   *
+   * @param key require this key.
+   * @param converse when true the coverse when is also created.
+   */
+  when(key: string, converse?: string): Pargv;
+
+  /**
+   * When
+   * When a specified key demand dependent key for default command.
+   *
+   * @param key require this key.
+   * @param demand this key is present.
+   * @param converse when true the coverse when is also created.
+   */
+  when(key: string, demand?: string, converse?: boolean): Pargv;
+  when(key: string | IMap<IPargvWhenConfig>, demand?: string | boolean, converse?: boolean): Pargv {
+    this._command.when(key, demand, converse);
+    return this;
+  }
+
+  /**
+   * Default
+   * Sets a default value for specified sub command argument or option in default command.
+   *
+   * @param config an object containing configs for property defaults.
+   */
+  default(config: IMap<any>): Pargv;
+
+  /**
+   * Default
+   * Sets a default value for specified sub command argument or option in default command.
+   *
+   * @param key the key to set default value for.
+   * @param val the value to set for the provided key.
+   */
+  default(key: string, val: any): Pargv;
+  default(key: string | IMap<any>, val?: any): Pargv {
+    this._command.default(key, val);
+    return this;
+  }
+
+  /**
+   * Max Options
+   * Specifies the maxium options allowed for default command.
+   *
+   * @param count the number of options allowed.
+   */
+  maxOptions(count: number) {
+    this._command._maxOptions = count;
+    return this;
+  }
+
+  /**
+   * Min Options
+   * Specifies the minimum options required for default command.
+   *
+   * @param count the number of options required.
+   */
+  minOptions(count: number) {
+    this._command._minOptions = count;
+    return this;
+  }
+
+  /**
+   * Completion At
+   * : Injects custom completion value for specified key.
+   * Key can be a known sub command argument option or * for anonymous.
+   *
+   * @param key the key to inject completion values for.
+   * @param vals the completion values for the provided key.
+   */
+  completionFor(key: string, ...vals: any[]): Pargv {
+    this._command.completionFor(key, ...vals);
+    return this;
+  }
+
+  /**
+   * Action
+   * Adds an action event to be called when parsing matches command.
+   *
+   * @param fn the callback function when parsed command matches.
+   */
+  action(fn: ActionHandler): Pargv {
+    this._command.action(fn);
+    return this;
+  }
+
+  /**
+   * Extend Aliases
+   * When true option aliases are extended on result object --option, -o results in { option: value, o: value }.
+   *
+   * @param extend when true aliases are exteneded on Pargv result object.
+   */
+  extendAliases(extend?: boolean): Pargv {
+    this._command.extendAliases(extend);
+    return this;
+  }
+
+  /**
+   * Example
+   * : Saves an example string/tuple of example string & description for default command.
+   *
+   * @param example string or an array of tuples [example, description].
+   * @param describe the description for the example.
+   */
+  example(example: string | [string, string][], describe?: string): Pargv {
+    this._command.example(example, describe);
+    return this;
+  }
+
+  /**
+   * Help
+   * Enables or disables help for default command.
+   *
+   * @param enabled true or false to toggle help.
+   */
+  help(enabled?: boolean): Pargv {
+    this._command.help(enabled);
+    return this;
+  }
+
+  get if() {
+    return this.when;
+  }
+
   // DEPRECATED //
 
   /**
@@ -1683,7 +1942,7 @@ export class Pargv extends EventEmitter {
    * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
    */
   get $(): PargvCommand {
-    this.log(`${colurs.applyAnsi('DEPRECATED:', 'yellow')} pargv.$ is deprecated, call pargv.command() without arguments.`);
+    this.log(`${colurs.applyAnsi('DEPRECATED:', 'yellow')} pargv.$ is deprecated, use methods on pargv instance. ex: pargv.option(), pargv.default()...`);
     return this.getCommand(DEFAULT_COMMAND);
   }
 

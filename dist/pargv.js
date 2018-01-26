@@ -87,7 +87,7 @@ var Pargv = /** @class */ (function (_super) {
         this._helpHandler = this.helpHandler;
         this._completionsHandler = this._completions.handler; // default completion handler.
         this.compatibility(options, true);
-        this._command = new command_1.PargvCommand(constants_1.DEFAULT_COMMAND, this._localize('Default command.').done(), this);
+        this._command = new command_1.PargvCommand(constants_1.DEFAULT_COMMAND, this._localize('General Options:').done(), this);
         this._commands[constants_1.DEFAULT_COMMAND] = this._command;
         return this;
     };
@@ -213,7 +213,7 @@ var Pargv = /** @class */ (function (_super) {
             var metaPadLongest = utils.keys(_this._meta)
                 .filter(function (k) { return k !== 'name' && k !== 'description'; })
                 .map(function (v) { return _this._localize(v).done(); })
-                .reduce(function (a, b) { return a.length > b.length ? a : b; }).length;
+                .reduce(function (a, b) { return a.length > b.length ? a : b; }, '').length;
             for (var k in _this._meta) {
                 var localeKey = _this._localize(k).done();
                 var curVal = _this._meta[k];
@@ -229,13 +229,14 @@ var Pargv = /** @class */ (function (_super) {
                 layout.div();
         };
         // Builds commands and flags help.
-        var buildOptions = function (cmd, altLayout) {
+        var buildOptions = function (cmd) {
             var argStr, optsStr, exStr, reqStr;
             //  cmdsStr = this._localize('Commands').done();
             argStr = _this._localize('Arguments').done();
             optsStr = _this._localize('Options').done();
             exStr = _this._localize('Examples').done();
             reqStr = _this._localize('required').done();
+            var isDef = cmd._name === constants_1.DEFAULT_COMMAND;
             if ((cmd._arguments.length && _this.options.displayTitles) || (!cmd._arguments.length && _this.options.displayNone))
                 layout.section(colurs.applyAnsi(argStr + ":", accent), [1, 0, 0, 1]);
             cmd._arguments.forEach(function (el) {
@@ -250,11 +251,14 @@ var Pargv = /** @class */ (function (_super) {
             });
             if (!cmd._arguments.length && _this.options.displayNone)
                 layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
-            if (cmd._arguments.length && cmd._options.length && !_this.options.displayTitles)
-                layout.div(); // when no titles and have commands and opts add some space.
-            if ((cmd._options.length && _this.options.displayTitles) || (!cmd._options.length && _this.options.displayNone))
-                layout.section(colurs.applyAnsi(optsStr + ":", accent), [1, 0, 0, 1]);
-            cmd._options.sort().forEach(function (el) {
+            if (!isDef) {
+                if (cmd._arguments.length && cmd._options.length && !_this.options.displayTitles)
+                    layout.div(); // when no titles and have commands and opts add some space.
+                if ((cmd._options.length && _this.options.displayTitles) || (!cmd._options.length && _this.options.displayNone))
+                    layout.section(colurs.applyAnsi(optsStr + ":", accent), [1, 0, 0, 1]);
+            }
+            var cmdOpts = cmd._options.sort();
+            cmdOpts.forEach(function (el) {
                 var isRequired = utils.contains(cmd._demands, el);
                 var aliases = cmd.aliases(el).sort();
                 var usages = cmd._usages[el]; // get without first key.
@@ -295,19 +299,20 @@ var Pargv = /** @class */ (function (_super) {
             falseStr = _this._localize('false').done();
             if (command) {
                 cmdKeys = [command];
-                // console.log(); // only displaying one command add spacing.
             }
             else {
                 cmdKeys = utils.keys(_this._commands)
                     .sort();
             }
             cmdKeys = cmdKeys.filter(function (k) { return k !== constants_1.DEFAULT_COMMAND; });
-            cmdKeys.unshift(constants_1.DEFAULT_COMMAND); // Make default command first.
+            if (defCmd._options.length > 1)
+                cmdKeys.unshift(constants_1.DEFAULT_COMMAND); // Make default command first.
             var ctr = 0;
             cmdKeys.forEach(function (el, i) {
                 if (el._name)
                     el = el._name;
                 var cmd = _this.getCommand(el);
+                var isDef = cmd._name === constants_1.DEFAULT_COMMAND;
                 if (!cmd._showHelp)
                     return;
                 if (ctr > 0)
@@ -317,17 +322,22 @@ var Pargv = /** @class */ (function (_super) {
                 var aliasesLen = aliases.length;
                 if (!aliases || !aliases.length)
                     aliases = noneStr;
-                var divs = [
-                    colurs.applyAnsi(usageStr + ": ", primary) + cmd._usage
-                ];
-                if (aliasesLen || _this.options.displayNone)
-                    divs.push(colurs.applyAnsi(aliasStr + ": ", primary) + aliases);
-                if (cmd._external)
-                    divs.push(colurs.applyAnsi("(" + extStr + ")", accent));
-                layout.div.apply(layout, divs);
-                if (cmd._describe && cmdKeys.length > 1) {
-                    var descPadding = _this.options.displayTitles ? [1, 0, 0, 0] : [1, 0, 1, 0];
-                    layout.div({ text: colurs.applyAnsi(cmd._describe, muted), padding: descPadding });
+                if (!isDef) {
+                    var divs = [
+                        colurs.applyAnsi(usageStr + ": ", primary) + cmd._usage
+                    ];
+                    if (aliasesLen || _this.options.displayNone)
+                        divs.push(colurs.applyAnsi(aliasStr + ": ", primary) + aliases);
+                    if (cmd._external)
+                        divs.push(colurs.applyAnsi("(" + extStr + ")", accent));
+                    layout.div.apply(layout, divs);
+                    if (cmd._describe && cmdKeys.length > 1) {
+                        var descPadding = _this.options.displayTitles ? [1, 0, 0, 0] : [1, 0, 1, 0];
+                        layout.div({ text: colurs.applyAnsi(cmd._describe, muted), padding: descPadding });
+                    }
+                }
+                else {
+                    layout.div({ text: colurs.applyAnsi(cmd._describe, primary), padding: [0, 0, 1, 0] });
                 }
                 if (!cmd._options.length && !cmd._arguments.length) {
                     var noArgOrOpts = '~ ' + _this._localize("No arguments or options").done() + ' ~';
@@ -427,7 +437,7 @@ var Pargv = /** @class */ (function (_super) {
             if (constants_1.FLAG_EXP.test(el) && ~(idx = el.indexOf('='))) {
                 arr.push(el.slice(0, idx), el.slice(idx + 1));
             }
-            else if (constants_1.FLAG_SHORT_EXP.test(el)) {
+            else if (constants_1.FLAG_SHORT_EXP.test(el) && el.charAt(0) !== '"' && el.charAt(0) !== "'") {
                 el.replace(constants_1.FLAG_EXP, '').split('').forEach(function (s) {
                     arr.push('-' + s);
                 });
@@ -800,7 +810,6 @@ var Pargv = /** @class */ (function (_super) {
             return result;
         }
         var ctr = 0;
-        var val;
         var stats = cmd.stats(normalized);
         normalized = stats.normalized; // set to normalized & ordered args.
         result = {
@@ -890,6 +899,7 @@ var Pargv = /** @class */ (function (_super) {
             };
         };
         normalized.forEach(function (el, i) {
+            var val;
             var key = stats.map[i]; // get cmd/opt by position in map.
             if ('$value' === key)
                 return; // if $value expects flag value no process.
@@ -897,10 +907,11 @@ var Pargv = /** @class */ (function (_super) {
             el = el.replace(/^--no/, '');
             var next = normalized[i + 1]; // next arg.
             var isFlag = constants_1.FLAG_EXP.test(el); // is a flag/option key.
-            var isFlagNext = constants_1.FLAG_EXP.test(next || ''); // next is a flag/option key.
+            var isFlagNext = cmd.isBool(key) && constants_1.FLAG_EXP.test(next || ''); // next is a flag/option key.
             var def = cmd._defaults[key]; // check if has default value.
             var isVariadic = cmd._variadic === key; // is a variadic key.
-            var isBool = (isFlag && (!next || cmd.isBool(key) || isFlagNext)); // is boolean key.
+            var isBool = (isFlag && (cmd.isBool(key) || isFlagNext)); // is boolean key.
+            //  (isFlag && (!next || cmd.isBool(key) || isFlagNext));
             var coercion = cmd._coercions[key]; // lookup user coerce function.
             if (isNot && !isBool) {
                 _this.error(_this._localize('cannot set option %s to boolean, a value is expected.')
@@ -1060,11 +1071,6 @@ var Pargv = /** @class */ (function (_super) {
                     path = parsed.install;
                 var success = _this._completions.install(path || _this._env.EXEC, replyCmd, template, parsed.force);
                 if (success) {
-                    // console.log();
-                    // this.log(
-                    //   this._localize('successfully installed tab completions, quit and reopen terminal.').done()
-                    // );
-                    // console.log();
                     _this.log('\n' + _this._localize('successfully installed tab completions, quit and reopen terminal.\n\n').done());
                 }
             }
@@ -1239,7 +1245,6 @@ var Pargv = /** @class */ (function (_super) {
         }
         return cmd.stats(args);
     };
-    // EXTENDED METHODS //
     /**
       * Layout
       * Creates a CLI layout much like creating divs in the terminal.
@@ -1386,6 +1391,166 @@ var Pargv = /** @class */ (function (_super) {
         };
         return methods;
     };
+    // DEFAULT COMMAND METHODS //
+    /**
+     * Usage
+     * Usage is generated automatically, this method allows override of the internal generated usage for default command.
+     *
+     * @param val the value to display for command usage.
+     */
+    Pargv.prototype.usage = function (val) {
+        this._command.usage(val);
+        return this;
+    };
+    /**
+      * Option
+      * Adds option to default command.
+      *
+      * Supported types: string, date, array,
+      * number, integer, float, json, regexp, boolean
+      *
+      * @param token the option token to parse as option.
+      * @param describe the description for the option.
+      * @param def an optional default value.
+      * @param type a string type, RegExp to match or Coerce method.
+      */
+    Pargv.prototype.option = function (token, describe, def, type) {
+        this._command.option(token, describe, def, type);
+        return this;
+    };
+    Pargv.prototype.alias = function (key) {
+        var alias = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            alias[_i - 1] = arguments[_i];
+        }
+        (_a = this._command).alias.apply(_a, [key].concat(alias));
+        return this;
+        var _a;
+    };
+    Pargv.prototype.describe = function (key, describe) {
+        this._command.describe(key, describe);
+        return this;
+    };
+    /**
+     * Coerce
+     * Coerce or transform sub command  arguemnt or option for default command.
+     *
+     * @param key the option key to be coerced.
+     * @param type the string type, RegExp or coerce callback function.
+     * @param def an optional value when coercion fails.
+     */
+    Pargv.prototype.coerce = function (key, type, def) {
+        this._command.coerce(key, type, def);
+        return this;
+    };
+    /**
+     * Demand
+     * The sub command argument or option keys to be demanded for default command.
+     *
+     * @param key the key to demand.
+     */
+    Pargv.prototype.demand = function () {
+        var keys = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            keys[_i] = arguments[_i];
+        }
+        (_a = this._command).demand.apply(_a, keys);
+        return this;
+        var _a;
+    };
+    Pargv.prototype.when = function (key, demand, converse) {
+        this._command.when(key, demand, converse);
+        return this;
+    };
+    Pargv.prototype.default = function (key, val) {
+        this._command.default(key, val);
+        return this;
+    };
+    /**
+     * Max Options
+     * Specifies the maxium options allowed for default command.
+     *
+     * @param count the number of options allowed.
+     */
+    Pargv.prototype.maxOptions = function (count) {
+        this._command._maxOptions = count;
+        return this;
+    };
+    /**
+     * Min Options
+     * Specifies the minimum options required for default command.
+     *
+     * @param count the number of options required.
+     */
+    Pargv.prototype.minOptions = function (count) {
+        this._command._minOptions = count;
+        return this;
+    };
+    /**
+     * Completion At
+     * : Injects custom completion value for specified key.
+     * Key can be a known sub command argument option or * for anonymous.
+     *
+     * @param key the key to inject completion values for.
+     * @param vals the completion values for the provided key.
+     */
+    Pargv.prototype.completionFor = function (key) {
+        var vals = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            vals[_i - 1] = arguments[_i];
+        }
+        (_a = this._command).completionFor.apply(_a, [key].concat(vals));
+        return this;
+        var _a;
+    };
+    /**
+     * Action
+     * Adds an action event to be called when parsing matches command.
+     *
+     * @param fn the callback function when parsed command matches.
+     */
+    Pargv.prototype.action = function (fn) {
+        this._command.action(fn);
+        return this;
+    };
+    /**
+     * Extend Aliases
+     * When true option aliases are extended on result object --option, -o results in { option: value, o: value }.
+     *
+     * @param extend when true aliases are exteneded on Pargv result object.
+     */
+    Pargv.prototype.extendAliases = function (extend) {
+        this._command.extendAliases(extend);
+        return this;
+    };
+    /**
+     * Example
+     * : Saves an example string/tuple of example string & description for default command.
+     *
+     * @param example string or an array of tuples [example, description].
+     * @param describe the description for the example.
+     */
+    Pargv.prototype.example = function (example, describe) {
+        this._command.example(example, describe);
+        return this;
+    };
+    /**
+     * Help
+     * Enables or disables help for default command.
+     *
+     * @param enabled true or false to toggle help.
+     */
+    Pargv.prototype.help = function (enabled) {
+        this._command.help(enabled);
+        return this;
+    };
+    Object.defineProperty(Pargv.prototype, "if", {
+        get: function () {
+            return this.when;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Pargv.prototype, "$", {
         // DEPRECATED //
         /**
@@ -1397,7 +1562,7 @@ var Pargv = /** @class */ (function (_super) {
          * @example pargv.$.option('-t').parse(['one', '-t', 'test'])
          */
         get: function () {
-            this.log(colurs.applyAnsi('DEPRECATED:', 'yellow') + " pargv.$ is deprecated, call pargv.command() without arguments.");
+            this.log(colurs.applyAnsi('DEPRECATED:', 'yellow') + " pargv.$ is deprecated, use methods on pargv instance. ex: pargv.option(), pargv.default()...");
             return this.getCommand(constants_1.DEFAULT_COMMAND);
         },
         enumerable: true,

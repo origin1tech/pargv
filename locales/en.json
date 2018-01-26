@@ -71,5 +71,6 @@
   "Global commands and options.": "Global commands and options.",
   "Default command.": "Default command.",
   "arguments": "arguments",
-  "Default command does not support method %s.": "Default command does not support method %s."
+  "Default command does not support method %s.": "Default command does not support method %s.",
+  "General Options:": "General Options:"
 }

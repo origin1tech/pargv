@@ -1337,7 +1337,7 @@ export class PargvCommand {
     if (!skip && map.length) // skipped when getting completions, not needed
       for (const k in this._whens) {                // iterate whens ensure demand exists.
         const demand = this._whens[k];
-        if (!utils.contains(map, demand))
+        if (utils.contains(map, k) && !utils.contains(map, demand))
           whens.push([k, demand]);
       }
 

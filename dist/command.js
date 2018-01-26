@@ -1086,7 +1086,7 @@ var PargvCommand = /** @class */ (function () {
         if (!skip && map.length)
             for (var k in this._whens) {
                 var demand = this._whens[k];
-                if (!utils.contains(map, demand))
+                if (utils.contains(map, k) && !utils.contains(map, demand))
                     whens.push([k, demand]);
             }
         var argumentsCount = normalized.filter(function (c) { return !constants_1.FLAG_EXP.test(c); }).length;

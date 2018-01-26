@@ -499,7 +499,6 @@ export class Pargv extends EventEmitter {
    * @param err the PargvError instance.
    */
   private errorHandler(err: Error) {
-    this.emit('error', err)
     err.stack = err.stack.split('\n').map((s, i) => {
       if (i === 0)
         return colurs.applyAnsi(colurs.strip(s), this.options.colors.alert);

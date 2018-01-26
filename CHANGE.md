@@ -2,11 +2,12 @@
 
 List of changes in descending order.
 
-### 12.28.2017 - 1.25.2018 (v2.1.1)
+### 12.28.2017 - 1.25.2018 (v2.1.0 - v2.1.2)
 
 Note minor version change. Configs from 2.0.30 or greater should still be compatible but moving to 2.1.x due to refactor of help and a couple additional methods. Removed Figlet just isn't needed user should pass whatever they like.
 
 <table>
+  <tr><td>errorHandler</td><td>bad emit forgot to remove.</td></tr>
   <tr><td>castToType</td><td>remove trim on strings, valid strings might start/end with space.</td></tr>
   <tr><td>command.stats</td><td>fix issue where "whens" are incorrectly demanded.</td></tr>
   <tr><td>usage</td><td>add method to allow manual override of usage string.</td></tr>

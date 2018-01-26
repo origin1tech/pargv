@@ -388,7 +388,6 @@ var Pargv = /** @class */ (function (_super) {
      */
     Pargv.prototype.errorHandler = function (err) {
         var _this = this;
-        this.emit('error', err);
         err.stack = err.stack.split('\n').map(function (s, i) {
             if (i === 0)
                 return colurs.applyAnsi(colurs.strip(s), _this.options.colors.alert);

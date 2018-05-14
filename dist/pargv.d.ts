@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { ChildProcess } from 'child_process';
+import { ChildProcess, SpawnOptions } from 'child_process';
 import { PargvCommand } from './command';
 import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IPargvLayout, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, IPargvCoerceConfig, IPargvWhenConfig, ActionHandler } from './interfaces';
 import { EventEmitter } from 'events';
@@ -226,6 +226,16 @@ export declare class Pargv extends EventEmitter {
      */
     command(command: string, describe?: string): Partial<PargvCommand>;
     /**
+     * Spawn
+     * Spawns a new child process, used by spawnHandler internally.
+     *
+     * @param prog the program to be spawned.
+     * @param args the arguments to pass to the child process.
+     * @param options the spawn options.
+     * @param exit whether should exit on close.
+     */
+    spawn(prog: string, args?: any[], options?: SpawnOptions, exit?: boolean): ChildProcess;
+    /**
       * Spawn
       * : Spawns and executes and external command.
       *
@@ -234,7 +244,7 @@ export declare class Pargv extends EventEmitter {
       * @param stdio optional stdio for child process.
       * @param exit indicates if should exit after process.
       */
-    spawn(parsed: IPargvParsedResult, cmd: PargvCommand, stdio?: any, exit?: boolean): ChildProcess;
+    spawnHandler(parsed: IPargvParsedResult, cmd: Partial<PargvCommand>, stdio?: any, exit?: boolean): ChildProcess;
     /**
      * Parse
      * Parses the provided arguments inspecting for commands and options.
@@ -249,6 +259,13 @@ export declare class Pargv extends EventEmitter {
      * @param argv optional arguments otherwise defaults to process.argv.
      */
     exec(...argv: any[]): IPargvParsedResult;
+    /**
+     * Run
+     * An alias to exec but requires arguments.
+     *
+     * @param argv arguments to be parsed.
+     */
+    run(...argv: any[]): IPargvParsedResult;
     /**
      * Base
      * : Sets a base path for all external scripts that contain extentions.

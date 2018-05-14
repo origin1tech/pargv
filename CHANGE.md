@@ -2,6 +2,15 @@
 
 List of changes in descending order.
 
+### 12.17.2017 (v2.1.3)
+
+<table>
+  <tr><td>spreadArguments</td><td>fix issue where spreadArguments could be overridden per command.</td></tr>
+  <tr><td>spawn:error</td><td>emit event on spawned action error - .on('spawn:error', err)</td></tr>
+  <tr><td>spawn:close</td><td>emit event on spawned action close - .on('spawn:close', code)</td></tr>
+  <tr><td>parse</td><td>fix bug where anonymous flags could result in null values.</td></tr>
+</table>
+
 ### 12.28.2017 - 1.25.2018 (v2.1.0 - v2.1.2)
 
 Note minor version change. Configs from 2.0.30 or greater should still be compatible but moving to 2.1.x due to refactor of help and a couple additional methods. Removed Figlet just isn't needed user should pass whatever they like.

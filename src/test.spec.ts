@@ -152,6 +152,35 @@ describe('Pargv', () => {
 
   });
 
+  it('should parse known and anonymous flags regardless of order.', () => {
+    pargv.reset();
+    pargv.command('generate.g <name> [args...] --test');
+    const parsed = pargv.parse(['g', 'app', 'one', 'two', '--flag0', 'flagval', '--flag1', '--test']);
+
+    const expected = {
+      '$exec': 'node_modules/mocha/bin/_mocha',
+      '$command': 'g',
+      '$external': null,
+      '$arguments': ['app', ['one', 'two']],
+      '$variadics': ['one', 'two'],
+      '$source':
+        ['g',
+          'app',
+          'one',
+          'two',
+          '--flag0',
+          'flagval',
+          '--flag1',
+          '--test'],
+      '$commands': ['app', ['one', 'two']],
+      test: true,
+      flag0: 'flagval',
+      flag1: true
+    };
+
+    assert.deepEqual(parsed, expected);
+  });
+
   it('should parse additional commands as variadic', (done) => {
 
     const args = procArgs.concat(['download', 'http://domain.com/file.zip']);
@@ -173,7 +202,7 @@ describe('Pargv', () => {
 
     const args = procArgs.concat(['download', 'http://url.com', '-u=bsmith', '-p=123456']);
 
-    pargv.reset()
+    pargv
       .command('download <url> --username.user.u [username] --password.pass.p [password]', 'Downloads from url.')
       .minOptions(2)
       .coerce('--password', (val, cmd) => {
@@ -241,8 +270,6 @@ describe('Pargv', () => {
       done();
     };
 
-    pargv.reset();
-
     pargv.command('command')
       .demand('-x', '-y')
       .onError(func)
@@ -253,7 +280,6 @@ describe('Pargv', () => {
   // Skip if Wercker, complains about figlet fonts.
   if (!process.env.WERCKER)
     it('should get auto generated help text.', () => {
-      pargv.reset();
       pargv.command('help');
       let resultTxt = colurs.strip(pargv.getHelp());
       expect(resultTxt.length).gt(0);
@@ -274,25 +300,25 @@ describe('Pargv', () => {
 
   it('should parse value to date.', () => {
     const parsed =
-      pargv.reset().parse(['--date', '1/1/2000']);
+      pargv.parse(['--date', '1/1/2000']);
     assert.instanceOf(parsed.date, Date);
   });
 
   it('should parse value to boolean.', () => {
     const parsed =
-      pargv.reset().parse(['--boolean', 'true']);
+      pargv.parse(['--boolean', 'true']);
     assert.equal(parsed.boolean, true);
   });
 
   it('should parse value to number.', () => {
     const parsed =
-      pargv.reset().parse(['--number', '25']);
+      pargv.parse(['--number', '25']);
     assert.equal(parsed.number, 25);
   });
 
   it('should parse value to number.', () => {
     const parsed =
-      pargv.reset().parse(['--number', '25']);
+      pargv.parse(['--number', '25']);
     assert.equal(parsed.number, 25);
   });
 
@@ -308,19 +334,19 @@ describe('Pargv', () => {
 
   it('should parse value outputting as an array.', () => {
     const parsed =
-      pargv.reset().parse(['--array', 'one, two, three, four']);
+      pargv.parse(['--array', 'one, two, three, four']);
     assert.deepEqual(parsed.array, ['one', 'two', 'three', 'four']);
   });
 
   it('should parse value to object from JSON.', () => {
     const parsed =
-      pargv.reset().parse(['--json', '{"name": "bob", "age": "35"}']);
+      pargv.parse(['--json', '{"name": "bob", "age": "35"}']);
     assert.deepEqual(parsed.json, { name: 'bob', age: 35 });
   });
 
   it('should parse value to object.', () => {
     const parsed =
-      pargv.reset().parse(['--obj', 'name:bob+age:40', '--obj2.sizes', 'small,medium,large', '--obj3', 'work.office:"5555679897"+secretary:"5553459878"']);
+      pargv.parse(['--obj', 'name:bob+age:40', '--obj2.sizes', 'small,medium,large', '--obj3', 'work.office:"5555679897"+secretary:"5553459878"']);
     assert.deepEqual(parsed.obj, { name: 'bob', age: 40 });
     assert.deepEqual(parsed.obj2, { sizes: ['small', 'medium', 'large'] });
     assert.deepEqual(parsed.obj3, { work: { office: 5555679897, secretary: 5553459878 } });
@@ -332,7 +358,7 @@ describe('Pargv', () => {
     const cmd = pargv.command('@bash.sh');
     cmd.cwd('src/test');
     const parsed = pargv.parse(['bash.sh']);
-    const proc = pargv.spawn(parsed, cmd, [], false);
+    const proc = pargv.spawnHandler(parsed, cmd, [], false);
     passpipe.proc(proc, (chunk) => {
       assert.equal(chunk, 'executed bash script.');
       done();
@@ -343,7 +369,7 @@ describe('Pargv', () => {
     const cmd = pargv.command('@node.js');
     pargv.base('src/test');
     const parsed = pargv.parse(['node.js']);
-    const proc = pargv.spawn(parsed, cmd, [], false);
+    const proc = pargv.spawnHandler(parsed, cmd, [], false);
     passpipe.proc(proc, (chunk) => {
       assert.equal(chunk, 'executed node script.');
       pargv.base(null);

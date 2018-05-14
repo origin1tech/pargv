@@ -387,6 +387,7 @@ export declare class PargvCommand {
      * @param key the option key to check.
      */
     isBool(key: string): boolean;
+    isAnon(key: string): void;
     /**
      * Command
      * A string containing Parv tokens to be parsed.

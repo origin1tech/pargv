@@ -80,6 +80,7 @@ export class PargvCommand {
       token = token.replace('...', '');
 
     let tokens = token.split(':');                // <age:number> to ['<age', 'number'];
+
     let key = tokens[0];                          // first element is command/option key.
     let type = tokens[1];                         // optional type.
     let def = tokens[2];                          // optional default value.
@@ -231,6 +232,11 @@ export class PargvCommand {
       next = utils.isFlag(next) ||                           // normalize next value.
         !COMMAND_VAL_EXP.test(next || '') ? null : next;
       const parsed = this.parseToken(el, next);        // parse the token.
+
+      if (parsed.required && parsed.default && !parsed.flag) { // can't have default with required arg.
+        this._pargv.error(`required argument "${parsed.key}" cannot have a default value.`);
+      }
+
       let describe;
 
       if (parsed.flag) {
@@ -1256,9 +1262,14 @@ export class PargvCommand {
       else {
         const idx = this._arguments.indexOf(k);
         const cur = clone[idx];
+        // const cloneAdj = clone.filter(v => !FLAG_EXP.test(v));
+        // if (cloneAdj.length < this._arguments.length) {
+
+        // }
         if (!utils.isValue(cur) || FLAG_EXP.test(clone[idx]))
           clone.splice(idx, 0, def);
       }
+
     }
 
     clone.forEach((el, i) => {
@@ -1404,6 +1415,11 @@ export class PargvCommand {
   isBool(key: string) {
     key = this.aliasToKey(key);
     return utils.contains(this._bools, key);
+  }
+
+  isAnon(key: string) {
+    key = this.aliasToKey(key);
+    const cmdKeys = utils.keys(this._bools);
   }
 
   /////////////////////

@@ -72,5 +72,7 @@
   "Default command.": "Default command.",
   "arguments": "arguments",
   "Default command does not support method %s.": "Default command does not support method %s.",
-  "General Options:": "General Options:"
+  "General Options:": "General Options:",
+  "Installs and or outputs script for tab completions.": "Installs and or outputs script for tab completions.",
+  "epilog": "epilog"
 }

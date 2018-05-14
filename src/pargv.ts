@@ -2,7 +2,7 @@
 
 import { parse, resolve, basename, join } from 'path';
 import { appendFileSync, writeFileSync, existsSync, mkdirSync, readFileSync, lstatSync, readlinkSync } from 'fs';
-import { spawn, spawnSync, ChildProcess } from 'child_process';
+import { spawn, spawnSync, ChildProcess, SpawnOptions } from 'child_process';
 import * as util from 'util';
 import * as cliui from 'cliui';
 import { Colurs, IColurs } from 'colurs';
@@ -12,7 +12,7 @@ import { localize } from './localize';
 import { PargvCommand } from './command';
 import { IMap, IPargvOptions, AnsiStyles, HelpHandler, CompletionHandler, IPargvLayout, IPargvLogo, IPargvParsedResult, ErrorHandler, IPargvMetadata, IPargvEnv, IPargvCompletions, LocalizeInit, IPargvStats, CoerceHandler, LogHandler, NodeCallback, IPargvSpawnConfig, IPargvCoerceConfig, IPargvWhenConfig, ActionHandler } from './interfaces';
 import { TOKEN_PREFIX_EXP, FLAG_EXP, SPLIT_CHARS, COMMAND_VAL_EXP, FLAG_SHORT_EXP, DOT_EXP, FORMAT_TOKENS_EXP, EXE_EXP, PARGV_ROOT, ARGV, MOCHA_TESTING, EOL, DEFAULT_COMMAND } from './constants';
-import { isString } from './utils';
+import { isString, isBoolean } from './utils';
 import { EventEmitter } from 'events';
 
 let colurs: IColurs;
@@ -821,28 +821,19 @@ export class Pargv extends EventEmitter {
   }
 
   /**
-    * Spawn
-    * : Spawns and executes and external command.
-    *
-    * @param parsed the parsed command result.
-    * @param cmd a PargvCommand instance.
-    * @param stdio optional stdio for child process.
-    * @param exit indicates if should exit after process.
-    */
-  spawn(parsed: IPargvParsedResult, cmd: PargvCommand, stdio?: any, exit?: boolean) {
+   * Spawn
+   * Spawns a new child process, used by spawnHandler internally.
+   *
+   * @param prog the program to be spawned.
+   * @param args the arguments to pass to the child process.
+   * @param options the spawn options.
+   * @param exit whether should exit on close.
+   */
+  spawn(prog: string, args?: any[], options?: SpawnOptions, exit?: boolean) {
 
     const self = this;
     const colors = this.options.colors;
-    let prog = parsed.$external; // the program to spawn/execute.
-    let basedir = cmd._cwd ? <string>cmd._cwd : this._base ? <string>this._base : '';
-    let args = parsed.$stats.normalized; // get normalized args.
     let proc: ChildProcess;
-
-    if (parsed.$command !== parsed.$external)
-      args.unshift(parsed.$command);
-
-    prog = join(basedir, prog); // ensure base dir if any.
-    prog = prog + cmd._extension || ''; // ensure extension if any.
 
     const isPath = /\.[a-z0-9]{2,}$/.test(prog); // is path with extension.
 
@@ -868,11 +859,11 @@ export class Pargv extends EventEmitter {
 
     }
 
-    let shouldExit = cmd._spawnOptions ? false : exit;
-    const opts = utils.extend({ stdio: stdio || 'inherit' }, cmd._spawnOptions);
+    options = utils.extend({ stdio: 'inherit' }, options);
 
     const exitProcess = (code) => {
-      if (shouldExit === false)
+      this.emit('spawn:close', code);
+      if (exit === false)
         return;
       process.exit(code || 0);
     };
@@ -897,6 +888,8 @@ export class Pargv extends EventEmitter {
       proc.on('close', exitProcess);
 
       proc.on('error', (err) => {
+
+        this.emit('spawn:error', err);
 
         if (err['code'] === 'ENOENT')
           this.error(
@@ -924,18 +917,135 @@ export class Pargv extends EventEmitter {
 
     };
 
+    proc = spawn(prog, args, options);
+    bindEvents(proc);
+
+    return proc;
+
+  }
+
+  /**
+    * Spawn
+    * : Spawns and executes and external command.
+    *
+    * @param parsed the parsed command result.
+    * @param cmd a PargvCommand instance.
+    * @param stdio optional stdio for child process.
+    * @param exit indicates if should exit after process.
+    */
+  spawnHandler(parsed: IPargvParsedResult, cmd: Partial<PargvCommand>, stdio?: any, exit?: boolean) {
+
+    const self = this;
+    const colors = this.options.colors;
+    let prog = parsed.$external; // the program to spawn/execute.
+
+    let basedir = cmd._cwd ? <string>cmd._cwd : this._base ? <string>this._base : '';
+    let args = parsed.$stats.normalized; // get normalized args.
+    let proc: ChildProcess;
+
+    if (parsed.$command !== parsed.$external)
+      args.unshift(parsed.$command);
+
+    prog = join(basedir, prog); // ensure base dir if any.
+    prog = prog + cmd._extension || ''; // ensure extension if any.
+
+    // const isPath = /\.[a-z0-9]{2,}$/.test(prog); // is path with extension.
+
+    // if (isPath) {
+
+    //   // check if is symlink, if true get path.
+    //   prog = lstatSync(prog).isSymbolicLink() ? readlinkSync(prog) : prog;
+
+    //   if (/\.js$/.test(prog) && !utils.isExecutable(prog) || utils.isWindows()) {
+    //     // if is .js and not executable add prog to args run with Node.
+    //     // for windows always set program as node.
+    //     args.unshift(prog);
+    //     prog = process.execPath;
+    //   }
+    //   else if (!utils.isExecutable(prog)) {
+    //     this.error(
+    //       self._localize('"%s" could not be executed, you could try "chmod +x %s" without quotes.')
+    //         .args(prog, prog)
+    //         .done()
+    //     );
+    //     return;
+    //   }
+
+    // }
+
+    let shouldExit = cmd._spawnOptions ? false : exit;
+    const opts = utils.extend({ stdio: stdio || 'inherit' }, cmd._spawnOptions);
+
+    // const exitProcess = (code) => {
+    //   this.emit('spawn:close', code, cmd, parsed);
+    //   if (shouldExit === false)
+    //     return;
+    //   process.exit(code || 0);
+    // };
+
+    // const bindEvents = (proc: ChildProcess) => {
+
+    //   if (!proc || !proc.on) return;
+
+    //   // Thanks to TJ!
+    //   // see > https://github.com/tj/commander.js/blob/master/index.js#L560
+
+    //   const signals = ['SIGUSR1', 'SIGUSR2', 'SIGTERM', 'SIGINT', 'SIGHUP'];
+
+    //   // Listen for signals to kill process.
+    //   signals.forEach(function (signal: any) {
+    //     process.on(signal, function () {
+    //       if ((proc.killed === false) && (proc['exitCode'] === null))
+    //         proc.kill(signal);
+    //     });
+    //   });
+
+    //   proc.on('close', exitProcess);
+
+    //   proc.on('error', (err) => {
+
+    //     this.emit('spawn:error', err, cmd, parsed);
+
+    //     if (err['code'] === 'ENOENT')
+    //       this.error(
+    //         self._localize('%s does not exist, try --%s.')
+    //           .args(prog)
+    //           .setArg('help')
+    //           .styles(colors.accent, colors.accent)
+    //           .done()
+    //       );
+
+    //     else if (err['code'] === 'EACCES')
+    //       this.error(
+    //         self._localize('%s could not be executed, check permissions or run as root.')
+    //           .args(prog)
+    //           .styles(colors.accent)
+    //           .done()
+    //       );
+
+    //     else
+    //       this.error(err);
+
+    //     exitProcess(1);
+
+    //   });
+
+    // };
+
     if (cmd && cmd._spawnAction) { // call user spawn action
+
       const spawnWrapper = (command, args?, options?): ChildProcess => {
         if (utils.isPlainObject(command))
-          return spawn(command.command, command.args || [], command.options);
-        return spawn(command, args, options);
+          return this.spawn(command.command, command.args || [], command.options, shouldExit);
+        return this.spawn(command, args, options, shouldExit);
       };
+
       proc = cmd._spawnAction(spawnWrapper, { command: prog, args: args, options: opts }, parsed, cmd) as ChildProcess;
-      bindEvents(proc);
+      // bindEvents(proc);
     }
     else {
-      proc = spawn(prog, args, opts);
-      bindEvents(proc);
+      proc = this.spawn(prog, args, opts, shouldExit);
+      // bindEvents(proc);
     }
 
     return proc;
@@ -1112,14 +1222,20 @@ export class Pargv extends EventEmitter {
       let next = normalized[i + 1];                   // next arg.
       const isFlag = FLAG_EXP.test(el);               // is a flag/option key.
       let isFlagNext = cmd.isBool(key) && FLAG_EXP.test(next || '');   // next is a flag/option key.
+      if (!cmd.isBool(key) && isFlag && FLAG_EXP.test(next || ''))
+        isFlagNext = true;
       let def = cmd._defaults[key];                 // check if has default value.
       const isVariadic = cmd._variadic === key;     // is a variadic key.
 
       let isBool =
-        (isFlag && (cmd.isBool(key) || isFlagNext)); // is boolean key.
+        (isFlag && (cmd.isBool(key) || isFlagNext) || (!next && isFlag)); // is boolean key.
       //  (isFlag && (!next || cmd.isBool(key) || isFlagNext));
 
       let coercion: CoerceHandler = cmd._coercions[key];  // lookup user coerce function.
+
+      // if (key === '--flag1') {
+      //   console.log('\nnext:', next, '  flag:', isFlag, '  flag next:', isFlagNext, '  default:', def + '\n');
+      // }
 
       if (isNot && !isBool) {
         this.error(
@@ -1242,7 +1358,7 @@ export class Pargv extends EventEmitter {
     let cmd = this.getCommand(cmdName) || null;
 
     if (cmd && cmd._external) { // is external command.
-      this.spawn(parsed, cmd);
+      this.spawnHandler(parsed, cmd);
       return parsed;
     }
 
@@ -1256,21 +1372,37 @@ export class Pargv extends EventEmitter {
 
     if (cmd && utils.isFunction(cmd._action)) { // is defined action.
 
+      const shouldSpread = isBoolean(cmd._spreadArguments) ? cmd._spreadArguments : this.options.spreadArguments;
+
       if (this._completionsCommand === cmd._name) { // is tab completions command.
         cmd._action.call(this, parsed.$arguments.shift() || null, parsed, cmd);
       }
 
       else { // user callback action.
-        if (this.options.spreadArguments)
+        if (shouldSpread) {
           cmd._action.call(this, ...parsed.$arguments, parsed, cmd);
-        else
+        }
+        else {
           cmd._action.call(this, parsed, cmd);
+        }
       }
 
     }
 
     return parsed;
 
+  }
+
+  /**
+   * Run
+   * An alias to exec but requires arguments.
+   *
+   * @param argv arguments to be parsed.
+   */
+  run(...argv: any[]) {
+    if (!argv.length)
+      this.error('run requires arguments to parse but none were provided.');
+    return this.exec(...argv);
   }
 
   /**

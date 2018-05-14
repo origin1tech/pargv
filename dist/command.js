@@ -173,6 +173,9 @@ var PargvCommand = /** @class */ (function () {
             next = utils.isFlag(next) || // normalize next value.
                 !constants_1.COMMAND_VAL_EXP.test(next || '') ? null : next;
             var parsed = _this.parseToken(el, next); // parse the token.
+            if (parsed.required && parsed.default && !parsed.flag) {
+                _this._pargv.error("required argument \"" + parsed.key + "\" cannot have a default value.");
+            }
             var describe;
             if (parsed.flag) {
                 if (!parsed.bool) {
@@ -1016,6 +1019,9 @@ var PargvCommand = /** @class */ (function () {
             else {
                 var idx = this._arguments.indexOf(k);
                 var cur = clone[idx];
+                // const cloneAdj = clone.filter(v => !FLAG_EXP.test(v));
+                // if (cloneAdj.length < this._arguments.length) {
+                // }
                 if (!utils.isValue(cur) || constants_1.FLAG_EXP.test(clone[idx]))
                     clone.splice(idx, 0, def);
             }
@@ -1146,6 +1152,10 @@ var PargvCommand = /** @class */ (function () {
     PargvCommand.prototype.isBool = function (key) {
         key = this.aliasToKey(key);
         return utils.contains(this._bools, key);
+    };
+    PargvCommand.prototype.isAnon = function (key) {
+        key = this.aliasToKey(key);
+        var cmdKeys = utils.keys(this._bools);
     };
     /////////////////////
     // PARGV WRAPPERS //

@@ -670,26 +670,19 @@ var Pargv = /** @class */ (function (_super) {
         return cmd;
     };
     /**
-      * Spawn
-      * : Spawns and executes and external command.
-      *
-      * @param parsed the parsed command result.
-      * @param cmd a PargvCommand instance.
-      * @param stdio optional stdio for child process.
-      * @param exit indicates if should exit after process.
-      */
-    Pargv.prototype.spawn = function (parsed, cmd, stdio, exit) {
+     * Spawn
+     * Spawns a new child process, used by spawnHandler internally.
+     *
+     * @param prog the program to be spawned.
+     * @param args the arguments to pass to the child process.
+     * @param options the spawn options.
+     * @param exit whether should exit on close.
+     */
+    Pargv.prototype.spawn = function (prog, args, options, exit) {
         var _this = this;
         var self = this;
         var colors = this.options.colors;
-        var prog = parsed.$external; // the program to spawn/execute.
-        var basedir = cmd._cwd ? cmd._cwd : this._base ? this._base : '';
-        var args = parsed.$stats.normalized; // get normalized args.
         var proc;
-        if (parsed.$command !== parsed.$external)
-            args.unshift(parsed.$command);
-        prog = path_1.join(basedir, prog); // ensure base dir if any.
-        prog = prog + cmd._extension || ''; // ensure extension if any.
         var isPath = /\.[a-z0-9]{2,}$/.test(prog); // is path with extension.
         if (isPath) {
             // check if is symlink, if true get path.
@@ -707,10 +700,10 @@ var Pargv = /** @class */ (function (_super) {
                 return;
             }
         }
-        var shouldExit = cmd._spawnOptions ? false : exit;
-        var opts = utils.extend({ stdio: stdio || 'inherit' }, cmd._spawnOptions);
+        options = utils.extend({ stdio: 'inherit' }, options);
         var exitProcess = function (code) {
-            if (shouldExit === false)
+            _this.emit('spawn:close', code);
+            if (exit === false)
                 return;
             process.exit(code || 0);
         };
@@ -729,6 +722,7 @@ var Pargv = /** @class */ (function (_super) {
             });
             proc.on('close', exitProcess);
             proc.on('error', function (err) {
+                _this.emit('spawn:error', err);
                 if (err['code'] === 'ENOENT')
                     _this.error(self._localize('%s does not exist, try --%s.')
                         .args(prog)
@@ -745,18 +739,105 @@ var Pargv = /** @class */ (function (_super) {
                 exitProcess(1);
             });
         };
+        proc = child_process_1.spawn(prog, args, options);
+        bindEvents(proc);
+        return proc;
+    };
+    /**
+      * Spawn
+      * : Spawns and executes and external command.
+      *
+      * @param parsed the parsed command result.
+      * @param cmd a PargvCommand instance.
+      * @param stdio optional stdio for child process.
+      * @param exit indicates if should exit after process.
+      */
+    Pargv.prototype.spawnHandler = function (parsed, cmd, stdio, exit) {
+        var _this = this;
+        var self = this;
+        var colors = this.options.colors;
+        var prog = parsed.$external; // the program to spawn/execute.
+        var basedir = cmd._cwd ? cmd._cwd : this._base ? this._base : '';
+        var args = parsed.$stats.normalized; // get normalized args.
+        var proc;
+        if (parsed.$command !== parsed.$external)
+            args.unshift(parsed.$command);
+        prog = path_1.join(basedir, prog); // ensure base dir if any.
+        prog = prog + cmd._extension || ''; // ensure extension if any.
+        // const isPath = /\.[a-z0-9]{2,}$/.test(prog); // is path with extension.
+        // if (isPath) {
+        //   // check if is symlink, if true get path.
+        //   prog = lstatSync(prog).isSymbolicLink() ? readlinkSync(prog) : prog;
+        //   if (/\.js$/.test(prog) && !utils.isExecutable(prog) || utils.isWindows()) {
+        //     // if is .js and not executable add prog to args run with Node.
+        //     // for windows always set program as node.
+        //     args.unshift(prog);
+        //     prog = process.execPath;
+        //   }
+        //   else if (!utils.isExecutable(prog)) {
+        //     this.error(
+        //       self._localize('"%s" could not be executed, you could try "chmod +x %s" without quotes.')
+        //         .args(prog, prog)
+        //         .done()
+        //     );
+        //     return;
+        //   }
+        // }
+        var shouldExit = cmd._spawnOptions ? false : exit;
+        var opts = utils.extend({ stdio: stdio || 'inherit' }, cmd._spawnOptions);
+        // const exitProcess = (code) => {
+        //   this.emit('spawn:close', code, cmd, parsed);
+        //   if (shouldExit === false)
+        //     return;
+        //   process.exit(code || 0);
+        // };
+        // const bindEvents = (proc: ChildProcess) => {
+        //   if (!proc || !proc.on) return;
+        //   // Thanks to TJ!
+        //   // see > https://github.com/tj/commander.js/blob/master/index.js#L560
+        //   const signals = ['SIGUSR1', 'SIGUSR2', 'SIGTERM', 'SIGINT', 'SIGHUP'];
+        //   // Listen for signals to kill process.
+        //   signals.forEach(function (signal: any) {
+        //     process.on(signal, function () {
+        //       if ((proc.killed === false) && (proc['exitCode'] === null))
+        //         proc.kill(signal);
+        //     });
+        //   });
+        //   proc.on('close', exitProcess);
+        //   proc.on('error', (err) => {
+        //     this.emit('spawn:error', err, cmd, parsed);
+        //     if (err['code'] === 'ENOENT')
+        //       this.error(
+        //         self._localize('%s does not exist, try --%s.')
+        //           .args(prog)
+        //           .setArg('help')
+        //           .styles(colors.accent, colors.accent)
+        //           .done()
+        //       );
+        //     else if (err['code'] === 'EACCES')
+        //       this.error(
+        //         self._localize('%s could not be executed, check permissions or run as root.')
+        //           .args(prog)
+        //           .styles(colors.accent)
+        //           .done()
+        //       );
+        //     else
+        //       this.error(err);
+        //     exitProcess(1);
+        //   });
+        // };
         if (cmd && cmd._spawnAction) {
             var spawnWrapper = function (command, args, options) {
                 if (utils.isPlainObject(command))
-                    return child_process_1.spawn(command.command, command.args || [], command.options);
-                return child_process_1.spawn(command, args, options);
+                    return _this.spawn(command.command, command.args || [], command.options, shouldExit);
+                return _this.spawn(command, args, options, shouldExit);
             };
             proc = cmd._spawnAction(spawnWrapper, { command: prog, args: args, options: opts }, parsed, cmd);
-            bindEvents(proc);
+            // bindEvents(proc);
         }
         else {
-            proc = child_process_1.spawn(prog, args, opts);
-            bindEvents(proc);
+            proc = this.spawn(prog, args, opts, shouldExit);
+            // bindEvents(proc);
         }
         return proc;
     };
@@ -907,11 +988,16 @@ var Pargv = /** @class */ (function (_super) {
             var next = normalized[i + 1]; // next arg.
             var isFlag = constants_1.FLAG_EXP.test(el); // is a flag/option key.
             var isFlagNext = cmd.isBool(key) && constants_1.FLAG_EXP.test(next || ''); // next is a flag/option key.
+            if (!cmd.isBool(key) && isFlag && constants_1.FLAG_EXP.test(next || ''))
+                isFlagNext = true;
             var def = cmd._defaults[key]; // check if has default value.
             var isVariadic = cmd._variadic === key; // is a variadic key.
-            var isBool = (isFlag && (cmd.isBool(key) || isFlagNext)); // is boolean key.
+            var isBool = (isFlag && (cmd.isBool(key) || isFlagNext) || (!next && isFlag)); // is boolean key.
             //  (isFlag && (!next || cmd.isBool(key) || isFlagNext));
             var coercion = cmd._coercions[key]; // lookup user coerce function.
+            // if (key === '--flag1') {
+            //   console.log('\nnext:', next, '  flag:', isFlag, '  flag next:', isFlagNext, '  default:', def + '\n');
+            // }
             if (isNot && !isBool) {
                 _this.error(_this._localize('cannot set option %s to boolean, a value is expected.')
                     .args(key).styles(colors.accent).done());
@@ -1008,7 +1094,7 @@ var Pargv = /** @class */ (function (_super) {
             cmdName = constants_1.DEFAULT_COMMAND;
         var cmd = this.getCommand(cmdName) || null;
         if (cmd && cmd._external) {
-            this.spawn(parsed, cmd);
+            this.spawnHandler(parsed, cmd);
             return parsed;
         }
         if (!cmd) {
@@ -1018,18 +1104,36 @@ var Pargv = /** @class */ (function (_super) {
         if (parsed.$stats && !this.options.extendStats && !(cmd && cmd._external))
             delete parsed.$stats;
         if (cmd && utils.isFunction(cmd._action)) {
+            var shouldSpread = utils_1.isBoolean(cmd._spreadArguments) ? cmd._spreadArguments : this.options.spreadArguments;
             if (this._completionsCommand === cmd._name) {
                 cmd._action.call(this, parsed.$arguments.shift() || null, parsed, cmd);
             }
             else {
-                if (this.options.spreadArguments)
+                if (shouldSpread) {
                     (_a = cmd._action).call.apply(_a, [this].concat(parsed.$arguments, [parsed, cmd]));
-                else
+                }
+                else {
                     cmd._action.call(this, parsed, cmd);
+                }
             }
         }
         return parsed;
         var _a;
+    };
+    /**
+     * Run
+     * An alias to exec but requires arguments.
+     *
+     * @param argv arguments to be parsed.
+     */
+    Pargv.prototype.run = function () {
+        var argv = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            argv[_i] = arguments[_i];
+        }
+        if (!argv.length)
+            this.error('run requires arguments to parse but none were provided.');
+        return this.exec.apply(this, argv);
     };
     /**
      * Base

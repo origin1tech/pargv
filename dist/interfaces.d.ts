@@ -10,7 +10,7 @@ export declare type ActionHandler = (...args: any[]) => void;
 export declare type SpawnAsyncMethod = (command: string | IPargvSpawnConfig, args?: string[], options?: SpawnOptions) => ChildProcess;
 export declare type SpawnSyncMethod = (command: string, args?: string[], options?: SpawnSyncOptions) => SpawnSyncReturns<Buffer | string>;
 export declare type SpawnMethod = SpawnAsyncMethod;
-export declare type SpawnActionHandler = (method: SpawnMethod, config: IPargvSpawnConfig, parsed?: IPargvParsedResult, cmd?: PargvCommand) => void | ChildProcess;
+export declare type SpawnActionHandler = (method: SpawnMethod, config: IPargvSpawnConfig, parsed?: IPargvParsedResult, cmd?: Partial<PargvCommand>) => void | ChildProcess;
 export declare type CompletionHandler = (current: string, argv: any[] | NodeCallback, done?: CompletionHandlerCallback) => any[];
 export declare type CompletionHandlerCallback = (completions: any[]) => void;
 export declare type HelpHandler = (command: string, commands?: IMap<PargvCommand>) => any;

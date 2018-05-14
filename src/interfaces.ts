@@ -11,7 +11,7 @@ export type ActionHandler = (...args: any[]) => void;
 export type SpawnAsyncMethod = (command: string | IPargvSpawnConfig, args?: string[], options?: SpawnOptions) => ChildProcess;
 export type SpawnSyncMethod = (command: string, args?: string[], options?: SpawnSyncOptions) => SpawnSyncReturns<Buffer | string>;
 export type SpawnMethod = SpawnAsyncMethod; // may allow sync in future | SpawnSyncMethod;
-export type SpawnActionHandler = (method: SpawnMethod, config: IPargvSpawnConfig, parsed?: IPargvParsedResult, cmd?: PargvCommand) => void | ChildProcess;
+export type SpawnActionHandler = (method: SpawnMethod, config: IPargvSpawnConfig, parsed?: IPargvParsedResult, cmd?: Partial<PargvCommand>) => void | ChildProcess;
 
 export type CompletionHandler = (current: string, argv: any[] | NodeCallback, done?: CompletionHandlerCallback) => any[];
 export type CompletionHandlerCallback = (completions: any[]) => void;

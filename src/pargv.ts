@@ -826,14 +826,31 @@ export class Pargv extends EventEmitter {
    *
    * @param prog the program to be spawned.
    * @param args the arguments to pass to the child process.
+   * @param exit whether should exit on close.
+   */
+  spawn(prog: string, args?: any[], options?: SpawnOptions, exit?: boolean): ChildProcess;
+
+  /**
+   * Spawn
+   * Spawns a new child process, used by spawnHandler internally.
+   *
+   * @param prog the program to be spawned.
+   * @param args the arguments to pass to the child process.
    * @param options the spawn options.
    * @param exit whether should exit on close.
    */
-  spawn(prog: string, args?: any[], options?: SpawnOptions, exit?: boolean) {
+  spawn(prog: string, args?: any[], options?: SpawnOptions, exit?: boolean): ChildProcess;
+
+  spawn(prog: string, args?: any[], options?: SpawnOptions | boolean, exit?: boolean): ChildProcess {
 
     const self = this;
     const colors = this.options.colors;
     let proc: ChildProcess;
+
+    if (utils.isBoolean(options)) {
+      exit = <boolean>options;
+      options = undefined;
+    }
 
     const isPath = /\.[a-z0-9]{2,}$/.test(prog); // is path with extension.
 
@@ -862,10 +879,8 @@ export class Pargv extends EventEmitter {
     options = utils.extend({ stdio: 'inherit' }, options);
 
     const exitProcess = (code) => {
-      this.emit('spawn:close', code);
-      if (exit === false)
-        return;
-      process.exit(code || 0);
+      if (exit === true)
+        process.exit(code || 0);
     };
 
     const bindEvents = (proc: ChildProcess) => {
@@ -888,8 +903,6 @@ export class Pargv extends EventEmitter {
       proc.on('close', exitProcess);
 
       proc.on('error', (err) => {
-
-        this.emit('spawn:error', err);
 
         if (err['code'] === 'ENOENT')
           this.error(
@@ -917,7 +930,7 @@ export class Pargv extends EventEmitter {
 
     };
 
-    proc = spawn(prog, args, options);
+    proc = spawn(prog, args, options as SpawnOptions);
     bindEvents(proc);
 
     return proc;
@@ -1212,6 +1225,7 @@ export class Pargv extends EventEmitter {
       };
     };
 
+
     normalized.forEach((el, i) => {
       let val;
       let key = stats.map[i];              // get cmd/opt by position in map.
@@ -1315,16 +1329,19 @@ export class Pargv extends EventEmitter {
 
     if (isExec) { // ensures correct number of cmd args.
 
+      const filteredAnon = stats.anonymous.filter(v => !FLAG_EXP.test(v));
+
       if (cmd._spreadArguments) {
 
         let offset =
-          (cmd._arguments.length + stats.anonymous.length) - result.$arguments.length;
+          (cmd._arguments.length + filteredAnon.length) - result.$arguments.length;
 
         if (cmd._variadic)
           offset = cmd._arguments.length - result.$arguments.length;
 
         while (offset > 0 && offset--)
           result.$arguments.push(null);
+
       }
 
     }
@@ -1391,18 +1408,6 @@ export class Pargv extends EventEmitter {
 
     return parsed;
 
-  }
-
-  /**
-   * Run
-   * An alias to exec but requires arguments.
-   *
-   * @param argv arguments to be parsed.
-   */
-  run(...argv: any[]) {
-    if (!argv.length)
-      this.error('run requires arguments to parse but none were provided.');
-    return this.exec(...argv);
   }
 
   /**

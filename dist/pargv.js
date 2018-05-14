@@ -669,20 +669,15 @@ var Pargv = /** @class */ (function (_super) {
         this._commands[cmd._name] = cmd;
         return cmd;
     };
-    /**
-     * Spawn
-     * Spawns a new child process, used by spawnHandler internally.
-     *
-     * @param prog the program to be spawned.
-     * @param args the arguments to pass to the child process.
-     * @param options the spawn options.
-     * @param exit whether should exit on close.
-     */
     Pargv.prototype.spawn = function (prog, args, options, exit) {
         var _this = this;
         var self = this;
         var colors = this.options.colors;
         var proc;
+        if (utils.isBoolean(options)) {
+            exit = options;
+            options = undefined;
+        }
         var isPath = /\.[a-z0-9]{2,}$/.test(prog); // is path with extension.
         if (isPath) {
             // check if is symlink, if true get path.
@@ -702,10 +697,8 @@ var Pargv = /** @class */ (function (_super) {
         }
         options = utils.extend({ stdio: 'inherit' }, options);
         var exitProcess = function (code) {
-            _this.emit('spawn:close', code);
-            if (exit === false)
-                return;
-            process.exit(code || 0);
+            if (exit === true)
+                process.exit(code || 0);
         };
         var bindEvents = function (proc) {
             if (!proc || !proc.on)
@@ -722,7 +715,6 @@ var Pargv = /** @class */ (function (_super) {
             });
             proc.on('close', exitProcess);
             proc.on('error', function (err) {
-                _this.emit('spawn:error', err);
                 if (err['code'] === 'ENOENT')
                     _this.error(self._localize('%s does not exist, try --%s.')
                         .args(prog)
@@ -1062,8 +1054,9 @@ var Pargv = /** @class */ (function (_super) {
         if (result.$variadics.length)
             result.$arguments.push(result.$variadics);
         if (isExec) {
+            var filteredAnon = stats.anonymous.filter(function (v) { return !constants_1.FLAG_EXP.test(v); });
             if (cmd._spreadArguments) {
-                var offset = (cmd._arguments.length + stats.anonymous.length) - result.$arguments.length;
+                var offset = (cmd._arguments.length + filteredAnon.length) - result.$arguments.length;
                 if (cmd._variadic)
                     offset = cmd._arguments.length - result.$arguments.length;
                 while (offset > 0 && offset--)
@@ -1119,21 +1112,6 @@ var Pargv = /** @class */ (function (_super) {
         }
         return parsed;
         var _a;
-    };
-    /**
-     * Run
-     * An alias to exec but requires arguments.
-     *
-     * @param argv arguments to be parsed.
-     */
-    Pargv.prototype.run = function () {
-        var argv = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            argv[_i] = arguments[_i];
-        }
-        if (!argv.length)
-            this.error('run requires arguments to parse but none were provided.');
-        return this.exec.apply(this, argv);
     };
     /**
      * Base

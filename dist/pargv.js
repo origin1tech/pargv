@@ -217,7 +217,7 @@ var Pargv = /** @class */ (function (_super) {
             for (var k in _this._meta) {
                 var localeKey = _this._localize(k).done();
                 var curVal = _this._meta[k];
-                if (!utils.contains(['name', 'description'], k)) {
+                if (!utils.contains(['name', 'description', 'epilog'], k)) {
                     var metaPadLen = (metaPadLongest - localeKey.length) + 2;
                     layout.div(colurs.applyAnsi(localeKey + ':', accent) + utils.padLeft(curVal, metaPadLen));
                 }
@@ -611,8 +611,8 @@ var Pargv = /** @class */ (function (_super) {
      * Adds name of CLI to help header.
      *
      * @param val the value to use as app name.
-     * @param font a Figlet font. (DEPRECATED)
      * @param styles an ansi color/style or array of styles. (DEPRECATED)
+     * @param font a Figlet font. (DEPRECATED)
      */
     Pargv.prototype.name = function (val, styles, font) {
         if (font || styles)
@@ -697,6 +697,7 @@ var Pargv = /** @class */ (function (_super) {
         }
         options = utils.extend({ stdio: 'inherit' }, options);
         var exitProcess = function (code) {
+            process.stdout.write('\n');
             if (exit === true)
                 process.exit(code || 0);
         };

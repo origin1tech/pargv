@@ -2,7 +2,7 @@
 
 List of changes in descending order.
 
-### 12.17.2017 (v2.1.3-v2.1.4)
+### 12.17.2017 (v2.1.3-v2.1.5)
 
 <table>
   <tr><td>spreadArguments</td><td>fix issue where spreadArguments could be overridden per command.</td></tr>
@@ -10,6 +10,7 @@ List of changes in descending order.
   <tr><td>parse</td><td>fix bug where anonymous flags could result in null values.</td></tr>
   <tr><td>PargvCommand</td><td>fix bug in typings where Partial is required.</td></tr>
   <tr><td>exec</td><td>fix issue where spread arguments include anonymous flags.</td></tr>
+  <tr><td>epilog</td><td>fix issue where epilog is displayed in the header.</td></tr>
 </table>
 
 ### 12.28.2017 - 1.25.2018 (v2.1.0 - v2.1.2)

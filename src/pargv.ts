@@ -256,8 +256,8 @@ export class Pargv extends EventEmitter {
       for (const k in this._meta) {
         const localeKey = this._localize(k).done();
         let curVal = this._meta[k];
-        if (!utils.contains(['name', 'description'], k)) {
-          const metaPadLen = (metaPadLongest - localeKey.length) + 2
+        if (!utils.contains(['name', 'description', 'epilog'], k)) {
+          const metaPadLen = (metaPadLongest - localeKey.length) + 2;
           layout.div(colurs.applyAnsi(localeKey + ':', accent) + utils.padLeft(curVal, metaPadLen));
         }
       }
@@ -755,8 +755,8 @@ export class Pargv extends EventEmitter {
    * Adds name of CLI to help header.
    *
    * @param val the value to use as app name.
-   * @param font a Figlet font. (DEPRECATED)
    * @param styles an ansi color/style or array of styles. (DEPRECATED)
+   * @param font a Figlet font. (DEPRECATED)
    */
   name(val?: string, styles?: AnsiStyles | AnsiStyles[], font?: string) {
     if (font || styles)
@@ -879,6 +879,7 @@ export class Pargv extends EventEmitter {
     options = utils.extend({ stdio: 'inherit' }, options);
 
     const exitProcess = (code) => {
+      process.stdout.write('\n');
       if (exit === true)
         process.exit(code || 0);
     };

@@ -185,8 +185,8 @@ export declare class Pargv extends EventEmitter {
      * Adds name of CLI to help header.
      *
      * @param val the value to use as app name.
-     * @param font a Figlet font. (DEPRECATED)
      * @param styles an ansi color/style or array of styles. (DEPRECATED)
+     * @param font a Figlet font. (DEPRECATED)
      */
     name(val?: string, styles?: AnsiStyles | AnsiStyles[], font?: string): Pargv;
     /**

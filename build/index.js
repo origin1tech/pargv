@@ -60,6 +60,7 @@ const actions = {
     let args = './node_modules/typedoc/bin/typedoc --out ./docs ./src --options ./typedoc.json';
     args = normalize(args);
     stiks.exec.node(args);
+    stiks.exec.command('touch', './docs/.nojekyll');
     return actions;
   },
 

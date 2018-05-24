@@ -91,7 +91,7 @@ var PargvCommand = /** @class */ (function () {
                 tmpUsage = tmpUsage.slice(0, tmpUsage.length - 1) + '...' + tmpUsageLast;
             }
         }
-        if (def) {
+        if (def) { // try to parse default val.
             var defType = type ? type : 'auto';
             def = this.castToType(key, defType, def);
         }
@@ -135,7 +135,7 @@ var PargvCommand = /** @class */ (function () {
         var split = utils.split(token.trim(), constants_1.SPLIT_CHARS); // Break out usage command.
         var origExt;
         var isExternal;
-        if (/^@/.test(split[0])) {
+        if (/^@/.test(split[0])) { // is external program cmd.
             var tmpExt = origExt = split.shift().trim().replace(/^@/, '');
             var splitExt = tmpExt.split(path_1.sep);
             tmpExt = splitExt.pop().replace(/^@/, '');
@@ -150,7 +150,7 @@ var PargvCommand = /** @class */ (function () {
             split.unshift(name);
             name = undefined;
         }
-        if (this._external && !name) {
+        if (this._external && !name) { // if no command name and is program use program.
             name = this._external;
             aliases.push(origExt); // full path alias.
             aliases.push(this._external + this._extension || ''); // name & ext alias.
@@ -173,12 +173,12 @@ var PargvCommand = /** @class */ (function () {
             next = utils.isFlag(next) || // normalize next value.
                 !constants_1.COMMAND_VAL_EXP.test(next || '') ? null : next;
             var parsed = _this.parseToken(el, next); // parse the token.
-            if (parsed.required && parsed.default && !parsed.flag) {
+            if (parsed.required && parsed.default && !parsed.flag) { // can't have default with required arg.
                 _this._pargv.error("required argument \"" + parsed.key + "\" cannot have a default value.");
             }
             var describe;
             if (parsed.flag) {
-                if (!parsed.bool) {
+                if (!parsed.bool) { // remove next if not bool.
                     split.splice(i + 1, 1);
                     if (parsed.isVariadic)
                         _this.error(_this._pargv
@@ -240,9 +240,9 @@ var PargvCommand = /** @class */ (function () {
         this.alias(option.key, option.key); // Add key to self.
         this.alias.apply(// Add key to self.
         this, [option.key].concat(option.aliases)); // Add aliases to map.
-        if (!utils.isUndefined(option.index))
+        if (!utils.isUndefined(option.index)) // Index to Command map.
             this.alias(option.key, option.index + '');
-        if (option.required)
+        if (option.required) // set as required.
             this.demand(option.key);
         if (option.default)
             this._defaults[option.key] = option.default;
@@ -664,10 +664,10 @@ var PargvCommand = /** @class */ (function () {
      * @param path the base path when command is external program.
      */
     PargvCommand.prototype.cwd = function (path) {
-        if (this._action || !this._external)
+        if (this._action || !this._external) // not needed if action defined.
             return this;
         this._cwd = path;
-        if (this._external !== this._name || utils.isBoolean(path))
+        if (this._external !== this._name || utils.isBoolean(path)) // external prog is not cmd just return.
             return;
         var fullPath = path_1.join(path, this._external);
         this._aliases[fullPath] = this._name;
@@ -803,7 +803,7 @@ var PargvCommand = /** @class */ (function () {
                 if (!pairs.length)
                     return null;
                 var parentPath;
-                if (constants_1.DOT_EXP.test(pairs[0])) {
+                if (constants_1.DOT_EXP.test(pairs[0])) { // split user.profile.name to [user, profile, name]
                     var matches = pairs.shift().match(constants_1.SPLIT_KEYVAL_EXP);
                     var segments = matches[0].split('.');
                     var key_1 = segments.pop();
@@ -821,7 +821,7 @@ var PargvCommand = /** @class */ (function () {
                         else {
                             if (/^\[\s*?("|').+("|')\s*?\]$/.test(castVal))
                                 castVal = castVal.replace(/(^\[|\]$)/g, '');
-                            if (opts.cast) {
+                            if (opts.cast) { // check if auto casting is enabled.
                                 castVal = utils.toDefault(autoCast(castVal), castVal);
                                 if (utils.isArray(castVal))
                                     castVal = castVal.map(function (el) {
@@ -840,7 +840,7 @@ var PargvCommand = /** @class */ (function () {
                     return null;
                 v = v.replace(/^"/, '').replace(/"$/, '');
                 var obj = utils.tryWrap(JSON.parse, v)();
-                if (utils.isPlainObject(obj) && opts.cast) {
+                if (utils.isPlainObject(obj) && opts.cast) { // auto casting is permitted.
                     obj = castObject(obj);
                 }
                 return obj;
@@ -861,7 +861,7 @@ var PargvCommand = /** @class */ (function () {
                 return utils.castType(v, 'number');
             },
             date: function (v, k) {
-                if (!isAuto && /^\d+$/.test(v))
+                if (!isAuto && /^\d+$/.test(v)) // if only number get from epoch.
                     return utils.fromEpoch(to.number(v));
                 return utils.castType(v, 'date');
             },
@@ -914,13 +914,14 @@ var PargvCommand = /** @class */ (function () {
             else
                 result = to[type](val);
         }
+        // Try to auto cast type.
         else {
             result = utils.toDefault(autoCast(val), val);
         }
         // If Auto no type checking.
         if (isAuto)
             return result;
-        if (!isListType)
+        if (!isListType) // if not matching list/regexp check default.
             result = utils.toDefault(result, def);
         // Ensure valid type.
         if (!utils.isValue(result) || !is[type](result)) {
@@ -1004,12 +1005,12 @@ var PargvCommand = /** @class */ (function () {
         var ctr = 0;
         // Ensure defaults for missing keys.
         for (var k in this._defaults) {
-            if (k === this._variadic)
+            if (k === this._variadic) // don't set default for variadic.
                 continue;
             var isFlag = constants_1.FLAG_EXP.test(k);
             var def = this._defaults[k];
             var isBool = this.isBool(k);
-            if (isFlag) {
+            if (isFlag) { // check if is missing default value.
                 if (!utils.contains(clone, k)) {
                     clone.push(k);
                     if (!isBool)
@@ -1034,17 +1035,17 @@ var PargvCommand = /** @class */ (function () {
             var origEl = el;
             el = el.replace(/^--no/, ''); // strip --no;
             var key = isFlag || ctr > lastIdx ? _this.aliasToKey(el) : _this.aliasToKey(ctr);
-            if (!key) {
+            if (!key) { // is anonymous command or option.
                 anonymous.push(origEl);
                 var anonKey = _this._variadic && !isFlag ? _this._variadic : el;
                 mapAnon.push(anonKey);
-                if (isFlag && !isFlagNext && next) {
+                if (isFlag && !isFlagNext && next) { // add only if not opt or cmd.
                     anonymous.push(next);
                     mapAnon.push('$value'); // keeps ordering denotes expects val.
                     clone.splice(i + 1, 1);
                 }
             }
-            else if (isFlag && key) {
+            else if (isFlag && key) { // is a known flag/option.
                 options.push(isNot ? '--no' + key : key); // converted from alias to key.
                 mapOpts.push(key);
                 if (!_this.isBool(el) && utils.isValue(next)) {
@@ -1053,7 +1054,7 @@ var PargvCommand = /** @class */ (function () {
                     clone.splice(i + 1, 1);
                 }
             }
-            else if (!isFlag && key) {
+            else if (!isFlag && key) { // is a known command.
                 args.push(el);
                 mapCmds.push(key);
                 ctr++;
@@ -1089,8 +1090,8 @@ var PargvCommand = /** @class */ (function () {
             }
         });
         var whens = [];
-        if (!skip && map.length)
-            for (var k in this._whens) {
+        if (!skip && map.length) // skipped when getting completions, not needed
+            for (var k in this._whens) { // iterate whens ensure demand exists.
                 var demand = this._whens[k];
                 if (utils.contains(map, k) && !utils.contains(map, demand))
                     whens.push([k, demand]);
@@ -1139,7 +1140,7 @@ var PargvCommand = /** @class */ (function () {
     PargvCommand.prototype.isRequired = function (key) {
         var origKey = key;
         key = this.aliasToKey(key);
-        if (utils.isNumber(key))
+        if (utils.isNumber(key)) // happens when command string is passed.
             key = origKey; // convert back to orig value passed.
         return utils.contains(this._demands, key);
     };

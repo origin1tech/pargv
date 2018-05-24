@@ -54,7 +54,7 @@ function localize(pargv, colurs) {
             },
             setArg: function (singular, plural, count, index) {
                 if (utils.isValue(plural)) {
-                    if (utils.isNumber(plural)) {
+                    if (utils.isNumber(plural)) { // this is singular index.
                         index = plural;
                         plural = undefined;
                     }

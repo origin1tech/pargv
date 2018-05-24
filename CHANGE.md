@@ -2,7 +2,13 @@
 
 List of changes in descending order.
 
-### 12.17.2017 (v2.1.3-v2.1.5)
+### 5.24.2018 (v2.1.6)
+
+<table>
+  <tr><td>npm audit</td><td>update dev dependencies, had vulnerabilities.</td></tr>
+</table>
+
+### 5.20.2018 (v2.1.3-v2.1.5)
 
 <table>
   <tr><td>spreadArguments</td><td>fix issue where spreadArguments could be overridden per command.</td></tr>

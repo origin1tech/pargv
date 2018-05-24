@@ -198,7 +198,7 @@ var Pargv = /** @class */ (function (_super) {
         var noneStr = this._localize('none').done();
         // Builds the app name, version descript header.
         var buildHeader = function () {
-            if (!metaKeys.length)
+            if (!metaKeys.length) // nothing in header.
                 return;
             if (_this._meta.name) {
                 var curVal = _this._meta.name;
@@ -249,7 +249,7 @@ var Pargv = /** @class */ (function (_super) {
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
-            if (!cmd._arguments.length && _this.options.displayNone)
+            if (!cmd._arguments.length && _this.options.displayNone) // no commands set "none".
                 layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
             if (!isDef) {
                 if (cmd._arguments.length && cmd._options.length && !_this.options.displayTitles)
@@ -274,7 +274,7 @@ var Pargv = /** @class */ (function (_super) {
                 arr.push(lastCol);
                 layout.div.apply(layout, arr);
             });
-            if (!cmd._options.length && _this.options.displayNone)
+            if (!cmd._options.length && _this.options.displayNone) // no options set "none".
                 layout.div({ text: colurs.applyAnsi(noneStr, muted), padding: [0, 0, 0, padLeftIfNested] });
             if (cmd._examples.length) {
                 layout.section(colurs.applyAnsi(exStr + ":", accent), [1, 0, 0, 1]);
@@ -361,6 +361,7 @@ var Pargv = /** @class */ (function (_super) {
         if (command) {
             buildBody();
         }
+        // Build help for all commands.
         else {
             if (this.options.displayHeader)
                 buildHeader();
@@ -430,7 +431,7 @@ var Pargv = /** @class */ (function (_super) {
         if (utils.isArray(args[0]))
             args = args[0];
         var arr = [], idx;
-        if (constants_1.EXE_EXP.test(args[0]) || args[0] === this._env.NODE_PATH)
+        if (constants_1.EXE_EXP.test(args[0]) || args[0] === this._env.NODE_PATH) // if contains node/exec path strip.
             args = args.slice(2);
         args.forEach(function (el) {
             if (constants_1.FLAG_EXP.test(el) && ~(idx = el.indexOf('='))) {
@@ -530,7 +531,7 @@ var Pargv = /** @class */ (function (_super) {
      */
     Pargv.prototype.showHelp = function (command) {
         var helpStr = this.buildHelp(command);
-        if (helpStr) {
+        if (helpStr) { // only output if string is returned.
             this.emit('help', helpStr);
             process.stderr.write('\n' + helpStr + '\n\n');
         }
@@ -568,7 +569,7 @@ var Pargv = /** @class */ (function (_super) {
         var cmd = cmds[key];
         if (cmd)
             return cmd;
-        for (var p in cmds) {
+        for (var p in cmds) { // Try to lookup by alias.
             if (cmd)
                 break;
             var tmp = cmds[p];
@@ -819,7 +820,7 @@ var Pargv = /** @class */ (function (_super) {
         //     exitProcess(1);
         //   });
         // };
-        if (cmd && cmd._spawnAction) {
+        if (cmd && cmd._spawnAction) { // call user spawn action
             var spawnWrapper = function (command, args, options) {
                 if (utils.isPlainObject(command))
                     return _this.spawn(command.command, command.args || [], command.options, shouldExit);
@@ -860,7 +861,7 @@ var Pargv = /** @class */ (function (_super) {
         var normalized = this.toNormalized(argv.slice(0)); // normalize the args.
         var source = normalized.slice(0); // store source args.
         var name = utils.first(normalized); // get first arg.
-        if (constants_1.FLAG_EXP.test(name))
+        if (constants_1.FLAG_EXP.test(name)) // name cmd can't be flag.
             name = undefined;
         // lookup the command.
         var cmd = this.getCommand(name);
@@ -868,9 +869,9 @@ var Pargv = /** @class */ (function (_super) {
         if ((isExec || cmd) && name !== undefined)
             // if (name !== undefined && name !== DEFAULT_COMMAND)
             normalized.shift(); // shift first arg.
-        if (!cmd)
+        if (!cmd) // if no command here fallback to the default.
             cmd = this.getCommand(constants_1.DEFAULT_COMMAND);
-        if (name === this._completionsCommand && ~source.indexOf(this._completionsReply)) {
+        if (name === this._completionsCommand && ~source.indexOf(this._completionsReply)) { // hijack parse this is a call for tab completion.
             result = {
                 $exec: env.EXEC,
                 $command: cmd._name,
@@ -918,7 +919,7 @@ var Pargv = /** @class */ (function (_super) {
             // .styles(colors.accent)
             );
         }
-        if (stats.whens.length) {
+        if (stats.whens.length) { // just display first.
             var when = stats.whens.shift();
             this.error(// no anon in strict mode.
             this._localize('%s requires %s but is missing.')
@@ -956,7 +957,7 @@ var Pargv = /** @class */ (function (_super) {
             // .styles(colors.accent, colors.primary, colors.accent)
             );
         }
-        if (cmd._external)
+        if (cmd._external) // if ext program just
             return result;
         // Normalize value and call user coerce method if exists.
         var coerceWrapper = function (key, type, isBool) {
@@ -1022,18 +1023,18 @@ var Pargv = /** @class */ (function (_super) {
                 }
             }
             else {
-                if (constants_1.DOT_EXP.test(key)) {
+                if (constants_1.DOT_EXP.test(key)) { // is dot notation key.
                     utils.set(result, key.replace(constants_1.FLAG_EXP, ''), val);
                 }
                 else {
-                    if (result[formattedKey]) {
+                    if (result[formattedKey]) { // if existing convert to array push new value.
                         result[formattedKey] = [result[formattedKey]];
                         result[formattedKey].push(val);
                     }
                     else {
                         result[formattedKey] = val;
                     }
-                    if (cmd._extendAliases) {
+                    if (cmd._extendAliases) { // extend each alias to object.
                         (cmd.aliases(key) || []).forEach(function (el) {
                             var frmKey = utils.camelcase(el.replace(constants_1.FLAG_EXP, ''));
                             if (result[frmKey]) {
@@ -1054,7 +1055,7 @@ var Pargv = /** @class */ (function (_super) {
         // Push variadics array to commands.
         if (result.$variadics.length)
             result.$arguments.push(result.$variadics);
-        if (isExec) {
+        if (isExec) { // ensures correct number of cmd args.
             var filteredAnon = stats.anonymous.filter(function (v) { return !constants_1.FLAG_EXP.test(v); });
             if (cmd._spreadArguments) {
                 var offset = (cmd._arguments.length + filteredAnon.length) - result.$arguments.length;
@@ -1079,7 +1080,7 @@ var Pargv = /** @class */ (function (_super) {
             argv[_i] = arguments[_i];
         }
         var parsed = this.parse.apply(this, argv.concat(['__exec__']));
-        if (!parsed || utils.isEmpty(parsed))
+        if (!parsed || utils.isEmpty(parsed)) // help detected return empty object.
             return {};
         var normLen = parsed.$stats && parsed.$stats.normalized.length;
         var optsLen = parsed.$stats && parsed.$stats.optionsCount;
@@ -1087,7 +1088,7 @@ var Pargv = /** @class */ (function (_super) {
         if (!cmdName && (normLen || optsLen))
             cmdName = constants_1.DEFAULT_COMMAND;
         var cmd = this.getCommand(cmdName) || null;
-        if (cmd && cmd._external) {
+        if (cmd && cmd._external) { // is external command.
             this.spawnHandler(parsed, cmd);
             return parsed;
         }
@@ -1097,12 +1098,12 @@ var Pargv = /** @class */ (function (_super) {
         }
         if (parsed.$stats && !this.options.extendStats && !(cmd && cmd._external))
             delete parsed.$stats;
-        if (cmd && utils.isFunction(cmd._action)) {
+        if (cmd && utils.isFunction(cmd._action)) { // is defined action.
             var shouldSpread = utils_1.isBoolean(cmd._spreadArguments) ? cmd._spreadArguments : this.options.spreadArguments;
-            if (this._completionsCommand === cmd._name) {
+            if (this._completionsCommand === cmd._name) { // is tab completions command.
                 cmd._action.call(this, parsed.$arguments.shift() || null, parsed, cmd);
             }
-            else {
+            else { // user callback action.
                 if (shouldSpread) {
                     (_a = cmd._action).call.apply(_a, [this].concat(parsed.$arguments, [parsed, cmd]));
                 }
@@ -1148,8 +1149,8 @@ var Pargv = /** @class */ (function (_super) {
             if (parsed.reply) {
                 return _this.completionResult(parsed, _this._completionsHandler); // reply with completions.
             }
-            else if (parsed.install) {
-                if (utils_1.isString(parsed.install))
+            else if (parsed.install) { // install completions.
+                if (utils_1.isString(parsed.install)) // Allow path to be provided w/ --install flag.
                     path = parsed.install;
                 var success = _this._completions.install(path || _this._env.EXEC, replyCmd, template, parsed.force);
                 if (success) {
@@ -1189,7 +1190,7 @@ var Pargv = /** @class */ (function (_super) {
             return this._completions.handler(current, argv);
         }
         utils.setBlocking(true); // set blocking on stream handle.
-        if (handler.length > 2) {
+        if (handler.length > 2) { // handler has callback.
             handler(current, argv, finish);
         }
         else {

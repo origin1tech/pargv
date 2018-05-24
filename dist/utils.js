@@ -64,7 +64,7 @@ function clearScreen(reset) {
     if (reset === void 0) { reset = true; }
     var out = '\x1B[2J';
     var newline = '\n';
-    if (chek_1.isWindows()) {
+    if (chek_1.isWindows()) { // hack cause windows sucks!
         newline = '\r\n';
         out = '';
         var lines = process.stdout['getWindowSize']()[1] || [];
@@ -287,7 +287,7 @@ function isExecutable(path) {
         return false;
     try {
         var stats = fs_1.statSync(path);
-        if (chek_1.isWindows()) {
+        if (chek_1.isWindows()) { // just return if is file, not ideal.
             return stats && stats.isFile();
         }
         else {

@@ -5,7 +5,8 @@ var fs_1 = require("fs");
 var constants_1 = require("./constants");
 var utils = require("./utils");
 var os_1 = require("os");
-var srcTpl = "" + os_1.EOL + os_1.EOL + "###-begin-{{app_name}}-completions-###" + os_1.EOL +
+var srcTpl = // template used to add to bash.
+ "" + os_1.EOL + os_1.EOL + "###-begin-{{app_name}}-completions-###" + os_1.EOL +
     ("source {{app_completions_path}}" + os_1.EOL) +
     ("###-end-{{app_name}}-completions-###" + os_1.EOL);
 function completions(pargv, colurs) {
@@ -20,7 +21,7 @@ function completions(pargv, colurs) {
      */
     function getPaths(path) {
         var appPath = path;
-        if (/dev\/temp\.ts$/.test(path))
+        if (/dev\/temp\.ts$/.test(path)) // hack used when debugging.
             appPath = 'pargv';
         var appName = path_1.basename(appPath); // get the basename from path.
         var completionsDir = path_1.join(env.HOME_PATH, "." + appName);
@@ -121,7 +122,7 @@ function completions(pargv, colurs) {
                 .done());
             return;
         }
-        if (!gen.paths.bashPath) {
+        if (!gen.paths.bashPath) { // failed to gen bash path probably windows.
             pargv.error(pargv._localize("\"cannot automatically install completions on platform %s.")
                 .args(pargv._env.PLATFORM)
                 .styles(colors.accent)
@@ -129,10 +130,10 @@ function completions(pargv, colurs) {
             return;
         }
         var tmp = true;
-        if (ensureDir(gen.paths.completionsDir)) {
-            if (write(gen.paths.completionsPath, gen.script)) {
+        if (ensureDir(gen.paths.completionsDir)) { // ensure dir exists.
+            if (write(gen.paths.completionsPath, gen.script)) { // write out completion script.
                 // const source = `source ${gen.paths.completionsPath}`;
-                if (write(gen.paths.bashPath, gen.sourceScript, true)) {
+                if (write(gen.paths.bashPath, gen.sourceScript, true)) { // append to profile.
                     return gen; // return the successful configuration.
                 }
                 else {
@@ -170,7 +171,7 @@ function completions(pargv, colurs) {
         if (pargv._env.EXEC === argv[0])
             argv.shift(); // remove first arg which is app/exec name.
         var tmpCmd = pargv.getCommand(utils.first(argv)); // is first is known command.
-        if (tmpCmd) {
+        if (tmpCmd) { // limit to single command if known.
             cmds = {}; // set the commands to just the one known command.
             cmds[tmpCmd._name] = tmpCmd;
             var sliced_1 = argv.slice(1); // remove command name.
@@ -180,7 +181,7 @@ function completions(pargv, colurs) {
                 if (!constants_1.FLAG_EXP.test(el) && i <= lastCmdIdx_1) {
                     var prev_1 = sliced_1[i - 1] || null;
                     var prevKey = tmpCmd.isOption(prev_1);
-                    if (!prevKey && !constants_1.FLAG_EXP.test(prev_1))
+                    if (!prevKey && !constants_1.FLAG_EXP.test(prev_1)) // could be val for option.
                         curCmdIdx_1 = i;
                 }
             });
@@ -198,7 +199,7 @@ function completions(pargv, colurs) {
                 if (tmpCmd._completions[key])
                     completions = completions.concat(tmpCmd._completions[key]);
             }
-            if (tmpCmd._completions['*'])
+            if (tmpCmd._completions['*']) // anon custom completions.
                 completions = completions.concat(tmpCmd._completions['*']);
         }
         else {

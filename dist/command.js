@@ -1289,7 +1289,7 @@ var PargvCommand = /** @class */ (function () {
          * : Gets methods for adding min commands or options.
          */
         get: function () {
-            var _this = this;
+            var self = this;
             return {
                 /**
                  * Min Commands
@@ -1298,8 +1298,8 @@ var PargvCommand = /** @class */ (function () {
                  * @param count the minimum number of commands.
                  */
                 commands: function (count) {
-                    _this._pargv.log(colurs.applyAnsi('DEPRECATED:', 'yellow') + " call \".minArguments()\" instead of \"min.commands()\".");
-                    return _this.minArguments(count);
+                    self._pargv.log(colurs.applyAnsi('DEPRECATED:', 'yellow') + " call \".minArguments()\" instead of \"min.commands()\".");
+                    return self.minArguments(count);
                 },
                 /**
                  * Min Options
@@ -1308,8 +1308,8 @@ var PargvCommand = /** @class */ (function () {
                  * @param count the minimum number of options.
                  */
                 options: function (count) {
-                    _this._pargv.log(colurs.applyAnsi('DEPRECATED:', 'yellow') + " call \".minOptions()\" instead of \"min.options()\".");
-                    return _this.minOptions(count);
+                    self._pargv.log(colurs.applyAnsi('DEPRECATED:', 'yellow') + " call \".minOptions()\" instead of \"min.options()\".");
+                    return self.minOptions(count);
                 }
             };
         },
@@ -1322,7 +1322,7 @@ var PargvCommand = /** @class */ (function () {
           * : Gets methods for adding max commands or options.
           */
         get: function () {
-            var _this = this;
+            var self = this;
             return {
                 /**
                  * Max Commands
@@ -1331,8 +1331,8 @@ var PargvCommand = /** @class */ (function () {
                  * @param count the maximum number of commands.
                  */
                 commands: function (count) {
-                    _this._pargv.log(colurs.applyAnsi('DEPRECATED:', 'magenta') + " call \".maxArguments()\" instead of \"max.commands()\".");
-                    return _this.maxArguments(count);
+                    self._pargv.log(colurs.applyAnsi('DEPRECATED:', 'magenta') + " call \".maxArguments()\" instead of \"max.commands()\".");
+                    return self.maxArguments(count);
                 },
                 /**
                  * Max Options
@@ -1341,8 +1341,8 @@ var PargvCommand = /** @class */ (function () {
                  * @param count the maximum number of options.
                  */
                 options: function (count) {
-                    _this._pargv.log(colurs.applyAnsi('DEPRECATED:', 'magenta') + " call \".maxOptions()\" instead of \"max.options()\".");
-                    return _this.maxOptions(count);
+                    self._pargv.log(colurs.applyAnsi('DEPRECATED:', 'magenta') + " call \".maxOptions()\" instead of \"max.options()\".");
+                    return self.maxOptions(count);
                 }
             };
         },

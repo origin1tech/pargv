@@ -2,10 +2,11 @@
 
 List of changes in descending order.
 
-### 5.24.2018 (v2.1.6)
+### 5.24.2018 (v2.1.6-v2.1.7)
 
 <table>
   <tr><td>npm audit</td><td>update dev dependencies, had vulnerabilities.</td></tr>
+  <tr><td>typedoc</td><td>fix typings nag.</td></tr>
 </table>
 
 ### 5.20.2018 (v2.1.3-v2.1.5)

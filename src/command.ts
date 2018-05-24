@@ -1550,6 +1550,8 @@ export class PargvCommand {
    */
   get min() {
 
+    const self = this;
+
     return {
 
       /**
@@ -1559,8 +1561,8 @@ export class PargvCommand {
        * @param count the minimum number of commands.
        */
       commands: (count: number) => {
-        this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'yellow')} call ".minArguments()" instead of "min.commands()".`);
-        return this.minArguments(count);
+        self._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'yellow')} call ".minArguments()" instead of "min.commands()".`);
+        return self.minArguments(count);
       },
 
       /**
@@ -1570,8 +1572,8 @@ export class PargvCommand {
        * @param count the minimum number of options.
        */
       options: (count: number) => {
-        this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'yellow')} call ".minOptions()" instead of "min.options()".`);
-        return this.minOptions(count);
+        self._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'yellow')} call ".minOptions()" instead of "min.options()".`);
+        return self.minOptions(count);
       }
 
     };
@@ -1584,6 +1586,8 @@ export class PargvCommand {
     */
   get max() {
 
+    const self = this;
+
     return {
 
       /**
@@ -1593,8 +1597,8 @@ export class PargvCommand {
        * @param count the maximum number of commands.
        */
       commands: (count: number) => {
-        this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} call ".maxArguments()" instead of "max.commands()".`);
-        return this.maxArguments(count);
+        self._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} call ".maxArguments()" instead of "max.commands()".`);
+        return self.maxArguments(count);
       },
 
       /**
@@ -1604,8 +1608,8 @@ export class PargvCommand {
        * @param count the maximum number of options.
        */
       options: (count: number) => {
-        this._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} call ".maxOptions()" instead of "max.options()".`);
-        return this.maxOptions(count);
+        self._pargv.log(`${colurs.applyAnsi('DEPRECATED:', 'magenta')} call ".maxOptions()" instead of "max.options()".`);
+        return self.maxOptions(count);
       }
 
     };
